@@ -1,2 +1,5 @@
 island-deploy
 island-deploy.zip
+
+# Local screenshots, generated previews and validation reports
+/artifacts/
