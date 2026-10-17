@@ -5,7 +5,7 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: { three: ['three'] },
+        manualChunks: { three: ['three'], 'night-sky': ['./src/night-sky.js'] },
       },
     },
     chunkSizeWarningLimit: 700,

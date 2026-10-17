@@ -12,9 +12,10 @@ export const WEATHER = {
   snow:   { cloudiness: .76, rain: 0, snow: 1, fog: .25, storm: 0, wind: .36 },
 };
 export function createSimulation(overrides = {}) {
-  return { hour: 14.5, elapsed: 0, running: true, speed: .5, dayDuration: 360,
+  return { hour: 14.5, dayIndex: 0, holdSunClock: false, elapsed: 0, running: true, speed: .5, dayDuration: 360,
     seasonIndex: 1, seasonProgress: 0, seasonDuration: 240, autoSeason: true,
-    weather: 'sunny', autoWeather: true, weatherProgress: 0,
+    weather: 'sunny', autoWeather: true, weatherProgress: 0, weatherDuration: undefined,
+    weatherSeasonIndex: overrides.seasonIndex ?? 1,
     lunarDay: LUNAR_CYCLE_DAYS / 2, autoMoon: true, windSeed: Math.floor(Math.random() * 2147483647), ...overrides };
 }
 
@@ -25,35 +26,56 @@ export function finishMoonNight(state) {
   return true;
 }
 
-export function advanceSimulation(state, delta) {
+export function advanceSimulation(state, delta, random = Math.random) {
   delta = Number.isFinite(delta) ? Math.max(0, delta) : 0;
   const animationRate = getAnimationRate(state);
   state.elapsed += delta * animationRate;
-  if (!state.running) return state;
-  const scaled = delta * state.speed;
-  if (state.moonNightEnding) {
+  const scaled = state.running ? delta * state.speed : 0;
+  if (state.running && !state.holdSunClock && state.moonNightEnding) {
     const ending = state.moonNightEnding;
     ending.elapsed += delta * animationRate;
     const progress = Math.min(1, ending.elapsed / 12);
     const eased = progress * progress * (3 - 2 * progress);
-    state.hour = (ending.startHour + (ending.targetHour - ending.startHour) * eased) % 24;
+    const hour=ending.startHour + (ending.targetHour - ending.startHour) * eased;
+    const dayOffset=Math.floor(hour/24);
+    state.dayIndex=(state.dayIndex??0)+dayOffset-(ending.dayOffset??0);ending.dayOffset=dayOffset;
+    state.hour = hour % 24;
     if (progress === 1) state.moonNightEnding = null;
-  } else state.hour = ((state.hour + scaled * 24 / state.dayDuration) % 24 + 24) % 24;
-  if (state.autoMoon) {
+  } else if (state.running && !state.holdSunClock) {
+    const hour=state.hour+scaled*24/state.dayDuration;
+    state.dayIndex=(state.dayIndex??0)+Math.floor(hour/24);state.hour=((hour%24)+24)%24;
+  }
+  if (state.running && state.autoMoon) {
     state.lunarDay = getMoonState(state.lunarDay + scaled / state.dayDuration).moonAge;
   }
-  if (state.autoSeason) {
+  if (state.running && state.autoSeason) {
     state.seasonProgress += scaled;
     const seasons = Math.floor(state.seasonProgress / state.seasonDuration);
     state.seasonIndex = (state.seasonIndex + seasons) % 4;
     state.seasonProgress %= state.seasonDuration;
   }
   if (state.autoWeather) {
-    state.weatherProgress += scaled;
-    if (state.weatherProgress > 55) {
-      const forecast = ['sunny', 'cloudy', 'rain', 'fog', 'storm', 'snow'];
-      state.weather = forecast[(forecast.indexOf(state.weather) + 1) % forecast.length];
-      state.weatherProgress %= 55;
+    const forecast = state.seasonIndex === 3
+      ? ['sunny', 'cloudy', 'rain', 'fog', 'snow']
+      : ['sunny', 'cloudy', 'rain', 'fog', 'storm'];
+    const nextWeather = () => {
+      const candidates = forecast.filter(weather => weather !== state.weather);
+      state.weather = candidates[Math.floor(random() * candidates.length)];
+      state.weatherDuration = 35 + random() * 50;
+    };
+    // Reconcile season changes, while letting manual selections last until
+    // their next automatic change even when outside the season's candidates.
+    if (state.weatherSeasonIndex !== state.seasonIndex) {
+      state.weatherSeasonIndex = state.seasonIndex;
+      if (!forecast.includes(state.weather)) { nextWeather(); state.weatherProgress = 0; }
+    }
+    if (state.running) {
+      state.weatherDuration ??= 35 + random() * 50;
+      state.weatherProgress += scaled;
+      while (state.weatherProgress >= state.weatherDuration) {
+        state.weatherProgress -= state.weatherDuration;
+        nextWeather();
+      }
     }
   }
   return state;
@@ -72,7 +94,7 @@ export function getEnvironment(state) {
   const moon = [Math.sin(moonAzimuth) * Math.cos(moonAltitude), Math.sin(moonAltitude), Math.cos(moonAzimuth) * Math.cos(moonAltitude)];
   const moonLight = moonState.moonIllumination * Math.max(0, Math.min(1, moon[1] / .5)) * moonVisibility;
   const wind = getWindState(state.elapsed, weather.wind, state.windSeed);
-  return { ...weather, ...wind, ...moonState, animationRate: getAnimationRate(state), hour: state.hour, daylight, moon, moonAltitude, moonVisibility, moonLight,
+  return { ...weather, ...wind, ...moonState, animationRate: getAnimationRate(state), dayIndex:state.dayIndex??0, hour: state.hour, daylight, moon, moonAltitude, moonVisibility, moonLight,
     season: SEASONS[state.seasonIndex], seasonIndex: state.seasonIndex,
     weather: state.weather, temperature: temperatures[state.seasonIndex] - (1 - daylight) * 5 - weather.rain * 4 - weather.snow * 12,
     sun: [Math.cos((state.hour - 6) / 24 * Math.PI * 2) * .7, elevation, .55] };

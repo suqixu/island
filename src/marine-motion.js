@@ -34,14 +34,40 @@ export function createMarineTimeline(seed = 0) {
   const rand = (kind, cycle, salt) => random(sceneSeed * .371 + cycle * 191.17 + salt * 1.618 + (kind === 'whale' ? 701 : 1709));
   function episode(kind, cycle, start) {
     const schedule = MARINE_SCHEDULE[kind];
-    const count = kind === 'whale' ? 1 : 1 + Math.floor(rand(kind, cycle, 3) * 4);
+    const population = rand(kind, cycle, 3);
+    const count = kind === 'whale' ? 1 : population < .48 ? 1 : population < .74 ? 2 : population < .9 ? 3 : 4;
     const spacing = kind === 'whale' ? 0 : .68 + rand(kind, cycle, 5) * .34;
-    const members = Array.from({ length: count }, (_, index) => Object.freeze({
-      lateral: kind === 'whale' ? 0 : (index - (count - 1) * .5) * 3.8 + (rand(kind, cycle, 31 + index) - .5) * 1.5,
-      along: kind === 'whale' ? 0 : (rand(kind, cycle, 41 + index) - .5) * 2.8,
-    }));
+    const lanes = [];
+    const members = Array.from({ length: count }, (_, index) => {
+      if (kind === 'whale') return Object.freeze({ lateral: 0, along: 0 });
+      // Sample each animal once. Index order must not become a marching order,
+      // and an individual must retain its arc throughout takeoff and landing.
+      const memberRandom = salt => rand(kind, cycle, 101 + index * 97 + salt);
+      let lateral = (memberRandom(1) - .5) * 14;
+      const crowded = () => lanes.some(other => Math.abs(other - lateral) < 3.2);
+      for (let attempt = 0; attempt < 32 && crowded(); attempt++) lateral = (memberRandom(23 + attempt * 23) - .5) * 14;
+      if (crowded()) {
+        const left = Math.min(...lanes) - 3.2, right = Math.max(...lanes) + 3.2;
+        lateral = Math.abs(left) < Math.abs(right) ? left : right;
+      }
+      lanes.push(lateral);
+      return Object.freeze({
+        lateral,
+        along: (memberRandom(3) - .5) * 7,
+        delay: index === 0 ? 0 : .3 + memberRandom(5) * 2.2,
+        duration: 2.1 + memberRandom(7) * .7,
+        travel: 12 + memberRandom(11) * 4,
+        leap: 4.4 + memberRandom(13) * 1.5,
+        heading: (memberRandom(17) - .5) * .2,
+        curve: (memberRandom(19) - .5) * 1.5,
+      });
+    });
     return Object.freeze({ ...schedule, kind, cycle, start, count, spacing,
-      end: start + schedule.duration + (count - 1) * spacing,
+      // The 5.8 m model must be wholly submerged before its instance appears
+      // and after its last dive frame, even with the steepest endpoint pitch.
+      base: kind === 'dolphin' ? -3.15 : schedule.base,
+      end: kind === 'whale' ? start + schedule.duration
+        : start + Math.max(...members.map(member => member.delay + member.duration)),
       placementSeed: rand(kind, cycle, 17) * 100000,
       activityThreshold: kind === 'whale' ? .42 + rand(kind, cycle, 19) * .38 : .30 + rand(kind, cycle, 19) * .44,
       members: Object.freeze(members) });
@@ -185,8 +211,27 @@ export function createMarineAnchor(heightAt, preferred = {}) {
 
 export function getMarinePose(kind, index, time, anchor = { x: 118, z: 118, heading: -.55 }, episode = null) {
   const schedule = episode ?? MARINE_SCHEDULE[kind] ?? MARINE_SCHEDULE.dolphin;
-  const start = schedule.start + Math.max(0, Math.floor(finite(index))) * schedule.spacing;
+  const member = episode?.members?.[index];
+  const start = schedule.start + (member?.delay ?? Math.max(0, Math.floor(finite(index))) * schedule.spacing);
   const t = Math.max(0, finite(time));
+  if (kind === 'dolphin' && episode && member) {
+    const duration = member.duration, progress = unit((t - start) / duration);
+    const along = (progress - .5) * member.travel;
+    const lateral = member.curve * Math.sin(progress * Math.PI) ** 2;
+    const heading = finite(anchor?.heading, -.55) + member.heading;
+    const lateralVelocity = member.curve * Math.PI * Math.sin(progress * TAU);
+    // Derive body direction from the same path as position. Keep the endpoint
+    // tangent while submerged, so landing never snaps flat or turns backwards.
+    return {
+      position: [finite(anchor?.x, 118) + Math.sin(heading) * along + Math.cos(heading) * lateral,
+        schedule.base + 4 * progress * (1 - progress) * member.leap,
+        finite(anchor?.z, 118) + Math.cos(heading) * along - Math.sin(heading) * lateral],
+      heading: heading + Math.atan2(lateralVelocity, member.travel),
+      pitch: Math.atan2(4 * (1 - 2 * progress) * member.leap, Math.hypot(member.travel, lateralVelocity)),
+      active: t >= start && t < start + duration && index < episode.count,
+      progress,
+    };
+  }
   const age = t < start ? 0 : episode ? t - start : (t - start) % schedule.period;
   const active = t >= start && age < schedule.duration && (!episode || index < episode.count);
   const idle = episode ? 0 : t < start ? 1 : (age - schedule.duration) / (schedule.period - schedule.duration);
@@ -242,7 +287,8 @@ export function createMarineEventTracker({ dolphins = 3, flyingFish = 6, timelin
         const schedule = episode ?? MARINE_SCHEDULE[rule.kind];
         for (let index = 0; index < Math.min(rule.count, episode?.count ?? rule.count); index++) {
           for (const [phase, type, strength] of rule.triggers) {
-            const start = schedule.start + index * schedule.spacing + phase * schedule.duration;
+            const member = episode?.members?.[index];
+            const start = schedule.start + (member?.delay ?? index * schedule.spacing) + phase * (member?.duration ?? schedule.duration);
             const cycle = episode?.cycle ?? Math.floor((time - start) / schedule.period);
             const eventTime = episode ? start : start + cycle * schedule.period;
             const key = `${rule.kind}:${index}:${type}`;

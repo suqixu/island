@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { createLagoonHabitats, getLagoonResidentPose } from './lagoon-life-motion.js';
+import { LAGOON_LAYOUT } from './lagoon.js';
 
 const TAU = Math.PI * 2;
 const QUALITY = { high: { fish: 42, turtle: 3, crab: 8, lobster: 5 },
@@ -140,6 +141,11 @@ export function createLagoonLife(scene, { heightAt, seed = 7319 } = {}) {
   const root = new THREE.Object3D(), part = new THREE.Object3D(), localMatrix = new THREE.Matrix4();
   const a = new THREE.Vector3(), b = new THREE.Vector3(), knee = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0);
   const segment = new THREE.Object3D(), direction = new THREE.Vector3();
+  // Include every complete habitat loop, fins/legs and local seabed relief.
+  // A single conservative test also keeps animals touching the screen edge.
+  const habitatBounds = new THREE.Sphere(new THREE.Vector3(LAGOON_LAYOUT.center[0], -4, LAGOON_LAYOUT.center[1]),
+    Math.max(...LAGOON_LAYOUT.axes) * 1.5);
+  const worldBounds = new THREE.Sphere(), frustum = new THREE.Frustum(), viewProjection = new THREE.Matrix4();
   let quality = QUALITY.high, disposed = false;
   function setRoot(pose, length) {
     root.position.fromArray(pose.position); root.rotation.set(-pose.pitch, pose.heading, pose.roll, 'YXZ');
@@ -172,6 +178,15 @@ export function createLagoonLife(scene, { heightAt, seed = 7319 } = {}) {
   }
   function update(time, env = {}, camera) {
     if (disposed) return;
+    if (camera?.isCamera) {
+      camera.updateMatrixWorld();
+      group.updateWorldMatrix(true, false);
+      viewProjection.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+      frustum.setFromProjectionMatrix(viewProjection);
+      worldBounds.copy(habitatBounds).applyMatrix4(group.matrixWorld);
+      group.visible = frustum.intersectsSphere(worldBounds);
+      if (!group.visible) return;
+    } else group.visible = true;
     const fishCounts = [0, 0, 0];
     // Take equal numbers from each complete school at every quality level.
     for (const home of homes.fish) {
@@ -183,7 +198,8 @@ export function createLagoonLife(scene, { heightAt, seed = 7319 } = {}) {
     }
     for (let species = 0; species < 3; species++) for (const mesh of [fish[species].body, fish[species].tail]) mesh.count = fishCounts[species];
     let turtleCount = 0;
-    for (const home of homes.turtle.slice(0, quality.turtle)) {
+    for (let member = 0; member < Math.min(homes.turtle.length, quality.turtle); member++) {
+      const home = homes.turtle[member];
       const pose = getLagoonResidentPose(time, home, heightAt); if (!pose.visible) continue;
       const index = turtleCount++; setRoot(pose, home.length); turtles.body.setMatrixAt(index, root.matrix);
       for (let sideIndex = 0; sideIndex < 2; sideIndex++) {
@@ -195,7 +211,8 @@ export function createLagoonLife(scene, { heightAt, seed = 7319 } = {}) {
     turtles.body.count = turtleCount; turtles.front.count = turtles.rear.count = turtleCount * 2;
     for (const [kind, model] of [['crab', crabs], ['lobster', lobsters]]) {
       let count = 0;
-      for (const home of homes[kind].slice(0, quality[kind])) {
+      for (let member = 0; member < Math.min(homes[kind].length, quality[kind]); member++) {
+        const home = homes[kind][member];
         const pose = getLagoonResidentPose(time, home, heightAt); if (!pose.visible) continue;
         const index = count++; setRoot(pose, home.length); model.body.setMatrixAt(index, root.matrix); feet(model, home, pose, index);
         for (let sideIndex = 0; sideIndex < 2; sideIndex++) {

@@ -7,8 +7,8 @@
     <meta name="description" content="浮屿：一座会呼吸的海岛。自由探索海洋、四季、昼夜与自然的声音。" />
     <title>浮屿 ISOLA · 在自然里，慢下来</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%231d4d47'/%3E%3Cpath d='M10 40q11-12 22 0t22 0M12 49q10-9 20 0t20 0' stroke='%23e5efbf' stroke-width='3' fill='none'/%3E%3Ccircle cx='33' cy='22' r='8' fill='%23e5efbf'/%3E%3C/svg%3E" />
-    <script type="module" crossorigin src="./assets/index-DsAcC9pO.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-Ci0ZPCGB.css">
+    <script type="module" crossorigin src="./assets/index-FK1o_gI7.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-V3_bCwUP.css">
   </head>
   <body>
     <div id="scene" aria-label="可拖动和缩放的三维海岛"></div>
@@ -63,6 +63,13 @@
             <button data-weather="storm" aria-label="雷暴" title="雷暴"><span data-icon="storm"></span></button>
             <button data-weather="snow" aria-label="飘雪" title="飘雪"><span data-icon="snow"></span></button>
             <label class="auto-option" title="天气自然变化"><input id="auto-weather" type="checkbox" checked aria-label="天气自然变化"/><span data-icon="cycle" aria-hidden="true"></span></label>
+          </div>
+          <div class="sky-options" role="group" aria-label="天象效果">
+            <button id="constellation-toggle" type="button" data-mode="off" aria-label="星座：默认不显示" title="星座：默认不显示 · 点击只显示星座" aria-pressed="false"><span data-icon="constellation" aria-hidden="true"></span><span class="sky-mode-badge" data-icon="labels" aria-hidden="true"></span></button>
+            <button id="meteor-toggle" type="button" class="selected" data-mode="default" aria-label="流星：默认" title="流星：默认随机出现 · 点击切换为即时出现" aria-pressed="true"><span data-icon="meteor" aria-hidden="true"></span><span class="sky-mode-badge" data-icon="instant" aria-hidden="true"></span></button>
+            <button id="comet-toggle" type="button" class="selected" data-mode="default" aria-label="彗星：默认" title="彗星：默认随机出现 · 点击切换为即时出现" aria-pressed="true"><span data-icon="comet" aria-hidden="true"></span><span class="sky-mode-badge" data-icon="instant" aria-hidden="true"></span></button>
+            <button id="eclipse-toggle" type="button" class="selected" data-mode="default" aria-label="日食：默认" title="日食：默认白天随机出现 · 点击切换为即时出现" aria-pressed="true"><span data-icon="eclipse" aria-hidden="true"></span><span class="sky-mode-badge" data-icon="instant" aria-hidden="true"></span></button>
+            <button id="lights-toggle" type="button" class="selected" data-mode="auto" aria-label="灯光：自动" title="灯光：随时间自动变化 · 点击关闭灯塔" aria-pressed="true"><span data-icon="lights" aria-hidden="true"></span></button>
           </div>
           <div class="wind-readout"><span>海风</span><span id="wind-speed">风速 6.0 m/s</span></div>
         </section>

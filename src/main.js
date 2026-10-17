@@ -1,12 +1,15 @@
 import * as THREE from 'three';
 import { getAnimationRate } from './animation-time.js';
+import { createSolarEclipse } from './solar-eclipse.js';
+import { getArtificialLightControls } from './artificial-light-controls.js';
+import { createSunsetBirds } from './sunset-birds.js';
 import { getMusicSceneEffects, isExclusiveMusicTrack } from './music-scene-effects.js';
 import { createDetailFocus } from './detail-focus.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { createBloomPass } from './bloom.js';
-import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { createScreenOutputPass } from './screen-output-pass.js';
 import { createIslandAsync } from './island.js';
 import { nextStartupPaint } from './startup-tasks.js';
 import { createOcean } from './ocean.js';
@@ -23,6 +26,7 @@ import { REST_PAVILION_SITES } from './rest-pavilion-layout.js';
 import { createPavilionSurfaceSampler } from './rest-pavilion-surface.js';
 import { getIslandPathLayout, PATH_LIFT } from './path-layout.js';
 import { createAtmosphere } from './atmosphere.js';
+import { loadCloudTextures } from './cloud-texture.js';
 import { createCloudCoverState, advanceCloudCover } from './cloud-cover.js';
 import { getSeaHorizonState } from './sea-horizon.js';
 import { CAVE_LAYOUT } from './cave-layout.js';
@@ -59,6 +63,7 @@ import { createSimulation, advanceSimulation, getEnvironment, finishMoonNight } 
 import { MOON_PHASES, LUNAR_CYCLE_DAYS } from './moon.js';
 import { createPoetry, loadPoetryFont } from './poetry.js';
 import { createFrameLoop } from './frame-loop.js';
+import { createCleanupScope } from './cleanup-scope.js';
 import { loadingScreen } from './loading-screen-entry.js';
 
 const $ = (id) => document.getElementById(id);
@@ -72,6 +77,13 @@ const paths = {
   fog: '<path d="M7 11a4 4 0 1 1 1.4-7.7 5 5 0 0 1 9.4 2.7 3 3 0 0 1 1.2 5M3 15h18M5 19h14"/>',
   storm: '<path d="M6 14a4 4 0 1 1 .9-7.9 6 6 0 0 1 11.7 1.5A3.3 3.3 0 0 1 18 14M13 12l-4 6h4l-2 5 6-8h-4l2-3"/>',
   snow: '<path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M9 5l3 3 3-3M9 19l3-3 3 3M4.5 10l4-1-1-4M19.5 14l-4 1 1 4M7.5 19l1-4-4-1M16.5 5l-1 4 4 1"/>',
+  constellation: '<path d="m5 6 6 3 7-5m-7 5-3 9 11 1-1-9"/><circle cx="5" cy="6" r="1.3"/><circle cx="11" cy="9" r="1.3"/><circle cx="18" cy="4" r="1.3"/><circle cx="8" cy="18" r="1.3"/><circle cx="19" cy="19" r="1.3"/>',
+  meteor: '<path d="m4 3 11 11M3 9l7 7M10 3l8 8"/><path d="m17 13 1.2 2.8L21 17l-2.8 1.2L17 21l-1.2-2.8L13 17l2.8-1.2L17 13Z"/>',
+  comet: '<circle cx="17" cy="17" r="3.2"/><path d="M14 16 3 5l13 9M16 13 9 3l9 11M13 18 3 11l11 9"/>',
+  instant: '<path d="m14 2-9 12h6l-1 8 9-12h-6l1-8Z"/>',
+  eclipse: '<circle cx="12" cy="12" r="5"/><path d="M12 7a5 5 0 0 1 0 10 6 6 0 0 0 0-10Z" fill="currentColor"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/>',
+  lights: '<path d="M9 18h6m-5 3h4M8 14a6 6 0 1 1 8 0c-1 .8-1 1.5-1 2H9c0-.5 0-1.2-1-2ZM12 1v1M3 5l1.5 1M21 5l-1.5 1M2 12h2m16 0h2"/>',
+  labels: '<path d="M4 5h16M4 12h12M4 19h16"/>',
   volume: '<path d="M11 5 6 9H3v6h3l5 4V5ZM15 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/>',
   mute: '<path d="M11 5 6 9H3v6h3l5 4V5Zm5 4 5 6m0-6-5 6"/>',
   camera: '<path d="M4 7h4l2-3h4l2 3h4a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1Z"/><circle cx="12" cy="13" r="4"/>',
@@ -112,28 +124,51 @@ const islandStageLabels = {
 };
 
 async function boot() {
+  const cleanup = createCleanupScope({ onFailure: loadingFailed });
+  cleanup.add(() => loadingScreen.dispose());
+  // DOM property handlers also retain the scene; restore their pre-boot values.
+  const handlers = [...document.querySelectorAll('button, input, select, [data-view], [data-season], [data-weather]')]
+    .map(element => [element, element.onclick, element.oninput, element.onchange]);
+  cleanup.add(() => {
+    for (const [element, onclick, oninput, onchange] of handlers) Object.assign(element, { onclick, oninput, onchange });
+    handlers.length = 0;
+    clearTimeout(toastTimer);
+  });
+  await cleanup.run(async () => {
   const startup = { startedAt: performance.now(), stages: [], slices: [] };
   async function stage(name, label, build) {
     loadingScreen.setStage(label);
     await nextStartupPaint();
     const start = performance.now();
-    try { return await build(); }
+    try {
+      const resource = await build();
+      if (resource?.dispose) cleanup.add(() => resource.dispose());
+      return resource;
+    }
     finally { startup.stages.push({ stage: name, durationMs: performance.now() - start }); }
   }
   await nextStartupPaint();
   // The save button renders immediately before toBlob; normal frames need no
   // persistent canvas buffer in addition to the composer's render targets.
-  const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+  // Scene geometry renders into the composer; its final full-screen output
+  // gains nothing from a second multisampled default framebuffer.
+  const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance' });
+  cleanup.add(() => renderer.forceContextLoss());
+  cleanup.add(() => renderer.domElement.remove());
+  cleanup.add(() => renderer.dispose());
   renderer.setSize(innerWidth, innerHeight); renderer.setPixelRatio(Math.min(devicePixelRatio, 1.7));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.04;
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   $('scene').appendChild(renderer.domElement);
   const scene = new THREE.Scene();
+  const sunsetBirds = createSunsetBirds();scene.add(sunsetBirds.group);
+  cleanup.add(() => sunsetBirds.dispose());
   const camera = new THREE.PerspectiveCamera(innerWidth < 760 ? 54 : 46, innerWidth / innerHeight, .5, 65000);
   const mobileScale = innerWidth < 760 ? 1.48 : 1;
   camera.position.set(160 * mobileScale, 68 * mobileScale, 200 * mobileScale);
   const controls = new OrbitControls(camera, renderer.domElement);
+  cleanup.add(() => controls.dispose());
   controls.target.set(0, 15, 0); controls.enableDamping = true; controls.dampingFactor = .05;
   controls.minDistance = 38; controls.maxDistance = 480; controls.maxPolarAngle = Math.PI * .49;
   controls.minPolarAngle = .08; controls.enablePan = true; controls.autoRotateSpeed = .32;
@@ -141,7 +176,11 @@ async function boot() {
   // Fetch assets while CPU construction runs. Capture rejection immediately so
   // a fast network failure cannot become an unhandled rejection before use.
   const assetStart = performance.now();
-  const resources = Promise.all([loadLunarSurface(), loadPoetryFont()])
+  const resources = Promise.all([
+    loadLunarSurface().then(value => ({ value, transfer: cleanup.add(() => value.dispose()) })),
+    loadPoetryFont(),
+    loadCloudTextures().then(value => ({ value, transfer: cleanup.add(() => value.forEach(map => map.dispose())) })),
+  ])
     .then(values => ({ values }), error => ({ error }))
     .finally(() => startup.stages.push({ stage: 'assets', durationMs: performance.now() - assetStart }));
   const island = await stage('island', '正在搭建海岛', () => createIslandAsync(scene, {
@@ -170,8 +209,11 @@ async function boot() {
   }
   const loaded = await stage('resource-wait', '正在准备月色与书法', () => resources);
   if (loaded.error) throw loaded.error;
-  const [moonMap, poetryFont] = loaded.values;
-  const atmosphere = await stage('atmosphere', '正在摆动太阳和月亮', () => createAtmosphere(scene, { moonMap, terrainHeightAt: island.heightAtRendered }));
+  const [moonAsset, poetryFont, cloudAsset] = loaded.values;
+  const moonMap = moonAsset.value, cloudMaps = cloudAsset.value;
+  const atmosphere = await stage('atmosphere', '正在摆动太阳和月亮', () => createAtmosphere(scene, { moonMap, cloudMaps, terrainHeightAt: island.heightAtRendered }));
+  // Atmosphere's disposal now owns these textures, including the shared atlas.
+  moonAsset.transfer(); cloudAsset.transfer();
   const poetry = await stage('poetry', '正在准备流动诗句', () => createPoetry(scene, camera, {
     font: poetryFont,
     getFocusDistance: () => camera.position.distanceTo(controls.target),
@@ -206,6 +248,7 @@ async function boot() {
   const openingSeal = $('opening-seal'), sealImage = $('opening-seal-image');
   sealImage.src = openingSealUrl;
   let sealAnimation, sealDisposed = false;
+  cleanup.add(() => { sealDisposed = true; sealAnimation?.cancel(); });
   async function showOpeningSeal() {
     try { await sealImage.decode(); } catch { return; }
     if (sealDisposed) return;
@@ -297,6 +340,7 @@ async function boot() {
       updateMusicControls();
     },
   });
+  cleanup.add(() => audio.dispose());
   atmosphere.onThunder = () => audio.thunder();
   const soundOffset = new THREE.Vector3(), soundRight = new THREE.Vector3();
   function playSpatialEvent(event, play) {
@@ -311,13 +355,21 @@ async function boot() {
     pavilion.onChime = event => playSpatialEvent(event, audio.chime);
   });
   const state = createSimulation();
+  const solarEclipse = createSolarEclipse();
+  let artificialLightMode='auto';
   const sceneRates = [0.5, 1, 2, 3, 4, 8, 16];
   const cloudCover = createCloudCoverState();
   const sunDirection = new THREE.Vector3();
-  const composer = new EffectComposer(renderer); composer.addPass(new RenderPass(scene, camera));
+  const composer = new EffectComposer(renderer);
+  cleanup.add(() => composer.dispose());
+  function addPass(pass) { cleanup.add(() => pass.dispose()); composer.addPass(pass); }
+  addPass(new RenderPass(scene, camera));
   const bloom = createBloomPass(innerWidth, innerHeight);
-  composer.addPass(bloom); composer.addPass(new OutputPass());
+  // Three 0.180's bloom dispose does not release its high-pass material.
+  cleanup.add(() => bloom.materialHighPassFilter.dispose());
+  addPass(bloom); addPass(createScreenOutputPass());
   let cameraMotion = null, lastUI = 0, frames = 0, fpsTime = 0;
+  let interacting = false, interactionUntil = 0;
   let quality = 'high';
   const seasons = ['春日', '夏日', '金秋', '冬日'];
   const weathers = { sunny: '晴朗', cloudy: '多云', rain: '细雨', fog: '薄雾', storm: '雷暴', snow: '飘雪' };
@@ -359,9 +411,50 @@ async function boot() {
   $('panel-close').onclick = () => panel(false);
   if (innerWidth <= 760) panel(false);
   document.querySelectorAll('[data-season]').forEach(el => el.onclick = () => { state.seasonIndex = Number(el.dataset.season); state.seasonProgress = 0; refreshUI(); });
-  document.querySelectorAll('[data-weather]').forEach(el => el.onclick = () => { state.weather = el.dataset.weather; state.weatherProgress = 0; refreshUI(); });
+  document.querySelectorAll('[data-weather]').forEach(el => el.onclick = () => { state.weather = el.dataset.weather; state.weatherProgress = 0; state.weatherDuration = undefined; state.weatherSeasonIndex = state.seasonIndex; refreshUI(); });
   $('auto-season').onchange = (event) => { state.autoSeason = event.target.checked; };
-  $('auto-weather').onchange = (event) => { state.autoWeather = event.target.checked; state.weatherProgress = 0; };
+  $('auto-weather').onchange = (event) => { state.autoWeather = event.target.checked; state.weatherProgress = 0; state.weatherDuration = undefined; state.weatherSeasonIndex = -1; };
+  const constellationModes=['off','lines','labels'],constellationNames=['默认不显示','只显示星座','星座和名称'];
+  let constellationIndex=0;
+  $('constellation-toggle').onclick=()=>{
+    constellationIndex=(constellationIndex+1)%constellationModes.length;
+    const mode=constellationModes[constellationIndex],button=$('constellation-toggle');atmosphere.setConstellationMode(mode);
+    button.dataset.mode=mode;button.classList.toggle('selected',mode!=='off');
+    button.setAttribute('aria-pressed',String(mode!=='off'));button.setAttribute('aria-label',`星座：${constellationNames[constellationIndex]}`);
+    button.title=`星座：${constellationNames[constellationIndex]} · 点击切换为${constellationNames[(constellationIndex+1)%3]}`;
+    toast(`星座：${constellationNames[constellationIndex]}`);
+  };
+  const skyModes=['default','instant','off'],skyModeNames=['默认','即时出现','不出现'];
+  const lightModes=['auto','lighthouse-off','all-off'],lightModeNames=['自动','关闭灯塔','关闭全部'];
+  $('lights-toggle').onclick=()=>{
+    const index=(lightModes.indexOf(artificialLightMode)+1)%lightModes.length;
+    artificialLightMode=lightModes[index];const button=$('lights-toggle');
+    button.dataset.mode=artificialLightMode;button.classList.toggle('selected',index!==2);
+    button.setAttribute('aria-pressed',String(index!==2));button.setAttribute('aria-label',`灯光：${lightModeNames[index]}`);
+    button.title=`灯光：${lightModeNames[index]} · 点击切换为${lightModeNames[(index+1)%lightModes.length]}`;
+    toast(`灯光：${index===0?'随时间自动变化':lightModeNames[index]}`);
+  };
+  for(const [id,name,setMode]of [
+    ['meteor-toggle','流星',atmosphere.setMeteorMode],
+    ['comet-toggle','彗星',atmosphere.setCometMode],
+    ['eclipse-toggle','日食',solarEclipse.setMode],
+  ]){
+    let index=0;const button=$(id);
+    button.onclick=()=>{
+      index=(index+1)%skyModes.length;const mode=skyModes[index];
+      if(id==='eclipse-toggle'&&mode==='instant'){
+        const environment=getEnvironment(state);
+        if(environment.daylight<.9||environment.sun[1]<.58||state.hour<9||state.hour>15.5){state.hour=12;state.moonNightEnding=null;refreshUI();}
+      }
+      setMode(mode);
+      button.dataset.mode=mode;button.classList.toggle('selected',mode!=='off');
+      button.setAttribute('aria-pressed',String(mode!=='off'));
+      button.setAttribute('aria-label',`${name}：${skyModeNames[index]}`);
+      button.title=`${name}：${skyModeNames[index]} · 点击切换为${skyModeNames[(index+1)%skyModes.length]}`;
+      const period=name==='日食'?'白天':'晴夜';
+      toast(`${name}：${skyModeNames[index]}${mode==='instant'?name==='日食'?' · 立即播放一次完整日食':` · ${period}立即出现并连续播放`:mode==='default'?` · ${period}随机出现`:''}`);
+    };
+  }
   $('moon-phase').onclick = () => {
     const current = Math.round(getEnvironment(state).moonPhase * MOON_PHASES.length) % MOON_PHASES.length;
     if (!state.autoMoon && current === MOON_PHASES.length - 1) {
@@ -373,7 +466,7 @@ async function boot() {
     }
     refreshUI();
   };
-  $('time-range').oninput = (event) => { state.moonNightEnding = null; state.hour = Number(event.target.value); poetry.restart(); refreshUI(); };
+  $('time-range').oninput = (event) => { state.moonNightEnding = null; state.hour = Number(event.target.value); state.holdSunClock=false;solarEclipse.reset();poetry.restart(); refreshUI(); };
   $('time-toggle').onclick = () => { state.running = !state.running; refreshUI(); };
   $('scene-rate').onclick = () => {
     state.speed = sceneRates[(sceneRates.indexOf(state.speed) + 1) % sceneRates.length];
@@ -487,7 +580,8 @@ async function boot() {
       updateMusicControls();
     }
   });
-  controls.addEventListener('start', () => { cameraMotion = null; });
+  cleanup.listen(controls, 'start', () => { cameraMotion = null; interacting = true; });
+  cleanup.listen(controls, 'end', () => { interacting = false; interactionUntil = performance.now() + 1200; });
   const detailFocus=createDetailFocus({element:renderer.domElement,camera,
     roots:[island.group,lighthouse.group,pathLamps.group,...restPavilions.map(pavilion=>pavilion.group),ocean.mesh],water:ocean.mesh,
     onFocus({position,target}){
@@ -499,6 +593,7 @@ async function boot() {
       document.querySelectorAll('[data-view]').forEach(button=>{button.classList.remove('selected');button.setAttribute('aria-pressed','false');});
       toast('已拉近 · 拖动环绕，滚轮缩放 · 点“全岛”返回');
     }});
+  cleanup.add(() => detailFocus.dispose());
   $('capture').onclick = () => {
     composer.render();
     renderer.domElement.toBlob(blob => {
@@ -518,7 +613,7 @@ async function boot() {
     renderer.setSize(innerWidth,innerHeight); composer.setSize(innerWidth,innerHeight);
     poetry.reframe();
   }
-  window.addEventListener('resize', resize);
+  cleanup.listen(window, 'resize', resize);
   const qualityOptions = [{ value: 'high', label: '精细' }, { value: 'medium', label: '均衡' }, { value: 'low', label: '流畅' }];
   $('quality').onclick = () => {
     const next = qualityOptions[(qualityOptions.findIndex(option => option.value === quality) + 1) % qualityOptions.length];
@@ -528,7 +623,9 @@ async function boot() {
     island.setQuality?.(quality);
     marine.setQuality(quality);
     sailboats.setQuality(quality);
+    sunsetBirds.setQuality(quality);
     lagoonLife.setQuality(quality);
+    atmosphere.setQuality(quality);
     lighthouse.setQuality(quality);
     pathLamps.setQuality(quality);
     restPavilions.forEach(pavilion => pavilion.setQuality(quality));
@@ -537,13 +634,13 @@ async function boot() {
     bloom.enabled = quality !== 'low'; renderer.shadowMap.enabled = quality !== 'low'; resize();
     toast(`已切换为${next.label}画质`);
   };
-  document.addEventListener('keydown',event => {
+  cleanup.listen(document, 'keydown',event => {
     if (event.target.matches('input, select, button')) return;
     if (event.key === 'Escape') panel(false);
     if (event.code === 'Space') { event.preventDefault(); state.running = !state.running; refreshUI(); }
   });
-  renderer.domElement.addEventListener('webglcontextlost',event => { event.preventDefault(); toast('图形连接中断，正在恢复'); });
-  renderer.domElement.addEventListener('webglcontextrestored',() => location.reload());
+  cleanup.listen(renderer.domElement, 'webglcontextlost',event => { event.preventDefault(); toast('图形连接中断，正在恢复'); });
+  cleanup.listen(renderer.domElement, 'webglcontextrestored',() => location.reload());
   let previousTime = performance.now();
   function frame(now, render = true) {
     const delta = Math.max(0, Math.min((now-previousTime)/1000,.1)); previousTime = now;
@@ -564,18 +661,24 @@ async function boot() {
       viewMusicTriggers[5].getMusicFlags(camera.position, controls.target, Boolean(cameraMotion)));
     env.skyCloudCover = advanceCloudCover(cloudCover, state.elapsed, env).coverage;
     sunDirection.set(...env.sun).normalize(); env.sunDirection = sunDirection;
+    env.eclipse=solarEclipse.update(delta,env);
+    state.holdSunClock=env.eclipse.active;
+    env.solarDaylight=env.daylight;
+    env.daylight*=env.eclipse.lightFactor;
     const sunBackdrop = getSunBackdropState(camera, innerWidth, innerHeight, sunDirection);
     env.sunBackdropDirection = sunBackdrop.direction;
-    env.sunAngularRadius = sunBackdrop.angularRadius;
+    env.sunAngularRadius = sunBackdrop.angularRadius*(1+env.eclipse.coverage*.8);
     env.sunFramed = sunBackdrop.framed;
     const moonlit = (1 - env.daylight) * env.moonLight * (1 - env.cloudiness * .9) * (1 - env.fog * .8);
     renderer.toneMappingExposure = 1.04 + moonlit * .30;
     env.moonDirection = getMoonBackdropDirection(camera, innerWidth, env);
     env.seaHorizon = getSeaHorizonState(env);
-    env.artificialLightsOff = getMusicSceneEffects(backgroundStatus, { enabled: soundEnabled, paused: musicPaused }).artificialLightsOff;
+    Object.assign(env,getArtificialLightControls(artificialLightMode,
+      getMusicSceneEffects(backgroundStatus, { enabled: soundEnabled, paused: musicPaused }).artificialLightsOff));
     island.update(state.elapsed,env); ocean.update(state.elapsed,env); audio.update(state.elapsed,env);
     marine.update(state.elapsed,env,camera);
     sailboats.update(state.elapsed,env,camera);
+    sunsetBirds.update(state.elapsed,env,camera);
     lagoonLife.update(state.elapsed,env,camera);
     lighthouse.update(state.elapsed,env);
     pathLamps.update(state.elapsed,env,camera);
@@ -607,34 +710,19 @@ async function boot() {
       loadingScreen.complete();
       showOpeningSeal();
     } catch (error) {
-      frameLoop.pause();
-      loadingFailed(error);
+      cleanup.fail(error);
     }
-  });
+  }, { maxFps: now => interacting || now < interactionUntil || Boolean(cameraMotion) || controls.autoRotate ? 60 : 30 });
+  cleanup.add(() => frameLoop.dispose());
   const visibilityChanged = () => document.hidden ? frameLoop.pause() : frameLoop.start();
-  document.addEventListener('visibilitychange', visibilityChanged);
+  cleanup.listen(document, 'visibilitychange', visibilityChanged);
   refreshUI();
   frameLoop.start();
-  window.addEventListener('pagehide',event => {
+  cleanup.listen(window, 'pagehide',event => {
     frameLoop.pause();
-    if (!event.persisted) {
-      sealDisposed = true;
-      sealAnimation?.cancel();
-      frameLoop.dispose();
-      loadingScreen.dispose();
-      document.removeEventListener('visibilitychange', visibilityChanged);
-      window.removeEventListener('resize', resize);
-      audio.dispose(); marine.dispose(); sailboats.dispose(); lagoonLife.dispose(); lighthouse.dispose(); pathLamps.dispose();
-      restPavilions.forEach(pavilion => pavilion.dispose());
-      poetry.dispose(); atmosphere.dispose(); ocean.dispose(); island.dispose();
-      detailFocus.dispose();controls.dispose();
-      composer.passes.forEach(pass => pass.dispose());
-      // Three 0.180's bloom dispose does not release its high-pass material.
-      bloom.materialHighPassFilter.dispose();
-      composer.dispose(); renderer.dispose();
-    }
+    if (!event.persisted) cleanup.dispose();
   });
-  window.addEventListener('pageshow',event => {
+  cleanup.listen(window, 'pageshow',event => {
     if (event.persisted) frameLoop.start();
     if (event.persisted && soundEnabled) audio.start().catch(() => {
       soundEnabled = false; $('sound-toggle').innerHTML = icon('mute'); $('sound-toggle').classList.remove('enabled');
@@ -644,6 +732,8 @@ async function boot() {
   });
   // Small read-only status surface for diagnosis and browser verification.
   window.isola = { state, scene, camera, renderer, controls, startup, getEnvironment: () => getEnvironment(state) };
+  cleanup.add(() => { delete window.isola; });
+  });
 }
 
 function loadingFailed(error) {

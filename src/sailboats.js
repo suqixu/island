@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { createSailboatMotion } from './sailboat-motion.js';
+import { createSunsetSailboatMotion } from './sunset-sailboat-motion.js';
 
 function merged(parts) {
   const geometry = mergeGeometries(parts);
@@ -112,7 +112,7 @@ function silhouetteModels() {
 /** Four slots with three shared silhouettes, allocated once and chosen per voyage. */
 export function createSailboats(scene, { heightAt, seed } = {}) {
   const group = new THREE.Group(); group.name = '远海帆船剪影'; scene.add(group);
-  const motion = createSailboatMotion({ heightAt, seed });
+  const motion = createSunsetSailboatMotion({ heightAt, seed });
   const models = silhouetteModels();
   const geometries = new Set(models.flatMap(model => model.parts.map(part => part.geometry))), materials = new Set();
   const dayHull = new THREE.Color('#26353b'), nightHull = new THREE.Color('#182635');

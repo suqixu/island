@@ -15,6 +15,21 @@ function lagoonRadius(x, z) {
   return Math.hypot((c * dx + s * dz) / 25, (-s * dx + c * dz) / 18);
 }
 
+test('游泳居民每帧仅采样一次中心和八个身体边缘，保持相同安全姿态', () => {
+  const { createLagoonHabitats, getLagoonResidentPose } = api();
+  const homes = createLagoonHabitats(heightAt, 42);
+  for (const home of [homes.fish[0], homes.turtle[0]]) {
+    const expected = getLagoonResidentPose(22, home, heightAt);
+    const samples = [];
+    const pose = getLagoonResidentPose(22, home, (x, z) => { samples.push([x, z]); return heightAt(x, z); });
+    assert.equal(samples.length, 9, '身体净空只需中心加八个边缘，不能重复查询中心');
+    assert.equal(samples.filter(([x, z]) => x === pose.position[0] && z === pose.position[2]).length, 1);
+    assert.deepEqual(pose, expected);
+    assert.equal(pose.visible, true);
+    assert.ok(pose.position[1] + home.heightRadius < -.06);
+  }
+});
+
 test('常驻生态确定性生成四种居民，三组鱼错相而非逐帧重新随机', () => {
   const { createLagoonHabitats, getLagoonResidentPose } = api();
   const first = createLagoonHabitats(heightAt, 42), repeated = createLagoonHabitats(heightAt, 42);

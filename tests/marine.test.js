@@ -18,6 +18,60 @@ const fishBodies = marine => marine.group.children.filter(mesh => mesh.isInstanc
   mesh.name.endsWith('鱼身体') && mesh.instanceMatrix.count === 20);
 const fishCount = marine => fishBodies(marine).reduce((count, mesh) => count + mesh.count, 0);
 
+test('低活动鱼群不采样海床，恢复白天后保持原有鱼群数量', () => {
+  let samples = 0;
+  const marine = createMarine(new THREE.Scene(), { heightAt: (x, z) => { samples++; return heightAt(x, z); }, fishSeed: 42 });
+  try {
+    samples = 0;
+    marine.update(0, { daylight: 0 }, cameraFor());
+    assert.equal(samples, 0, '已隐藏的鱼无需继续计算海床和姿态');
+    assert.equal(fishCount(marine), 0);
+    marine.update(.1, clear, cameraFor());
+    assert.equal(fishCount(marine), 60);
+  } finally { marine.dispose(); }
+});
+
+test('天气不足或后台中断的鲸轮直接跳过锚点搜索，不能在本轮中途恢复', () => {
+  const episode = createMarineTimeline(42).getEpisode('whale', 12);
+  for (const interrupted of [false, true]) {
+    let samples = 0;
+    const marine = createMarine(new THREE.Scene(), { heightAt: (x, z) => { samples++; return heightAt(x, z); }, fishSeed: 42, marineSeed: 42 });
+    const camera = cameraFor(), events = [];
+    marine.onEvent = event => events.push(event);
+    try {
+      const env = interrupted ? clear : { ...clear, daylight: .25 };
+      marine.update(interrupted ? 0 : episode.start - .1, env, camera);
+      samples = 0;
+      marine.update(episode.start + .01, env, camera);
+      assert.equal(samples, 60, '只需采样仍可见的60条近岸鱼，不搜索注定被拒绝的远海锚点');
+      assert.equal(marine.group.children.find(item => item.name === '鲸鱼身体').count, 0);
+      marine.update(episode.start + .02, clear, camera);
+      assert.equal(marine.group.children.find(item => item.name === '鲸鱼身体').count, 0);
+      assert.deepEqual(events, []);
+    } finally { marine.dispose(); }
+  }
+});
+
+test('鲸轮转至画面背面先裁剪投影，再跳过地形遮挡采样并结束该轮', () => {
+  let samples = 0;
+  const marine = createMarine(new THREE.Scene(), { heightAt: (x, z) => { samples++; return heightAt(x, z); }, fishSeed: 42, marineSeed: 42 });
+  const camera = cameraFor(), episode = createMarineTimeline(42).getEpisode('whale', 12);
+  try {
+    marine.update(episode.start - .1, clear, camera);
+    marine.update(episode.start + .01, clear, camera);
+    const whale = marine.group.children.find(item => item.name === '鲸鱼身体');
+    assert.equal(whale.count, 1, '先验证本轮已在前方可见');
+    camera.lookAt(400, 68, 500);
+    samples = 0;
+    marine.update(episode.start + .02, clear, camera);
+    assert.equal(samples, 60, '屏外鲸鱼无需做地形射线采样');
+    assert.equal(whale.count, 0);
+    camera.lookAt(0, 15, 0);
+    marine.update(episode.start + .03, clear, camera);
+    assert.equal(whale.count, 0, '本轮不能因镜头转回而重新选锚点');
+  } finally { marine.dispose(); }
+});
+
 test('16倍速在十帧画面下仍显示鲸豚和落水事件，不能误判为后台中断', () => {
   const marine=createMarine(new THREE.Scene(),{heightAt,fishSeed:42}),camera=cameraFor(),events=[];
   let whales=0,dolphins=0;
@@ -149,11 +203,11 @@ test('首次十二秒出现清楚的远海鲸喷，海豚随后独立跃水，�
         if (plume) sprayDuration += 1 / 60;
       }
     }
-    assert.equal(events.filter(event => event.type === 'dolphin').length, 3);
+    assert.equal(events.filter(event => event.type === 'dolphin').length, 2);
     assert.equal(events.filter(event => event.type === 'whale-blow').length, 1);
-    assert.equal(events.filter(event => event.type === 'splash').length, 4);
+    assert.equal(events.filter(event => event.type === 'splash').length, 3);
     assert.equal(events.filter(event => event.type === 'flying-fish').length, 0);
-    assert.equal(new Set(events.filter(event => event.type === 'dolphin').map(event => event.position.x)).size, 3);
+    assert.equal(new Set(events.filter(event => event.type === 'dolphin').map(event => event.position.x)).size, 2);
     for (const event of events) {
       assert.ok(event.position.isVector3 && event.position.toArray().every(Number.isFinite));
       assert.ok(heightAt(event.position.x, event.position.z) < -5);
@@ -400,4 +454,40 @@ test('已开始的鲸轮后台恢复跳过旧鲸喷，低帧率海豚音源仍�
   assert.ok(sound.position.distanceTo(new THREE.Vector3().setFromMatrixPosition(matrix)) < .05,
     '音源应使用当前渲染姿态，不能落后0.264秒的跃水位置');
   dolphin.dispose();
+});
+
+test('海豚从完全潜水状态出入画，每只起落无需新建几何和实例缓冲', () => {
+  const matrix = new THREE.Matrix4(), world = new THREE.Vector3();
+  let checked = 0;
+  for (const seed of [0, 42, 77]) {
+    const timeline = createMarineTimeline(seed), episode = timeline.getEpisode('dolphin', 30);
+    const marine = createMarine(new THREE.Scene(), { heightAt, fishSeed: seed, marineSeed: seed });
+    const body = marine.group.children.find(mesh => mesh.name === '海豚身体');
+    const tail = marine.group.children.find(mesh => mesh.name === '海豚尾鳍');
+    const resources = [body.geometry, tail.geometry, body.instanceMatrix.array, tail.instanceMatrix.array];
+    const camera = cameraFor();
+    for (let frame = 0; frame < (episode.end + .1) * 120; frame++) {
+      const now = frame / 120; marine.update(now, clear, camera);
+      if (now < episode.start || now >= episode.end) continue;
+      const active = episode.members.map((member, index) => ({ ...member, index }))
+        .filter(member => now >= episode.start + member.delay && now < episode.start + member.delay + member.duration);
+      for (let instance = 0; instance < body.count; instance++) {
+        const member = active[instance], age = now - episode.start - member.delay;
+        if (age > 1 / 120 && member.duration - age > 1 / 120) continue;
+        checked++;
+        for (const mesh of [body, tail]) {
+          mesh.getMatrixAt(instance, matrix);
+          const points = mesh.geometry.attributes.position;
+          for (let vertex = 0; vertex < points.count; vertex++) {
+            world.fromBufferAttribute(points, vertex).applyMatrix4(matrix);
+            assert.ok(world.y < .15, '个体开始和结束渲染时须全身潜水，不能在水面瞬间生成或消失');
+          }
+        }
+      }
+    }
+    assert.equal(body.geometry, resources[0]); assert.equal(tail.geometry, resources[1]);
+    assert.equal(body.instanceMatrix.array, resources[2]); assert.equal(tail.instanceMatrix.array, resources[3]);
+    marine.dispose();
+  }
+  assert.ok(checked >= 12, '覆盖多个种子、多个成员实际起落边界');
 });

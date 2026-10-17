@@ -362,7 +362,7 @@ export function createLighthouse(scene, { heightAt, position, doorDirection = { 
   function update(time, environment = {}) {
     if (disposed) return;
     if (environment.quality && environment.quality !== quality) setQuality(environment.quality);
-    const strength = environment.artificialLightsOff ? 0 : getLighthouseLampStrength(environment.daylight);
+    const strength = environment.artificialLightsOff || environment.lighthouseLightsOff ? 0 : getLighthouseLampStrength(environment.daylight);
     light.intensity = strength * 23; light.visible = strength > .0001;
     glowMaterial.emissiveIntensity = strength * 6.5;
     lensMaterial.emissiveIntensity = strength * 2.7;

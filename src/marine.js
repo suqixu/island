@@ -247,9 +247,9 @@ export function createMarine(scene, { heightAt, fishSeed = Math.floor(Math.rando
           // Underwater vertices do not need a clear air ray; check the water
           // line there so a submerged approach is not culled before surfacing.
           corner.y = Math.max(.05, corner.y);
+          projected.copy(corner).project(camera);
+          if (Math.abs(projected.x) >= .94 || projected.y <= -.8 || projected.y >= .65 || projected.z <= -1 || projected.z >= 1) return false;
           if (!clearViewingRay(corner)) return false;
-          corner.project(camera);
-          if (Math.abs(corner.x) >= .94 || corner.y <= -.8 || corner.y >= .65 || corner.z <= -1 || corner.z >= 1) return false;
         }
     return true;
   }
@@ -297,11 +297,13 @@ export function createMarine(scene, { heightAt, fishSeed = Math.floor(Math.rando
       // Evaluate the real model, including its tail, at the surface phase.
       // A centre point in frame is insufficient for a 25 m whale on a phone.
       let visible = true, minX = Infinity, maxX = -Infinity;
-      const travelMargin = episode.travel * .5 / record.length;
-      const lateralMargin = .65 / record.length;
       for (let member = 0; member < episode.count && visible; member++) {
         const memberRecord = records.find(item => item.kind === record.kind && item.index === member);
-        const peak = getMarinePose(record.kind, member, episode.start + member * episode.spacing + episode.duration * .5,
+        const motion = episode.members[member];
+        const travelMargin = (motion.travel ?? episode.travel) * .5 / memberRecord.length;
+        const lateralMargin = Math.max(.65, Math.abs(motion.curve ?? 0)) / memberRecord.length;
+        const peak = getMarinePose(record.kind, member,
+          episode.start + (motion.delay ?? member * episode.spacing) + (motion.duration ?? episode.duration) * .5,
           memberAnchor(anchor, episode, member), episode);
         setPose(dummy, peak, memberRecord.length);
         for (const cx of [bounds.min.x - lateralMargin, bounds.max.x + lateralMargin]) for (const cy of [bounds.min.y, bounds.max.y])
@@ -378,9 +380,9 @@ export function createMarine(scene, { heightAt, fishSeed = Math.floor(Math.rando
     lastTime = now;
     if (camera?.isCamera) camera.getWorldPosition(cameraPosition);
     const activity = getMarineActivity(env), counts = [0, 0, 0];
-    for (let index = 0; index < settings.fish; index++) {
+    for (let index = 0; activity >= .27 && index < settings.fish; index++) {
       const member = fish[index], pose = getFishPose(now, member.habitatIndex, member.home, heightAt, activity);
-      if (!pose.visible || activity < .27) continue;
+      if (!pose.visible) continue;
       const model = schools[member.species], instance = counts[member.species]++;
       setPose(dummy, pose, member.length); model.body.setMatrixAt(instance, dummy.matrix);
       setTail(model, instance, dummy.matrix, pose.tail, false);
@@ -394,10 +396,11 @@ export function createMarine(scene, { heightAt, fishSeed = Math.floor(Math.rando
       if (!episode || now >= episode.end || episode.cycle === state.cycle) continue;
       state.cycle = episode.cycle;
       const first = records.find(item => item.kind === kind && item.index === 0);
-      const anchor = visibleAnchor(first, camera, episode);
       // A late return from the background must not materialize a pod halfway
       // through a leap or attach a previous episode's sound to a new anchor.
-      const allowed = Boolean(anchor) && !interrupted && now - episode.start <= Math.max(1, step) && activity >= episode.activityThreshold;
+      const eligible = !interrupted && now - episode.start <= Math.max(1, step) && activity >= episode.activityThreshold;
+      const anchor = eligible ? visibleAnchor(first, camera, episode) : null;
+      const allowed = Boolean(anchor);
       for (const record of records.filter(item => item.kind === kind)) {
         record.cycle = episode.cycle; record.episode = episode;
         record.anchor = record.index < episode.count ? memberAnchor(anchor, episode, record.index) : null;
@@ -406,9 +409,9 @@ export function createMarine(scene, { heightAt, fishSeed = Math.floor(Math.rando
     }
     framePoses.clear(); hiddenKinds.clear();
     for (const record of records) {
-      if (!record.episode) continue;
+      if (!record.episode || !record.allowed || record.index >= limitFor(record.kind)) continue;
       const pose = getMarinePose(record.kind, record.index, now, record.anchor, record.episode);
-      if (!record.allowed || !pose.active || record.index >= limitFor(record.kind)) continue;
+      if (!pose.active) continue;
       setPose(dummy, pose, record.length);
       if (!currentPoseVisible(record, camera)) hiddenKinds.add(record.kind);
       framePoses.set(record, pose);

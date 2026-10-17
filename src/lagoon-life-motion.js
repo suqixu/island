@@ -88,7 +88,7 @@ export function getLagoonResidentPose(time, home, heightAt) {
     gaitAmount = 16 * p * p * (1 - p) * (1 - p);
   }
   const angle = home.phase + travel * home.rate, { x, z, heading } = routeAt(home, angle);
-  const floor = sample(heightAt, x, z), limb = home.limbPhase + (swim ? t : travel) * (swim ? 3.7 : 2.1);
+  const limb = home.limbPhase + (swim ? t : travel) * (swim ? 3.7 : 2.1);
   if (swim) {
     const highest = footprint(heightAt, x, z, home.radius);
     const desired = -home.depth + Math.sin(t * .33 + home.phase) * .12;
@@ -97,6 +97,7 @@ export function getLagoonResidentPose(time, home, heightAt) {
       tail: Math.sin(limb) * .28, flipper: Math.sin(t * 2.7 + home.limbPhase) * .43,
       visible: Number.isFinite(highest) && highest < -home.heightRadius * 2 - .23 };
   }
+  const floor = sample(heightAt, x, z);
   const dx = (sample(heightAt, x + .15, z) - sample(heightAt, x - .15, z)) / .3;
   const dz = (sample(heightAt, x, z + .15) - sample(heightAt, x, z - .15)) / .3;
   let bump = 0;

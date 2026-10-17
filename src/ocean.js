@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { getAnimationDelta } from './animation-time.js';
+import { createOceanFoamTexture } from './ocean-foam.js';
 import { getSunVisibility } from './sun-framing.js';
 import { getSunsetState } from './sunset.js';
 import { getSeaHorizonState, SEA_HORIZON_GLSL } from './sea-horizon.js';
@@ -239,6 +240,8 @@ const fragmentShader = /* glsl */ `
   uniform vec3 uSunsetCloudRose;
   uniform vec3 uSunsetCloudShadow;
   uniform sampler2D uBathymetry;
+  uniform sampler2D uFoamMap;
+  uniform float uFoamReady;
   uniform float uCoastExtent;
   varying vec3 vWorldPosition;
   varying vec3 vNormal;
@@ -529,7 +532,12 @@ const fragmentShader = /* glsl */ `
       float runupReach = 2.4 + waveEnergy * 4.6;
       float front = runupReach * (0.5 + 0.5 * cos(swashPhase));
       float incoming = smoothstep(-0.2, 0.55, sin(swashPhase));
-      float laceNoise = fbm(coastPoint * 0.72 - uFlowOffset * 0.17 + vec2(0.0, uWaveTime * 0.065));
+      // One mip-filtered mask fetch replaces three value-noise octaves.
+      // Mirrored wrapping avoids discontinuities at the generated tile edges.
+      vec2 foamUV = (coastPoint - uFlowOffset * 0.24) * 0.14
+        + vec2(coastNoise * 0.10, uWaveTime * 0.009);
+      float laceNoise = uFoamReady > 0.5 ? texture2D(uFoamMap, foamUV).r
+        : fbm(coastPoint * 0.72 - uFlowOffset * 0.17 + vec2(0.0, uWaveTime * 0.065));
       float lace = smoothstep(0.25, 0.71, laceNoise);
       float swashFront = 1.0 - smoothstep(0.45, 1.8, abs(shore - front));
       float residue = (1.0 - smoothstep(1.4, runupReach + 2.0, shore)) *
@@ -537,7 +545,7 @@ const fragmentShader = /* glsl */ `
       float breaker = smoothstep(0.54, 0.94, sin(shore * 0.62 + uWaveTime * 1.25 + coastNoise * 4.5));
       breaker *= (1.0 - smoothstep(4.0, 10.0 + waveEnergy * 4.0, shore)) *
                  smoothstep(0.8, 3.0, shore) * smoothstep(0.3, 0.66, laceNoise);
-      foam = swashFront * (0.42 + incoming * 0.32) * (0.3 + lace * 0.7) +
+      foam = swashFront * (0.42 + incoming * 0.32) * (mix(0.3, 0.10, uFoamReady) + lace * mix(0.7, 0.90, uFoamReady)) +
              residue + breaker * (0.32 + waveEnergy * 0.22);
     }
     // Whitecaps also occur in fine weather, confined to steep, patchy crests.
@@ -549,7 +557,10 @@ const fragmentShader = /* glsl */ `
       float capPatch = fbm(capPoint + vec2(7.3, uWaveTime * 0.008));
       float crestSteepness = waveBreaking + (1.0 - normal.y) * 0.42;
       float whitecap = smoothstep(0.075, 0.21, crestSteepness) * smoothstep(0.49, 0.73, capPatch);
-      float capLace = smoothstep(0.33, 0.7, noise(drift * 0.65));
+      float capDetail = uFoamReady > 0.5 ? texture2D(uFoamMap,
+        vec2(dot(drift, uWindDirection), dot(drift, acrossWind)) * vec2(0.12, 0.24)).r
+        : noise(drift * 0.65);
+      float capLace = smoothstep(0.18, 0.70, capDetail);
       foam += whitecap * (0.4 + capLace * 0.6) * (0.27 + uWind * 0.46 + uStorm * 0.4) *
               smoothstep(2.0, 8.0, shore) * (1.0 - smoothstep(180.0, 520.0, distanceToCamera));
     }
@@ -606,6 +617,8 @@ const fragmentShader = /* glsl */ `
 
 export function createOcean(scene, { heightAt, shelterAt } = {}) {
   const bathymetry = createBathymetry(heightAt, shelterAt);
+  const foam = createOceanFoamTexture();
+  let disposed = false;
   const seaHorizon = getSeaHorizonState();
   const uniforms = {
     uTime: { value: 0 },
@@ -645,8 +658,13 @@ export function createOcean(scene, { heightAt, shelterAt } = {}) {
     uSunsetCloudRose: { value: new THREE.Color() },
     uSunsetCloudShadow: { value: new THREE.Color() },
     uBathymetry: { value: bathymetry },
+    uFoamMap: { value: foam.texture },
+    uFoamReady: { value: 0 },
     uCoastExtent: { value: COAST_EXTENT },
   };
+  foam.ready.then(loaded => {
+    if (!disposed) uniforms.uFoamReady.value = loaded ? 1 : 0;
+  });
   const material = new THREE.ShaderMaterial({
     uniforms, vertexShader, fragmentShader,
     side: THREE.FrontSide,
@@ -673,6 +691,9 @@ export function createOcean(scene, { heightAt, shelterAt } = {}) {
   const warmDeepWater = new THREE.Color('#075777');
   const coldShallowWater = new THREE.Color('#44aeb5');
   const coldDeepWater = new THREE.Color('#164b68');
+  const clearShallowWater = new THREE.Color('#28b9c8');
+  const clearDeepWater = new THREE.Color('#075ab5');
+  const clearColdDeepWater = new THREE.Color('#155aa2');
   const cloudyShallowWater = new THREE.Color('#6b9f9d');
   const cloudyDeepWater = new THREE.Color('#376279');
   const stormShallowWater = new THREE.Color('#527a85');
@@ -681,7 +702,7 @@ export function createOcean(scene, { heightAt, shelterAt } = {}) {
   const fogDeepWater = new THREE.Color('#5c7b8e');
   const scratch = new THREE.Color();
   const sunsetSun = new THREE.Color();
-  const weatherState = { wind: 0.25, windSpeed: 7, swell: 0.38, gust: 0.12, cloudiness: 0.1, storm: 0, fog: 0, rain: 0, snow: 0 };
+  const weatherState = { clearBlue: 0, wind: 0.25, windSpeed: 7, swell: 0.38, gust: 0.12, cloudiness: 0.1, storm: 0, fog: 0, rain: 0, snow: 0 };
   let windAngle = Math.atan2(0.55, 0.83);
   let waveTime = 0;
   let lastUpdateTime = null;
@@ -691,6 +712,7 @@ export function createOcean(scene, { heightAt, shelterAt } = {}) {
   }
 
   function update(time, env = {}) {
+    if (disposed) return;
     time = Number.isFinite(time) ? time : (lastUpdateTime ?? 0);
     const firstUpdate = lastUpdateTime === null;
     const delta = firstUpdate ? 0 : getAnimationDelta(time - lastUpdateTime, .15, env);
@@ -705,6 +727,7 @@ export function createOcean(scene, { heightAt, shelterAt } = {}) {
     weatherState.fog = THREE.MathUtils.lerp(weatherState.fog, finiteInput(env.fog, 0), weatherBlend);
     weatherState.rain = THREE.MathUtils.lerp(weatherState.rain, finiteInput(env.rain, 0), weatherBlend);
     weatherState.snow = THREE.MathUtils.lerp(weatherState.snow, finiteInput(env.snow, 0), weatherBlend);
+    weatherState.clearBlue = THREE.MathUtils.lerp(weatherState.clearBlue, env.weather === 'sunny' ? 1 : 0, weatherBlend);
     let targetWindAngle = Math.atan2(0.55, 0.83);
     const direction = env.windDirection;
     if (Array.isArray(direction) && direction.length === 2 && direction.every(Number.isFinite) &&
@@ -798,23 +821,34 @@ export function createOcean(scene, { heightAt, shelterAt } = {}) {
     // Water depth still separates the clear cyan shelf from the blue open sea.
     // Smoothed cloud/storm/fog coverage reduces saturation rather than making
     // a rainy sea abruptly green; reflected sky and haze remain independent.
+    // Strong daylight and a clear sky allow richer blue absorption in open
+    // water. Dusk, clouds and wet weather retain their established palettes.
+    const clearBlue = weatherState.clearBlue * THREE.MathUtils.smoothstep(daylight, .55, .95)
+      * THREE.MathUtils.smoothstep(sunHeight, .15, .7)
+      * (1 - THREE.MathUtils.smoothstep(Math.max(cloudiness, uniforms.uSkyCloudCover.value), .2, .85))
+      * (1 - weatherState.fog) * (1 - weatherState.rain) * (1 - storm);
     const cloudTint = THREE.MathUtils.smoothstep(cloudiness, 0.2, 0.95) * 0.65;
     const stormTint = storm * 0.48;
     const fogTint = weatherState.fog * 0.36;
     uniforms.uShallowColor.value.copy(cold ? coldShallowWater : warmShallowWater)
+      .lerp(clearShallowWater, clearBlue)
       .lerp(cloudyShallowWater, cloudTint).lerp(stormShallowWater, stormTint)
       .lerp(fogShallowWater, fogTint);
     uniforms.uDeepColor.value.copy(cold ? coldDeepWater : warmDeepWater)
+      .lerp(cold ? clearColdDeepWater : clearDeepWater, clearBlue)
       .lerp(cloudyDeepWater, cloudTint).lerp(stormDeepWater, stormTint)
       .lerp(fogDeepWater, fogTint);
   }
 
   function dispose() {
+    if (disposed) return;
+    disposed = true;
+    foam.dispose();
     scene.remove(mesh);
     mesh.geometry.dispose();
     material.dispose();
     bathymetry.dispose();
   }
 
-  return { mesh, update, dispose, bathymetry };
+  return { mesh, update, dispose, bathymetry, ready: foam.ready };
 }

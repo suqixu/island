@@ -5,9 +5,12 @@ import { getSunVisibility } from './sun-framing.js';
 import { getMoonNightVisibility } from './moon.js';
 import { getMoonBackdropScale } from './moon-framing.js';
 import { createAfterRainState, advanceAfterRain } from './after-rain.js';
+import { getRainbowFraming, createRainbowAppearance, RAINBOW_GLSL } from './rainbow.js';
 import { getSunsetState } from './sunset.js';
 import { createCloudMotionState, advanceCloudMotion, getCloudLayerSpeed } from './cloud-motion.js';
+import { createCloudTextureData } from './cloud-texture.js';
 import { getSeaHorizonState, SEA_HORIZON_GLSL } from './sea-horizon.js';
+import { createNightSky } from './night-sky.js';
 
 const clamp = THREE.MathUtils.clamp;
 const weatherCloudiness = { sunny: 0.16, cloudy: 0.75, rain: 0.87, fog: 0.5, storm: 1, snow: 0.82 };
@@ -29,72 +32,17 @@ function canvasTexture(width, height, paint) {
   return texture;
 }
 
-// A single density silhouette avoids stacks of translucent smoke circles.
-// Relief and a cool, flatter base give the cumulus field depth at startup.
-function cloudTexture(seed, thin = false) {
-  const random = randomSource(seed);
-  return canvasTexture(768, 384, (ctx, width, height) => {
-    const grid = new Float32Array(64 * 64);
-    for (let i = 0; i < grid.length; i++) grid[i] = random();
-    function noise(x, y) {
-      const ix = Math.floor(x), iy = Math.floor(y), fx = x - ix, fy = y - iy;
-      const u = fx * fx * (3 - 2 * fx), v = fy * fy * (3 - 2 * fy);
-      const at = (a, b) => grid[((b & 63) * 64) + (a & 63)];
-      const a = at(ix, iy), b = at(ix + 1, iy), c = at(ix, iy + 1), d = at(ix + 1, iy + 1);
-      return (a + (b - a) * u) * (1 - v) + (c + (d - c) * u) * v;
-    }
-    const lobes = [];
-    for (let i = 0; i < 13; i++) {
-      const t = i / 12;
-      lobes.push({ x: .17 + t * .66, y: thin ? .53 + (random() - .5) * .12 : .68 - Math.sin(t * Math.PI) * (.18 + random() * .12),
-        rx: .075 + random() * .085, ry: thin ? .07 + random() * .09 : .12 + random() * .18 });
-    }
-    const pixels = ctx.createImageData(width, height);
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
-        const nx = x / width, ny = y / height;
-        const broad = noise(nx * 7.1 + 3, ny * 7.1 + 9);
-        const detail = noise(nx * 21.7 + 13, ny * 23.3 + 5);
-        const fine = noise(nx * 58.1 + 11, ny * 53.7 + 19);
-        const wx = nx + (broad - .5) * .035;
-        const wy = ny + (detail - .5) * .032;
-        let density = -10;
-        let normalX = 0, normalY = 0, normalZ = 0, normalWeight = 0;
-        for (const lobe of lobes) {
-          const dx = (wx - lobe.x) / lobe.rx, dy = (wy - lobe.y) / lobe.ry;
-          const lobeDensity = 1 - dx * dx - dy * dy;
-          density = Math.max(density, lobeDensity);
-          // Blend overlapping volumes' lighting instead of exposing seams
-          // where the nearest individual lobe changes.
-          const blend = Math.max(0, lobeDensity + .25);
-          const weight = blend * blend * blend;
-          normalX += dx * weight;
-          normalY += dy * weight;
-          normalZ += Math.sqrt(Math.max(0, lobeDensity)) * weight;
-          normalWeight += weight;
-        }
-        if (normalWeight > 0) {
-          normalX /= normalWeight;
-          normalY /= normalWeight;
-          normalZ /= normalWeight;
-        }
-        density += (detail - .5) * .14 + (fine - .5) * .08;
-        const base = 1 - THREE.MathUtils.smoothstep(ny, thin ? .71 : .76, thin ? .76 : .81);
-        const alpha = THREE.MathUtils.smoothstep(density, -.055, .075) * base * (thin ? .35 + detail * .45 : .94);
-        if (alpha < .002) continue;
-        const top = 1 - THREE.MathUtils.smoothstep(ny, .24, .78);
-        const relief = broad * .62 + detail * .28 + fine * .10;
-        const illumination = clamp(.48 + normalZ * .56 - normalX * .32 - normalY * .70, 0, 1);
-        const shade = (1 - illumination) * (thin ? 22 : 76) + (1 - relief) * (thin ? 8 : 16);
-        const index = (y * width + x) * 4;
-        pixels.data[index] = clamp(204 + top * 49 - shade + fine * 5, 0, 255);
-        pixels.data[index + 1] = clamp(216 + top * 37 - shade * .9, 0, 255);
-        pixels.data[index + 2] = clamp(228 + top * 25 - shade * .68, 0, 255);
-        pixels.data[index + 3] = Math.round(alpha * 255);
-      }
-    }
-    ctx.putImageData(pixels, 0, 0);
-  });
+// Bake volume, turbulent edges and self-shadow once; sprites reuse the result.
+function cloudTexture(seed, kind = 'cumulus') {
+  const { data, width, height } = createCloudTextureData(seed, { kind });
+  const texture = new THREE.DataTexture(data, width, height, THREE.RGBAFormat);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.flipY = true;
+  texture.magFilter = THREE.LinearFilter;
+  texture.minFilter = THREE.LinearMipmapLinearFilter;
+  texture.generateMipmaps = true;
+  texture.needsUpdate = true;
+  return texture;
 }
 
 function addCloudSunset(material) {
@@ -108,11 +56,14 @@ function addCloudSunset(material) {
     uCloudSunsetSide: { value: 0 },
   };
   material.userData.sunsetUniforms = uniforms;
-  material.customProgramCacheKey = () => 'sculpted-sunset-cloud-v1';
+  material.customProgramCacheKey = () => 'photographic-volume-cloud-v2';
   material.onBeforeCompile = shader => {
     Object.assign(shader.uniforms, uniforms);
+    shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nvarying vec2 vCloudUv;')
+      .replace('#include <uv_vertex>', '#include <uv_vertex>\nvCloudUv = uv;');
     shader.fragmentShader = shader.fragmentShader.replace('#include <common>', `
       #include <common>
+      varying vec2 vCloudUv;
       uniform float uCloudSunsetStrength;
       uniform vec3 uCloudSunsetGold;
       uniform vec3 uCloudSunsetRose;
@@ -123,12 +74,17 @@ function addCloudSunset(material) {
     `).replace('#include <map_fragment>', `
       #include <map_fragment>
       #ifdef USE_MAP
+        // Fade the atlas cell's outermost wisps before another cell can bleed
+        // through; the cloud itself retains its photographic alpha detail.
+        vec2 cloudBorder = smoothstep(vec2(0.0), vec2(0.045), vCloudUv)
+          * (1.0 - smoothstep(vec2(0.955), vec2(1.0), vCloudUv));
+        diffuseColor.a *= cloudBorder.x * cloudBorder.y;
         // The original density texture carries the cloud's volume: tint its
         // lit ridges separately from its blue-violet underside.
         float relief = dot(sampledDiffuseColor.rgb, vec3(0.2126, 0.7152, 0.0722));
         float cloudLight = smoothstep(0.25, 0.86, relief);
-        float cloudTop = smoothstep(0.28, 0.82, vMapUv.y);
-        float cloudSide = clamp(0.5 + (vMapUv.x - 0.5) * uCloudSunsetSide, 0.0, 1.0);
+        float cloudTop = smoothstep(0.28, 0.82, vCloudUv.y);
+        float cloudSide = clamp(0.5 + (vCloudUv.x - 0.5) * uCloudSunsetSide, 0.0, 1.0);
         float cloudRim = (1.0 - smoothstep(0.42, 0.92, sampledDiffuseColor.a))
           * cloudTop * (0.35 + cloudSide * 0.65);
         vec3 sunsetBody = mix(uCloudSunsetShadow, uCloudSunsetRose,
@@ -200,28 +156,24 @@ const skyFragment = /* glsl */ `
   uniform vec3 uSunsetRose;
   uniform vec3 uMoonDirection;
   uniform float uMoonStrength;
+  uniform float uEclipseActive;
+  uniform float uEclipseOffset;
+  uniform float uEclipseCoverage;
+  uniform float uEclipseTotality;
   uniform float uDaylight;
   uniform float uTwilight;
   uniform float uCloudiness;
   uniform float uStorm;
   uniform float uLightning;
   uniform float uRainbowStrength;
+  uniform float uRainbowSecondary;
   uniform float uRainbowRadius;
   uniform float uRainbowWidth;
   uniform vec3 uRainbowCenter;
   uniform vec3 uRainbowRight;
   uniform vec3 uRainbowUp;
   ${SEA_HORIZON_GLSL}
-  vec3 rainbowColor(float position) {
-    // Continuous spectral order: violet inside, red outside.
-    float band = clamp(position, 0.0, 1.0) * 6.0;
-    if (band < 1.0) return mix(vec3(0.42, 0.12, 0.75), vec3(0.10, 0.24, 0.95), band);
-    if (band < 2.0) return mix(vec3(0.10, 0.24, 0.95), vec3(0.08, 0.68, 0.90), band - 1.0);
-    if (band < 3.0) return mix(vec3(0.08, 0.68, 0.90), vec3(0.20, 0.78, 0.25), band - 2.0);
-    if (band < 4.0) return mix(vec3(0.20, 0.78, 0.25), vec3(0.98, 0.82, 0.12), band - 3.0);
-    if (band < 5.0) return mix(vec3(0.98, 0.82, 0.12), vec3(1.0, 0.36, 0.05), band - 4.0);
-    return mix(vec3(1.0, 0.36, 0.05), vec3(0.92, 0.10, 0.04), band - 5.0);
-  }
+  ${RAINBOW_GLSL}
   void main() {
     vec3 direction = normalize(vDirection);
     float height = max(direction.y, 0.0);
@@ -258,6 +210,14 @@ const skyFragment = /* glsl */ `
     float solarAboveHorizon = smoothstep(-horizonEdge * 0.5, horizonEdge * 0.5, direction.y);
     float sunDisk = 1.0 - smoothstep(solarRadius - solarEdge, solarRadius + solarEdge, solarDistance);
     float sunHalo = exp(-pow(solarDistance / (solarRadius * 2.5), 2.0));
+    vec3 eclipseAxis = abs(solarDirection.y) < 0.98 ? vec3(0.0, 1.0, 0.0) : vec3(0.0, 0.0, 1.0);
+    vec3 eclipseRight = normalize(cross(eclipseAxis, solarDirection));
+    vec3 eclipseUp = cross(solarDirection, eclipseRight);
+    vec2 eclipsePoint = vec2(dot(direction,eclipseRight),dot(direction,eclipseUp)) / solarRadius;
+    vec2 eclipseCenter = vec2(uEclipseOffset,uEclipseOffset*0.08);
+    float eclipseDistance = length(eclipsePoint-eclipseCenter);
+    float eclipseEdge = max(fwidth(eclipseDistance),0.02);
+    float eclipseMask = (1.0-smoothstep(1.05-eclipseEdge,1.05+eclipseEdge,eclipseDistance))*uEclipseActive;
     float sunRays = 0.0;
     if (solarDistance < solarRadius * 3.5) {
       vec3 axis = abs(solarDirection.y) < 0.98 ? vec3(0.0, 1.0, 0.0) : vec3(0.0, 0.0, 1.0);
@@ -275,21 +235,20 @@ const skyFragment = /* glsl */ `
     // At the horizon the red disc replaces its backdrop instead of adding
     // a bright sky to it. Noon retains the existing additive warm-white disc.
     color *= 1.0 - discCoverage * uSunRedness;
-    color += uSunColor * (discCoverage * uSunDiscIntensity
-      + (sunHalo * 0.22 + sunRays * 0.1) * uSunVisibility * solarAboveHorizon);
+    color += uSunColor * (discCoverage * uSunDiscIntensity * (1.0-eclipseMask)
+      + (sunHalo * 0.22 + sunRays * 0.1) * uSunVisibility * solarAboveHorizon * (1.0-uEclipseCoverage));
+    float coronaRadius=solarDistance/solarRadius;
+    float coronaAngle=atan(eclipsePoint.y+0.0000001,eclipsePoint.x);
+    float corona=exp(-max(0.0,coronaRadius-1.0)*2.8)
+      *(0.65+0.35*pow(abs(cos(coronaAngle*3.0)),3.0))
+      *smoothstep(1.0,1.07,coronaRadius)*(1.0-smoothstep(2.6,4.2,coronaRadius));
+    color += vec3(0.8,0.84,0.76)*corona*uEclipseTotality*uSunDiscVisibility*solarAboveHorizon;
+    color=mix(color,vec3(0.0005,0.0008,0.0012),eclipseMask*uEclipseTotality);
     float moonAlignment = max(dot(direction, uMoonDirection), 0.0);
     color += vec3(0.08, 0.13, 0.2) * pow(moonAlignment, 210.0) * uMoonStrength;
     if (uRainbowStrength > 0.001) {
-      vec2 rainbowPlane = vec2(dot(direction, uRainbowRight), dot(direction, uRainbowUp));
-      float rainbowDistance = length(rainbowPlane);
-      float rainbowEdge = max(fwidth(rainbowDistance), uRainbowWidth * 0.12);
-      float rainbowBand = 1.0 - smoothstep(uRainbowWidth * 0.42,
-        uRainbowWidth * 0.5 + rainbowEdge, abs(rainbowDistance - uRainbowRadius));
-      float rainbowPosition = (rainbowDistance - uRainbowRadius) / uRainbowWidth + 0.5;
-      float rainbowArc = smoothstep(0.0, uRainbowRadius * 0.18, rainbowPlane.y)
-        * smoothstep(0.0, 0.15, dot(direction, uRainbowCenter)) * solarAboveHorizon;
-      color = mix(color, rainbowColor(rainbowPosition),
-        rainbowBand * rainbowArc * uRainbowStrength * 0.52);
+      color = seaRainbow(color, direction, uRainbowCenter, uRainbowRight, uRainbowUp,
+        uRainbowRadius, uRainbowWidth, uRainbowStrength, uRainbowSecondary, uSeaHorizonTime);
     }
     color *= 1.0 - uStorm * 0.42;
     // 共享目标已含雷暴暗化，低空雾仅在深夜融合，并保留其后的闪电照亮。
@@ -376,16 +335,17 @@ function createPrecipitation(count, snow, random) {
  * Sky, clouds, precipitation, atmospheric fog and the scene's main lighting.
  * Time is elapsed seconds. The environment's sunDirection points toward the sun.
  */
-export function createAtmosphere(scene, { moonMap, terrainHeightAt } = {}) {
+export function createAtmosphere(scene, { moonMap, terrainHeightAt, cloudMaps: suppliedCloudMaps } = {}) {
   const random = randomSource(601907);
+  const rainbowAppearance = createRainbowAppearance();
   const group = new THREE.Group();
   group.name = 'atmosphere';
   scene.add(group);
 
   const colors = {
     zenithDay: new THREE.Color('#5e9dcc'),
-    zenithNight: new THREE.Color('#070f25'),
-    zenithMoon: new THREE.Color('#172c48'),
+    zenithNight: new THREE.Color('#04070d'),
+    zenithMoon: new THREE.Color('#0b121d'),
     zenithDusk: new THREE.Color('#334972'),
     horizonDay: new THREE.Color('#bddeeb'),
     horizonNight: new THREE.Color('#142b43'),
@@ -398,7 +358,7 @@ export function createAtmosphere(scene, { moonMap, terrainHeightAt } = {}) {
     fogMoon: new THREE.Color('#2c4255'),
     fogDusk: new THREE.Color('#cc9f88'),
     cloudDay: new THREE.Color('#f5fafb'),
-    cloudNight: new THREE.Color('#53647f'),
+    cloudNight: new THREE.Color('#444e60'),
     cloudStorm: new THREE.Color('#697d91'),
     cloudDusk: new THREE.Color('#ffbd90'),
     sunlight: new THREE.Color('#fff4df'),
@@ -437,6 +397,10 @@ export function createAtmosphere(scene, { moonMap, terrainHeightAt } = {}) {
       uSunsetRose: { value: new THREE.Color() },
       uMoonDirection: { value: new THREE.Vector3(-0.6, 0.5, -0.7).normalize() },
       uMoonStrength: { value: 0 },
+      uEclipseActive: { value: 0 },
+      uEclipseOffset: { value: -2.1 },
+      uEclipseCoverage: { value: 0 },
+      uEclipseTotality: { value: 0 },
       uDaylight: { value: 1 },
       uTwilight: { value: 0 },
       uCloudiness: { value: 0.2 },
@@ -448,6 +412,7 @@ export function createAtmosphere(scene, { moonMap, terrainHeightAt } = {}) {
       uSeaHorizonWeather: { value: 0 },
       uSeaHorizonCloudCover: { value: 0 },
       uRainbowStrength: { value: 0 },
+      uRainbowSecondary: { value: 0 },
       uRainbowRadius: { value: 0.15 },
       uRainbowWidth: { value: 0.012 },
       uRainbowCenter: { value: new THREE.Vector3(0, 0, -1) },
@@ -465,50 +430,8 @@ export function createAtmosphere(scene, { moonMap, terrainHeightAt } = {}) {
   sky.renderOrder = -1000;
   group.add(sky);
 
-  const starPositions = new Float32Array(1400 * 3);
-  const starBrightness = new Float32Array(1400);
-  for (let i = 0; i < 1400; i++) {
-    const elevation = 0.035 + random() * 0.965;
-    const azimuth = random() * Math.PI * 2;
-    const radius = Math.sqrt(1 - elevation * elevation);
-    starPositions[i * 3] = Math.cos(azimuth) * radius * 2200;
-    starPositions[i * 3 + 1] = elevation * 2200;
-    starPositions[i * 3 + 2] = Math.sin(azimuth) * radius * 2200;
-    starBrightness[i] = 0.2 + Math.pow(random(), 2) * 0.8;
-  }
-  const starGeometry = new THREE.BufferGeometry();
-  starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
-  starGeometry.setAttribute('aBrightness', new THREE.BufferAttribute(starBrightness, 1));
-  const starMaterial = new THREE.ShaderMaterial({
-    uniforms: { uOpacity: { value: 0 }, uTime: { value: 0 } },
-    vertexShader: /* glsl */ `
-      attribute float aBrightness;
-      uniform float uTime;
-      varying float vBrightness;
-      void main() {
-        vBrightness = aBrightness * (0.83 + 0.17 * sin(uTime * 0.6 + position.x));
-        gl_PointSize = 1.0 + aBrightness * 1.7;
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-      }
-    `,
-    fragmentShader: /* glsl */ `
-      uniform float uOpacity;
-      varying float vBrightness;
-      void main() {
-        float radius = length(gl_PointCoord - vec2(0.5));
-        float alpha = (1.0 - smoothstep(0.08, 0.5, radius)) * vBrightness * uOpacity;
-        gl_FragColor = vec4(0.82, 0.89, 1.0, alpha);
-      }
-    `,
-    transparent: true,
-    blending: THREE.AdditiveBlending,
-    depthWrite: false,
-    toneMapped: false,
-  });
-  const stars = new THREE.Points(starGeometry, starMaterial);
-  stars.frustumCulled = false;
-  stars.renderOrder = -900;
-  group.add(stars);
+  const nightSky = createNightSky();
+  group.add(nightSky.group);
 
   const moonMaterial = new THREE.ShaderMaterial({
     uniforms: {
@@ -572,10 +495,13 @@ export function createAtmosphere(scene, { moonMap, terrainHeightAt } = {}) {
   moon.renderOrder = -800;
   group.add(moon);
 
-  const cloudMaps = [cloudTexture(1701), cloudTexture(4367), cloudTexture(9481),
-    cloudTexture(2609, true), cloudTexture(7823, true)];
+  const cloudKinds = ['cumulus', 'cumulus', 'tower', 'cumulus', 'altocumulus', 'cirrus', 'cumulus', 'altocumulus'];
+  const cloudSeeds = [1701, 4367, 9481, 2609, 7823, 3811, 6289, 8513];
+  const cloudMaps = suppliedCloudMaps ?? cloudSeeds.map((seed, index) => cloudTexture(seed, cloudKinds[index]));
   const clouds = [];
   for (let i = 0; i < 78; i++) {
+    const kind = cloudKinds[i % cloudKinds.length];
+    const thin = kind === 'cirrus', patches = kind === 'altocumulus', tower = kind === 'tower';
     const azimuth = random() * Math.PI * 2;
     const radius = 700 + random() * 1150;
     const cloud = new THREE.Sprite(new THREE.SpriteMaterial({
@@ -583,19 +509,22 @@ export function createAtmosphere(scene, { moonMap, terrainHeightAt } = {}) {
       depthWrite: false, fog: false, opacity: 0.5,
     }));
     addCloudSunset(cloud.material);
-    const width = 155 + random() * 235;
-    cloud.scale.set(width, width * (0.36 + random() * 0.12), 1);
-    cloud.position.set(Math.cos(azimuth) * radius, 175 + random() * 230, Math.sin(azimuth) * radius);
+    const width = patches ? 530 + random() * 310 : thin ? 380 + random() * 260 : 230 + random() * 220;
+    const aspect = tower ? 1.06 : thin ? .30 : patches ? .60 : .69 + random() * .18;
+    cloud.scale.set(width, width * aspect, 1);
+    cloud.position.set(Math.cos(azimuth) * radius,
+      175 + random() * 230 + (patches ? 180 : thin ? 250 : tower ? 40 : 0), Math.sin(azimuth) * radius);
     cloud.renderOrder = -500;
     cloud.userData.origin = cloud.position.clone();
     cloud.userData.threshold = random() * 0.88;
     cloud.userData.clearCoverage = i % 3 === 0 ? 0.64 : 0.32 + random() * 0.15;
-    cloud.userData.opacity = 0.56 + random() * 0.32;
+    cloud.userData.opacity = thin ? .55 + random() * .22 : .94 + random() * .05;
     cloud.userData.speed = 0.45 + random() * 0.5;
     cloud.userData.drift = new THREE.Vector2();
     cloud.userData.width = width;
     cloud.userData.height = cloud.scale.y;
-    cloud.userData.thin = i % cloudMaps.length >= 3;
+    cloud.userData.kind = kind;
+    cloud.userData.thin = thin || patches;
     cloud.userData.motionLayer = { height: cloud.userData.origin.y,
       thin: cloud.userData.thin, variation: (cloud.userData.speed - 0.45) / 0.5 };
     cloud.userData.sunsetVariation = cloud.userData.threshold / 0.88;
@@ -694,6 +623,13 @@ export function createAtmosphere(scene, { moonMap, terrainHeightAt } = {}) {
   const api = {
     update,
     dispose,
+    setQuality: nightSky.setQuality,
+    setConstellationsVisible: nightSky.setConstellationsVisible,
+    setConstellationMode: nightSky.setConstellationMode,
+    setMeteorsVisible: nightSky.setMeteorsVisible,
+    setCometsVisible: nightSky.setCometsVisible,
+    setMeteorMode: nightSky.setMeteorMode,
+    setCometMode: nightSky.setCometMode,
     sunLight,
     hemisphereLight,
     fog,
@@ -839,6 +775,11 @@ export function createAtmosphere(scene, { moonMap, terrainHeightAt } = {}) {
     const moonFillStrength = moonThroughWeather * night;
 
     const uniforms = skyMaterial.uniforms;
+    const eclipse=env.eclipse;
+    uniforms.uEclipseActive.value=eclipse?.active?1:0;
+    uniforms.uEclipseOffset.value=eclipse?.offset??-2.1;
+    uniforms.uEclipseCoverage.value=eclipse?.coverage??0;
+    uniforms.uEclipseTotality.value=eclipse?.totality??0;
     const seaHorizon = env.seaHorizon ?? getSeaHorizonState(env);
     uniforms.uSeaHorizonNight.value = seaHorizon.night;
     uniforms.uSeaHorizonColor.value.fromArray(seaHorizon.color);
@@ -866,7 +807,7 @@ export function createAtmosphere(scene, { moonMap, terrainHeightAt } = {}) {
     // Weather dims the visible surface of the disc; its physical descent is
     // already handled by framing and per-pixel horizon clipping. This keeps
     // the half disc red instead of mixing most of the pale sky into it.
-    uniforms.uSunDiscVisibility.value = getSunVisibility({ sunHeight: .10, daylight, cloudiness,
+    uniforms.uSunDiscVisibility.value = getSunVisibility({ sunHeight: .10, daylight:env.solarDaylight??daylight, cloudiness,
       rain: rainStrength, snow: snowStrength, fog: fogStrength, storm: stormStrength });
     uniforms.uSunAngularRadius.value = Number.isFinite(env.sunAngularRadius)
       ? clamp(env.sunAngularRadius, 0.001, 0.06) : 0.01;
@@ -888,33 +829,36 @@ export function createAtmosphere(scene, { moonMap, terrainHeightAt } = {}) {
     camera.getWorldPosition(center);
     sky.position.copy(center);
     uniforms.uRainbowStrength.value = 0;
+    uniforms.uRainbowSecondary.value = rainbowAppearance.update(afterRain.startedAt);
     if (rainbowStrength > 0.001) {
-      // Place a distant arc in open sky beside the introduction. Its centre lies on the real
-      // world horizon, so terrain and clouds retain their normal occlusion.
+      // Frame a broad double bow over the sea, with its feet lost below the horizon.
       camera.getWorldDirection(forward);
       right.setFromMatrixColumn(camera.matrixWorld, 0).normalize();
       cameraUp.setFromMatrixColumn(camera.matrixWorld, 1).normalize();
       const slope = Math.tan(THREE.MathUtils.degToRad(camera.getEffectiveFOV()) * 0.5);
-      const rainbowX = innerWidth < 420 ? .44 : innerWidth < 760 ? .06 : -.33;
+      const rainbowX = innerWidth < 760 ? 0 : -.08;
       const horizonY = -(forward.y + right.y * rainbowX * slope * camera.aspect) / (cameraUp.y * slope);
       const horizonPixels = (1 - horizonY) * innerHeight * 0.5;
-      const skyPixels = horizonPixels - (innerWidth < 760 ? 94 : 110);
-      const radiusPixels = Math.min(innerWidth * (innerWidth < 760 ? .14 : .19), skyPixels * .70);
-      if (cameraUp.y > 0.1 && Number.isFinite(horizonPixels) && radiusPixels > 38 && horizonPixels < innerHeight) {
+      const frame = getRainbowFraming({ width: innerWidth, height: innerHeight,
+        horizonPixels, fov: camera.getEffectiveFOV() });
+      if (cameraUp.y > 0.1 && frame.visible) {
         uniforms.uRainbowCenter.value.copy(forward)
           .addScaledVector(right, rainbowX * slope * camera.aspect)
           .addScaledVector(cameraUp, horizonY * slope).normalize();
+        uniforms.uRainbowCenter.value.y = 0;
+        uniforms.uRainbowCenter.value.normalize().multiplyScalar(Math.cos(frame.depression));
+        uniforms.uRainbowCenter.value.y = -Math.sin(frame.depression);
+        uniforms.uRainbowUp.value.set(0, 1, 0);
         uniforms.uRainbowRight.value.crossVectors(uniforms.uRainbowCenter.value, uniforms.uRainbowUp.value).normalize();
-        uniforms.uRainbowRadius.value = Math.sin(Math.atan(radiusPixels * 2 * slope / innerHeight));
-        const minimumWidth = Math.sin(Math.atan((innerWidth < 760 ? 10 : 12) * 2 * slope / innerHeight));
-        uniforms.uRainbowWidth.value = Math.max(uniforms.uRainbowRadius.value * .065, minimumWidth);
+        // Orthogonal up keeps angular distance and the colour bands circular.
+        uniforms.uRainbowUp.value.crossVectors(uniforms.uRainbowRight.value, uniforms.uRainbowCenter.value).normalize();
+        uniforms.uRainbowRadius.value = frame.radius;
+        uniforms.uRainbowWidth.value = frame.width;
         uniforms.uRainbowStrength.value = rainbowStrength;
       }
     }
-    stars.position.copy(center);
-    starMaterial.uniforms.uOpacity.value = night * (1 - cloudiness * 0.94) * (1 - fogStrength);
-    starMaterial.uniforms.uTime.value = time;
-    stars.visible = starMaterial.uniforms.uOpacity.value > 0.005;
+    nightSky.update(time, { ...env, daylight, cloudiness, fog: fogStrength, moonLight: moonThroughWeather,
+      moonDirection, sunDirection }, camera);
     const moonPhase = env.moonPhase ?? 0.5;
     const moonIllumination = env.moonIllumination ?? 1;
     const moonElevation = Number.isFinite(env.moonAltitude) ? Math.sin(env.moonAltitude) : moonDirection.y;
@@ -958,7 +902,7 @@ export function createAtmosphere(scene, { moonMap, terrainHeightAt } = {}) {
         // Individual clouds fade in at different cover thresholds. A sunset
         // may reveal an existing cloud's detail, but cannot create clear-sky clouds.
         const population = THREE.MathUtils.smoothstep(visualCover, data.threshold, Math.min(1, data.threshold + 0.16));
-        const density = 0.42 + visualCover * 0.58;
+        const density = data.kind === 'cirrus' ? .42 + visualCover * .58 : .82 + visualCover * .18;
         coverage = population * THREE.MathUtils.lerp(density, Math.max(density, 0.72), sunset.glow * 0.85);
       } else {
         coverage = Math.max(data.clearCoverage, clamp((cloudiness - data.threshold) * 2.4 + 0.28, 0, 1));
@@ -1031,6 +975,7 @@ export function createAtmosphere(scene, { moonMap, terrainHeightAt } = {}) {
   function dispose() {
     if (disposed) return;
     disposed = true;
+    nightSky.dispose();
     const materials = new Set();
     const textures = new Set();
     group.traverse((object) => {

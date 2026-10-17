@@ -170,3 +170,41 @@ test('五个种子在最终三角网格海床上保持全部真实模型顶点�
     } finally { life.dispose(); }
   }
 });
+
+test('镜头背对泻湖时停止地形采样和实例上传，转回后按当前时间恢复完整姿态', () => {
+  let samples = 0;
+  const bed = (x, z) => { samples++; return heightAt(x, z); };
+  const life = create(new THREE.Scene(), { heightAt: bed, seed: 42 });
+  const reference = create(new THREE.Scene(), { heightAt, seed: 42 });
+  const camera = new THREE.PerspectiveCamera(46, 16 / 9, .5, 65000);
+  camera.position.set(50, 38, 148); camera.lookAt(50, -1, 75); camera.updateMatrixWorld();
+  try {
+    samples = 0; life.update(12, {}, camera);
+    assert.equal(life.group.visible, true); assert.ok(samples > 0);
+    const matrices = life.group.children.map(mesh => Array.from(mesh.instanceMatrix.array));
+    const versions = life.group.children.map(mesh => mesh.instanceMatrix.version);
+    camera.lookAt(50, 38, 400); camera.updateMatrixWorld();
+    samples = 0; life.update(30, {}, camera);
+    assert.equal(samples, 0, '整个活动范围在镜头背后时不应再计算海床和步足');
+    assert.equal(life.group.visible, false);
+    assert.deepEqual(life.group.children.map(mesh => Array.from(mesh.instanceMatrix.array)), matrices);
+    assert.deepEqual(life.group.children.map(mesh => mesh.instanceMatrix.version), versions);
+    life.setQuality('low'); reference.setQuality('low');
+    camera.lookAt(50, -1, 75); camera.updateMatrixWorld();
+    life.update(47, {}, camera); reference.update(47, {});
+    assert.equal(life.group.visible, true);
+    for (let i = 0; i < life.group.children.length; i++) {
+      const actual = life.group.children[i], expected = reference.group.children[i];
+      assert.equal(actual.count, expected.count);
+      assert.deepEqual(actual.instanceMatrix.array.slice(0, actual.count * 16),
+        expected.instanceMatrix.array.slice(0, expected.count * 16), '恢复后应直接处于当前轨迹，不补播旧动作');
+    }
+    // A camera inside the habitat or very near its edge must never cull limbs.
+    camera.position.set(50, -1, 75); camera.lookAt(50, -1, 100); camera.updateMatrixWorld();
+    life.update(50, {}, camera); assert.equal(life.group.visible, true);
+    // Also respect a transformed parent rather than testing local bounds as world coordinates.
+    life.group.position.x = 500;
+    camera.position.set(550, 38, 148); camera.lookAt(550, -1, 75); camera.updateMatrixWorld();
+    life.update(51, {}, camera); assert.equal(life.group.visible, true);
+  } finally { life.dispose(); reference.dispose(); }
+});

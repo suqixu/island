@@ -110,6 +110,16 @@ body.zen-mode .zen-toggle{pointer-events:auto;font-family:Georgia,serif;font-siz
 /* Compact scene and music controls keep the landscape in view. */
 .auto-option svg,.auto-play svg{display:block;width:16px;height:16px}
 .time-actions{display:flex;align-items:center;gap:6px}
+.sky-options{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin-top:8px}
+.control-panel .sky-options button{position:relative;display:flex;align-items:center;justify-content:center;height:32px;padding:0;border:1px solid rgba(235,243,219,.12);border-radius:7px;color:var(--muted)}
+.control-panel .sky-options button.selected{color:var(--lime);background:rgba(225,237,177,.2);border-color:rgba(225,237,177,.48)}
+.control-panel .sky-options button:hover:not(.selected){background:rgba(225,237,177,.15)}
+.sky-options svg{display:block;width:19px;height:19px}
+.control-panel .sky-options button[data-mode="instant"]{color:#ffe0a1;background:rgba(255,212,124,.18);border-color:rgba(255,212,124,.65)}
+.sky-options .sky-mode-badge{display:none;position:absolute;right:1px;top:1px}
+.sky-options [data-mode="instant"] .sky-mode-badge,.sky-options [data-mode="labels"] .sky-mode-badge{display:block}
+.sky-options .sky-mode-badge svg{width:8px;height:10px;fill:currentColor;stroke-width:1}
+.control-panel .sky-options button[data-mode="lighthouse-off"]{color:#ffe0a1;background:rgba(255,212,124,.10);border-color:rgba(255,212,124,.4)}
 #scene-rate{display:flex;align-items:center;justify-content:center;gap:4px;height:28px;min-width:57px;padding:0 6px;border:1px solid rgba(235,243,219,.12);border-radius:7px;color:var(--lime);font-size:10px;font-variant-numeric:tabular-nums}
 #scene-rate svg{display:block;width:13px;height:13px}
 #scene-rate:hover{background:rgba(225,237,177,.15)}

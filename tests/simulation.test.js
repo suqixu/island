@@ -2,6 +2,64 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createSimulation, getEnvironment, advanceSimulation } from '../src/simulation.js';
 
+test('自动天气按随机抽样跳转，不再按固定顺序且不会连续重复', () => {
+  const outcomes=[];
+  for(const sample of [.1,.35,.6,.9]){
+    const state=createSimulation({speed:1,autoSeason:false,weather:'sunny',weatherDuration:1});
+    advanceSimulation(state,1,()=>sample);outcomes.push(state.weather);
+    assert.notEqual(state.weather,'sunny');
+  }
+  assert.deepEqual(new Set(outcomes),new Set(['cloudy','rain','fog','storm']));
+});
+
+test('随机天气遵守季节候选，非冬无雪、冬季无雷暴，换季清理不合季节的天气',()=>{
+  for(const seasonIndex of [0,1,2,3]){
+    const outcomes=new Set();
+    for(const sample of [.1,.35,.6,.9]){
+      const state=createSimulation({speed:1,autoSeason:false,seasonIndex,weather:'sunny',weatherDuration:1});
+      advanceSimulation(state,1,()=>sample);outcomes.add(state.weather);
+    }
+    assert.deepEqual(outcomes,new Set(seasonIndex===3?['cloudy','rain','fog','snow']:['cloudy','rain','fog','storm']));
+  }
+  for(const [seasonIndex,weather]of [[0,'snow'],[1,'snow'],[2,'snow'],[3,'storm']]){
+    const state=createSimulation({autoSeason:false,seasonIndex:seasonIndex===3?1:3,weather});
+    state.seasonIndex=seasonIndex;
+    advanceSimulation(state,0,()=>.5);assert.notEqual(state.weather,weather);
+  }
+});
+
+test('每轮天气重新随机持续时长，并保留跨轮剩余时间',()=>{
+  const fast=createSimulation({speed:1,autoSeason:false,weatherDuration:1});
+  const slow=createSimulation({speed:1,autoSeason:false,weatherDuration:1});
+  advanceSimulation(fast,1,()=>0);advanceSimulation(slow,1,()=>.99);
+  advanceSimulation(fast,40,()=>.9);advanceSimulation(slow,40,()=>.9);
+  assert.equal(fast.weather,'storm','短时长应已进入下一种天气');
+  assert.equal(slow.weather,'storm','长时长仍保持首次抽中的天气');
+  assert.ok(fast.weatherProgress>0&&fast.weatherProgress<10);
+  assert.equal(slow.weatherProgress,40);
+  const original=slow.weather;
+  advanceSimulation(slow,44,()=>.1);assert.equal(slow.weather,original);
+  advanceSimulation(slow,1,()=>.1);assert.notEqual(slow.weather,original);
+});
+
+test('关闭天气循环保留手动天气，暂停轮换不推进天气计时',()=>{
+  const manual=createSimulation({autoWeather:false,seasonIndex:1,weather:'snow'});
+  advanceSimulation(manual,500,()=>0);assert.equal(manual.weather,'snow');
+  const paused=createSimulation({running:false,weather:'rain',weatherProgress:30});
+  advanceSimulation(paused,500,()=>0);assert.equal(paused.weather,'rain');assert.equal(paused.weatherProgress,30);
+});
+
+test('暂停轮换时手动换季仍校正自动天气，但不推进天气计时',()=>{
+  for(const [from,to,weather]of [[1,3,'storm'],[3,1,'snow']]){
+    const state=createSimulation({running:false,autoSeason:false,seasonIndex:from,weather,weatherProgress:12});
+    state.seasonIndex=to;advanceSimulation(state,100,()=>.5);
+    assert.notEqual(state.weather,weather,'暂停时也不能把雷暴或飘雪带入不匹配的季节');
+    assert.equal(state.weatherProgress,0);
+    const corrected=state.weather;advanceSimulation(state,100,()=>0);
+    assert.equal(state.weather,corrected);assert.equal(state.weatherProgress,0);
+  }
+});
+
 test('默认半速推进昼夜，风浪的真实时间继续独立推进', () => {
   const state = createSimulation({ hour: 18 });
   assert.equal(state.speed, .5);
@@ -45,6 +103,19 @@ test('昼夜跨午夜后时间保持有效，并保留循环进度', () => {
   const state = createSimulation({ hour: 23.9, dayDuration: 120, speed: 1 });
   advanceSimulation(state, 1);
   assert.ok(Math.abs(state.hour - 0.1) < 1e-8);
+  assert.equal(getEnvironment(state).dayIndex,1);
+});
+
+test('模拟日期只在自然跨午夜时递增，手动调整时刻不重置日期',()=>{
+  const state=createSimulation({hour:23,speed:1,dayDuration:24,autoWeather:false,autoSeason:false});
+  advanceSimulation(state,50);assert.equal(state.dayIndex,3);assert.equal(state.hour,1);
+  state.hour=12;advanceSimulation(state,0);assert.equal(getEnvironment(state).dayIndex,3);
+});
+
+test('日食期间保持太阳时刻而环境动画继续，解除后恢复昼夜',()=>{
+  const state=createSimulation({hour:12,holdSunClock:true,autoWeather:false,autoSeason:false});
+  advanceSimulation(state,30);assert.equal(state.hour,12);assert.equal(state.elapsed,30);assert.equal(state.dayIndex,0);
+  state.holdSunClock=false;advanceSimulation(state,30);assert.equal(state.hour,13);assert.equal(state.elapsed,60);
 });
 test('暂停时间后波浪用的真实时间仍可独立推进', () => {
   const state = createSimulation({ running: false });

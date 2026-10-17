@@ -250,6 +250,8 @@ test('随机事件的成员出入水连续，声音阈值匹配同一时间线�
         const episode = timeline.getEpisode(event.kind, event.time);
         const pose = getMarinePose(event.kind, event.index, event.time, { x: 220, z: 220, heading: -.55 }, episode);
         assert.ok(pose.active, '声音只能对应实际活动成员');
+        const phase = event.type === 'whale-blow' ? .29 : event.kind === 'whale' ? .88 : event.type === 'dolphin' ? .14 : .87;
+        assert.ok(Math.abs(pose.progress - phase) < 1e-8, '声音应跟随个体自己的起跳时刻与时长');
         assert.ok(event.index < episode.count);
         const key = `${event.kind}:${event.cycle}:${event.index}:${event.type}`;
         assert.ok(!seen.has(key)); seen.add(key);
@@ -259,9 +261,16 @@ test('随机事件的成员出入水连续，声音阈值匹配同一时间线�
         const episode = timeline.getEpisode(kind, now);
         if (!episode) continue;
         for (let index = 0; index < episode.count; index++) {
-          const boundary = episode.start + index * episode.spacing + episode.duration;
-          assert.ok(distance(getMarinePose(kind, index, boundary - .00001, undefined, episode).position,
-            getMarinePose(kind, index, boundary + .00001, undefined, episode).position) < .001);
+          const member = episode.members[index], start = episode.start + (member.delay ?? index * episode.spacing);
+          for (const boundary of [start, start + (member.duration ?? episode.duration)]) {
+            const before = getMarinePose(kind, index, boundary - .00001, undefined, episode);
+            const after = getMarinePose(kind, index, boundary + .00001, undefined, episode);
+            assert.ok(distance(before.position, after.position) < .001);
+            if (kind === 'dolphin') {
+              assert.ok(Math.abs(before.pitch - after.pitch) < .001, '确切入水边界的俯仰也应连续');
+              assert.ok(Math.abs(before.heading - after.heading) < .001, '确切入水边界不能掉头');
+            }
+          }
         }
       }
     }
@@ -277,4 +286,82 @@ test('明亮月夜允许适度鲸豚活动，暗夜与雷暴仍压低活动', ()
   assert.ok(moon >= .5 && moon < .75);
   assert.ok(getMarineActivity({ daylight: 0 }) < .2);
   assert.ok(getMarineActivity({ daylight: 0, moonLight: 1, storm: 1 }) < .2);
+});
+
+test('海豚更常单独出现，多只时起跳不按索引排队且每只保留独立弧线', () => {
+  const { createMarineTimeline, getMarinePose } = api();
+  const counts = new Map(); let loosePod = null, pods = 0, variedArcs = 0, scatteredPods = 0;
+  for (let seed = 0; seed < 160; seed++) {
+    const episode = createMarineTimeline(seed).getEpisode('dolphin', 30);
+    counts.set(episode.count, (counts.get(episode.count) ?? 0) + 1);
+    if (episode.count < 3) continue;
+    pods++;
+    if (episode.members.some((member, index) => index > 0 && member.lateral < episode.members[index - 1].lateral)) scatteredPods++;
+    const starts = [], durations = [], peaks = [], speeds = [], headings = [];
+    for (let member = 0; member < episode.count; member++) {
+      const poses = [];
+      for (let step = 0; step < 700; step++) {
+        const time = episode.start + step / 100;
+        const pose = getMarinePose('dolphin', member, time, undefined, episode);
+        if (pose.active) poses.push({ ...pose, time });
+      }
+      starts.push(poses[0].time); durations.push(poses.length / 100);
+      const peak = poses.reduce((best, pose) => pose.position[1] > best.position[1] ? pose : best);
+      peaks.push(peak.position[1]); headings.push(peak.heading);
+      speeds.push(distance(poses[0].position, poses.at(-1).position) / durations.at(-1));
+    }
+    if (starts.some((start, index) => index > 1 && start < starts[index - 1])) loosePod = episode;
+    if (Math.max(...durations) - Math.min(...durations) > .08 && Math.max(...peaks) - Math.min(...peaks) > .2 &&
+        Math.max(...speeds) - Math.min(...speeds) > .15 && Math.max(...headings) - Math.min(...headings) > .015) variedArcs++;
+  }
+  assert.ok(counts.get(1) >= 65, '至少四成活动为单只，减少每轮都像编队的观感');
+  assert.deepEqual([...counts.keys()].sort(), [1, 2, 3, 4]);
+  assert.ok(loosePod, '至少存在非索引顺序起跳的小群');
+  assert.ok(variedArcs > pods * .8, '大多数小群应同时有不同时长、跃高、游速和朝向，不能只是整齐复制');
+  assert.ok(scatteredPods > pods * .5, '成员不能继续按索引从左到右排列');
+});
+
+test('同群海豚可同时处于起跳与入水阶段，出入水体轴连续且沿轨迹方向', () => {
+  const { createMarineTimeline, getMarinePose } = api();
+  let mixedPhase = false;
+  for (const seed of [0, 42, 77, 2718, 941]) {
+    const timeline = createMarineTimeline(seed);
+    for (let time = 25; time < 130; time += 8) {
+      const episode = timeline.getEpisode('dolphin', time);
+      const original = structuredClone(episode);
+      for (let step = 0; step < 400; step++) {
+        const now = episode.start - .01 + step / 60;
+        const poses = Array.from({ length: episode.count }, (_, index) => getMarinePose('dolphin', index, now, undefined, episode));
+        if (poses.some(pose => pose.active && pose.progress < .3) && poses.some(pose => pose.active && pose.progress > .75)) mixedPhase = true;
+        for (let index = 0; index < poses.length; index++) {
+          const pose = poses[index], after = getMarinePose('dolphin', index, now + .0001, undefined, episode);
+          assert.ok(distance(pose.position, after.position) < .003);
+          assert.ok(Math.abs(pose.pitch - after.pitch) < .003, '入水边界不能把低头姿态瞬间掰平');
+          assert.ok(Math.abs(pose.heading - after.heading) < .003, '入水边界不能瞬间掉头');
+          if (!pose.active || !after.active) continue;
+          const velocity = after.position.map((value, axis) => value - pose.position[axis]);
+          const forward = [Math.sin(pose.heading) * Math.cos(pose.pitch), Math.sin(pose.pitch), Math.cos(pose.heading) * Math.cos(pose.pitch)];
+          assert.ok(velocity.reduce((sum, value, axis) => sum + value * forward[axis], 0) / Math.hypot(...velocity) > .999);
+        }
+      }
+      assert.deepEqual(episode, original, '固定个体参数不能在逐帧采样中重随机');
+    }
+  }
+  assert.ok(mixedPhase, '不能只让整个群体一起跳起、一起落下');
+});
+
+test('松散海豚小群保留游动间距，随机布局不能让可见身体挤在同一点', () => {
+  const { createMarineTimeline, getMarinePose } = api();
+  for (let seed = 0; seed < 160; seed++) {
+    const episode = createMarineTimeline(seed).getEpisode('dolphin', 30);
+    for (let time = episode.start; time < episode.end; time += .05) {
+      const poses = episode.members.map((member, index) => getMarinePose('dolphin', index, time,
+        { x: member.lateral, z: member.along, heading: 0 }, episode));
+      for (let index = 0; index < poses.length; index++) for (let other = index + 1; other < poses.length; other++) {
+        const first = poses[index], second = poses[other];
+        if (!first.active || !second.active || first.position[1] < -.7 || second.position[1] < -.7) continue;
+        assert.ok(distance(first.position, second.position) > 1.5, '随机错落仍应留出两只身体的宽度');
+      }
+    }
+  }
 });

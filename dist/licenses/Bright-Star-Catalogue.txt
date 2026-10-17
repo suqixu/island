@@ -1,0 +1,33 @@
+Night sky data and rendering
+===========================
+
+Bright stars: The Bright Star Catalogue, 5th Revised Ed. (Preliminary Version),
+Dorrit Hoffleit and Wayne H. Warren Jr. (1991), CDS catalogue V/50.
+https://cdsarc.cds.unistra.fr/ftp/V/50/ReadMe
+https://cdsarc.cds.unistra.fr/ftp/V/50/catalog.gz
+
+The local subset contains 4,103 entries with V magnitude <= 5.8 and valid
+J2000 coordinates. Each row stores HR number, right ascension (degrees),
+declination (degrees), V magnitude and B-V colour index (missing B-V: 0.45).
+No reference star chart images are redistributed. The original catalogue
+authors and the CDS astronomical data centre are acknowledged above.
+
+Rebuild: python3 scripts/build-star-catalog.py /path/to/catalog.gz
+
+The star map uses a representative latitude of 30 degrees north and a
+seasonal sidereal orientation. This preserves actual relative stellar
+positions (including the Big Dipper, Cassiopeia and Orion), but is not an
+ephemeris for the user's geographic position or the current calendar date.
+An optional constellation guide adds labelled stick figures for the Big Dipper,
+Cassiopeia, Orion, Cygnus and Lyra, plus all twelve zodiac constellations:
+Aries, Taurus, Gemini, Cancer, Leo, Virgo, Libra, Scorpius, Sagittarius,
+Capricornus, Aquarius and Pisces. The figures use HR identifiers from this same
+catalogue (src/zodiac-constellations.js). These are illustrative connecting lines, not IAU boundary polygons.
+
+Galactic plane orientation: ICRS north Galactic pole
+(RA, Dec) = (192.85948, +27.12825) degrees; ESA Gaia DR3 documentation:
+https://gea.esac.esa.int/archive/documentation/GDR3/Data_processing/chap_cu3ast/sec_cu3ast_intro/ssec_cu3ast_intro_tansforms.html
+
+The Milky Way's diffuse light, dust rifts and unresolved background stars are
+procedural scenery, not a survey image. Meteors and the occasional comet
+are fictional visual events, not predictions of actual astronomical events.

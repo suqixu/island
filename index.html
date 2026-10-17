@@ -62,6 +62,13 @@
             <button data-weather="snow" aria-label="飘雪" title="飘雪"><span data-icon="snow"></span></button>
             <label class="auto-option" title="天气自然变化"><input id="auto-weather" type="checkbox" checked aria-label="天气自然变化"/><span data-icon="cycle" aria-hidden="true"></span></label>
           </div>
+          <div class="sky-options" role="group" aria-label="天象效果">
+            <button id="constellation-toggle" type="button" data-mode="off" aria-label="星座：默认不显示" title="星座：默认不显示 · 点击只显示星座" aria-pressed="false"><span data-icon="constellation" aria-hidden="true"></span><span class="sky-mode-badge" data-icon="labels" aria-hidden="true"></span></button>
+            <button id="meteor-toggle" type="button" class="selected" data-mode="default" aria-label="流星：默认" title="流星：默认随机出现 · 点击切换为即时出现" aria-pressed="true"><span data-icon="meteor" aria-hidden="true"></span><span class="sky-mode-badge" data-icon="instant" aria-hidden="true"></span></button>
+            <button id="comet-toggle" type="button" class="selected" data-mode="default" aria-label="彗星：默认" title="彗星：默认随机出现 · 点击切换为即时出现" aria-pressed="true"><span data-icon="comet" aria-hidden="true"></span><span class="sky-mode-badge" data-icon="instant" aria-hidden="true"></span></button>
+            <button id="eclipse-toggle" type="button" class="selected" data-mode="default" aria-label="日食：默认" title="日食：默认白天随机出现 · 点击切换为即时出现" aria-pressed="true"><span data-icon="eclipse" aria-hidden="true"></span><span class="sky-mode-badge" data-icon="instant" aria-hidden="true"></span></button>
+            <button id="lights-toggle" type="button" class="selected" data-mode="auto" aria-label="灯光：自动" title="灯光：随时间自动变化 · 点击关闭灯塔" aria-pressed="true"><span data-icon="lights" aria-hidden="true"></span></button>
+          </div>
           <div class="wind-readout"><span>海风</span><span id="wind-speed">风速 6.0 m/s</span></div>
         </section>
 
