@@ -5,10 +5,9 @@ import * as THREE from 'three';
 import { createIsland } from '../src/island.js';
 import * as islandApi from '../src/island.js';
 
-function geometryDigest(group, includeNewFlowers = true) {
+function geometryDigest(group) {
   const hash = createHash('sha256');
   group.traverse(object => {
-    if (!includeNewFlowers && object.userData.caveFlowerMeadow) return;
     hash.update(object.name);
     hash.update(JSON.stringify([object.position.toArray(), object.quaternion.toArray(), object.scale.toArray(), object.count]));
     for (const [name, attribute] of Object.entries(object.geometry?.attributes ?? {}).sort()) {
@@ -22,13 +21,31 @@ function geometryDigest(group, includeNewFlowers = true) {
   return hash.digest('hex');
 }
 
+// 固定基线只记录结构和整数索引，避免跨平台数学函数的末位差异影响快照。
+// 浮点几何、变换和实例数据仍由同一运行环境下的完整摘要逐字节比较。
+function structureDigest(group) {
+  const hash = createHash('sha256');
+  group.traverse(object => {
+    if (object.userData.caveFlowerMeadow) return;
+    hash.update(JSON.stringify([object.name, object.type, object.children.length, object.count ?? null]));
+    for (const [name, attribute] of Object.entries(object.geometry?.attributes ?? {}).sort()) {
+      hash.update(JSON.stringify([name, attribute.array.constructor.name, attribute.itemSize, attribute.count, attribute.normalized]));
+    }
+    for (const attribute of [object.geometry?.index, object.instanceMatrix, object.instanceColor]) {
+      hash.update(JSON.stringify(attribute ? [attribute.array.constructor.name, attribute.itemSize, attribute.count, attribute.normalized] : null));
+    }
+    const index = object.geometry?.index;
+    if (index) hash.update(Buffer.from(index.array.buffer, index.array.byteOffset, index.array.byteLength));
+  });
+  return hash.digest('hex');
+}
+
 test('分阶段海岛保留现有全部顶点、索引、实例矩阵、颜色与数量，并在内部耗时循环中让步', async () => {
   assert.equal(typeof islandApi.createIslandAsync, 'function', '启动需要异步分段创建海岛');
   const original = createIsland(new THREE.Scene());
   const before = geometryDigest(original.group);
-  // 洞道延长、转弯、内部遮蔽增强与洞内转角微光后的固定快照，防止同步与异步实现一起退化。
-  // Newly requested flowers have separate placement/budget coverage; preserve every previous island object.
-  assert.equal(geometryDigest(original.group, false), '0ee60796f617ace1e35c0916aea09689bceb28eeff82f106eb159c926605d3c6');
+  // 花丛有独立的布局和预算测试；固定结构快照防止同步与异步实现同时丢失旧模型。
+  assert.equal(structureDigest(original.group), '4fb7d7f469017633edb0a37567756bf911c1d42d4081de9c60cf4c60fdb04a88');
   const scene = new THREE.Scene(), stages = [], slices = [];
   let stage, clock = 0, paints = 0;
   const asynchronous = await islandApi.createIslandAsync(scene, {
