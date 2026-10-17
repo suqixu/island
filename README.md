@@ -79,6 +79,17 @@ npm run preview
 
 构建使用相对资源路径，同一份构建支持部署到 `/sometest/island/`、`/sometest/demo/island/` 或更深的子目录。
 
+本仓库通过 `.github/workflows/deploy.yml` 自动发布：
+
+1. 在仓库 `Settings → Pages → Build and deployment` 中，将 `Source` 设置为 `GitHub Actions`。
+2. 将工作流随代码提交并推送到 `main` 后，会自动使用 Node.js 22 执行 `npm ci`、`npm test` 和 `npm run build`；全部成功后发布 `dist/`。
+3. 也可在 `Actions → Deploy GitHub Pages → Run workflow` 中选择 `main` 手动发布。其他分支手动运行只做测试和构建，不部署。
+4. 发布成功后访问 `https://suqixu.github.io/island/`，也可从工作流的 `github-pages` 环境打开实际地址。
+
+无需配置个人访问令牌，也无需手动提交 `dist/`。工作流使用 GitHub 自动提供的令牌，发布任务仅在 `main` 上运行。
+
+若要部署到其他现有 Pages 仓库的子目录，仍可手动复制构建结果：
+
 1. 执行 `npm run build`。
 2. 将 `dist/` **里面的内容**（`index.html` 和完整的 `assets/` 文件夹）复制到仓库的 `demo/island/`，覆盖旧版本。
 3. 按仓库现有的 GitHub Pages 发布方式更新网站，发布完成后刷新页面。
