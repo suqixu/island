@@ -84,3 +84,11 @@ test('异常输入保守关闭霞光，数值有效且不同结果的颜色数�
   a.sunColor[0] = 99;
   assert.notEqual(b.sunColor[0], 99);
 });
+
+test('低空晚霞的受光云体呈饱和橘红，落日后延续玫红而不是灰桃色', () => {
+  const fire = stateAt(17.8), embers = stateAt(18.2);
+  assert.ok(fire.cloudRose[1] / fire.cloudRose[0] < .09, '受光云体应明显偏红');
+  assert.ok(fire.cloudGold[1] / fire.cloudGold[0] < .15, '亮边应呈金红而不是浅黄');
+  assert.ok(embers.cloudRose[1] / embers.cloudRose[0] < .20, '余晖保留玫红饱和度');
+  assert.ok(fire.cloudGold[0] > fire.cloudShadow[0] * 3, '暗部保留体积对比');
+});

@@ -16,8 +16,8 @@ const colors = {
   sunWhite: linear('#fff4df'), sunGold: linear('#ffc568'), sunRed: linear('#ff421f'),
   horizonGold: linear('#f7b866'), horizonRed: linear('#e87553'), horizonRose: linear('#ae638c'),
   zenithGold: linear('#6b81ad'), zenithRed: linear('#785d9b'), zenithRose: linear('#635080'),
-  cloudGold: linear('#ffd083'), cloudOrange: linear('#ff783f'), cloudEmber: linear('#ed925d'),
-  cloudPeach: linear('#f9a389'), cloudRed: linear('#ff664c'), cloudRose: linear('#ce739b'),
+  cloudGold: linear('#ffc372'), cloudOrange: linear('#ff542a'), cloudEmber: linear('#ed674e'),
+  cloudPeach: linear('#ff9874'), cloudRed: linear('#ff4034'), cloudRose: linear('#d6528b'),
   cloudShadow: linear('#625c87'), cloudShadowLate: linear('#524a78'),
 };
 

@@ -1,20 +1,52 @@
 import volumes from './assets/data/cloud-volumes.json' with { type: 'json' };
 import * as THREE from 'three';
 
-const atlasUrl = new URL('./assets/images/cloud-atlas-v1.png', import.meta.url).href;
+const atlasUrls = [
+  new URL('./assets/images/cloud-atlas-v1.png', import.meta.url).href,
+  new URL('./assets/images/cloud-atlas-v2.png', import.meta.url).href,
+  new URL('./assets/images/cloud-atlas-v3.png', import.meta.url).href,
+  new URL('./assets/images/cloud-atlas-v4.png', import.meta.url).href,
+  new URL('./assets/images/cloud-atlas-v5.png', import.meta.url).href,
+  new URL('./assets/images/cloud-atlas-v6.png', import.meta.url).href,
+  new URL('./assets/images/cloud-atlas-v7.png', import.meta.url).href,
+  new URL('./assets/images/cloud-atlas-v8.png', import.meta.url).href,
+];
+const cloudKinds = ['cumulus', 'cumulus', 'tower', 'cumulus', 'altocumulus', 'cirrus', 'cumulus', 'altocumulus'];
+
 export async function loadCloudTextures() {
-  const atlas = await new THREE.TextureLoader().loadAsync(atlasUrl);
-  atlas.colorSpace = THREE.SRGBColorSpace;
-  atlas.minFilter = THREE.LinearFilter;
-  atlas.magFilter = THREE.LinearFilter;
-  atlas.generateMipmaps = false;
-  return Array.from({ length: 8 }, (_, index) => {
-    const map = index === 0 ? atlas : atlas.clone();
-    map.repeat.set(.248, .496);
-    map.offset.set((index % 4) * .25 + .001, index < 4 ? .502 : .002);
-    map.needsUpdate = true;
-    return map;
+  const loader = new THREE.TextureLoader();
+  // Wait for every request so a failed load cannot strand completed GPU assets.
+  const results = await Promise.allSettled(atlasUrls.map(url => loader.loadAsync(url)));
+  const failure = results.find(result => result.status === 'rejected');
+  if (failure) {
+    for (const result of results) if (result.status === 'fulfilled') result.value.dispose();
+    throw failure.reason;
+  }
+  return results.flatMap(({ value: atlas }, sheet) => {
+    atlas.colorSpace = THREE.SRGBColorSpace;
+    atlas.minFilter = THREE.LinearFilter;
+    atlas.magFilter = THREE.LinearFilter;
+    atlas.generateMipmaps = false;
+    return cloudKinds.map((kind, cell) => {
+      const map = cell === 0 ? atlas : atlas.clone();
+      map.repeat.set(.248, .496);
+      map.offset.set((cell % 4) * .25 + .001, cell < 4 ? .502 : .002);
+      map.userData = { cloudKind: kind, cloudId: sheet * 8 + cell };
+      map.needsUpdate = true;
+      return map;
+    });
   });
+}
+
+// Deal every silhouette once before reusing it; shuffling never mutates the
+// loader's shared map list or changes the lighting direction baked in a sprite.
+export function shuffleCloudMaps(maps, random = Math.random) {
+  const shuffled = maps.slice();
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
 }
 
 const decoded = new Map();

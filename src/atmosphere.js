@@ -8,7 +8,7 @@ import { createAfterRainState, advanceAfterRain } from './after-rain.js';
 import { getRainbowFraming, createRainbowAppearance, RAINBOW_GLSL } from './rainbow.js';
 import { getSunsetState } from './sunset.js';
 import { createCloudMotionState, advanceCloudMotion, getCloudLayerSpeed } from './cloud-motion.js';
-import { createCloudTextureData } from './cloud-texture.js';
+import { createCloudTextureData, shuffleCloudMaps } from './cloud-texture.js';
 import { getSeaHorizonState, SEA_HORIZON_GLSL } from './sea-horizon.js';
 import { createNightSky } from './night-sky.js';
 
@@ -56,7 +56,7 @@ function addCloudSunset(material) {
     uCloudSunsetSide: { value: 0 },
   };
   material.userData.sunsetUniforms = uniforms;
-  material.customProgramCacheKey = () => 'photographic-volume-cloud-v2';
+  material.customProgramCacheKey = () => 'photographic-volume-cloud-v5';
   material.onBeforeCompile = shader => {
     Object.assign(shader.uniforms, uniforms);
     shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nvarying vec2 vCloudUv;')
@@ -79,22 +79,25 @@ function addCloudSunset(material) {
         vec2 cloudBorder = smoothstep(vec2(0.0), vec2(0.045), vCloudUv)
           * (1.0 - smoothstep(vec2(0.955), vec2(1.0), vCloudUv));
         diffuseColor.a *= cloudBorder.x * cloudBorder.y;
-        // The original density texture carries the cloud's volume: tint its
-        // lit ridges separately from its blue-violet underside.
+        // Suppress only the baked blue cast without lifting the photograph's
+        // luminance. Original contrast, warm highlights and alpha stay intact.
         float relief = dot(sampledDiffuseColor.rgb, vec3(0.2126, 0.7152, 0.0722));
+        float blueCast = smoothstep(0.008, 0.10, sampledDiffuseColor.b - sampledDiffuseColor.r);
+        vec3 naturalCloud = mix(sampledDiffuseColor.rgb, vec3(relief), blueCast * 0.90);
+        diffuseColor.rgb = diffuse * naturalCloud;
         float cloudLight = smoothstep(0.25, 0.86, relief);
         float cloudTop = smoothstep(0.28, 0.82, vCloudUv.y);
         float cloudSide = clamp(0.5 + (vCloudUv.x - 0.5) * uCloudSunsetSide, 0.0, 1.0);
         float cloudRim = (1.0 - smoothstep(0.42, 0.92, sampledDiffuseColor.a))
           * cloudTop * (0.35 + cloudSide * 0.65);
         vec3 sunsetBody = mix(uCloudSunsetShadow, uCloudSunsetRose,
-          cloudLight * (0.50 + uCloudSunsetVariation * 0.28));
+          pow(cloudLight, 0.72) * (0.72 + uCloudSunsetVariation * 0.20));
         float goldenRidge = smoothstep(0.64, 0.96, relief)
           * (0.26 + uCloudSunsetFacing * 0.48) + cloudRim * 0.60;
         vec3 sunsetCloud = mix(sunsetBody, uCloudSunsetGold, clamp(goldenRidge, 0.0, 1.0));
-        sunsetCloud *= 0.60 + sqrt(max(relief, 0.0)) * 0.58;
+        sunsetCloud *= 0.68 + sqrt(max(relief, 0.0)) * 0.66;
         diffuseColor.rgb = mix(diffuseColor.rgb, sunsetCloud,
-          uCloudSunsetStrength * (0.70 + uCloudSunsetFacing * 0.30));
+          uCloudSunsetStrength * (0.88 + uCloudSunsetFacing * 0.12));
       #endif
     `);
   };
@@ -498,14 +501,16 @@ export function createAtmosphere(scene, { moonMap, terrainHeightAt, cloudMaps: s
   const cloudKinds = ['cumulus', 'cumulus', 'tower', 'cumulus', 'altocumulus', 'cirrus', 'cumulus', 'altocumulus'];
   const cloudSeeds = [1701, 4367, 9481, 2609, 7823, 3811, 6289, 8513];
   const cloudMaps = suppliedCloudMaps ?? cloudSeeds.map((seed, index) => cloudTexture(seed, cloudKinds[index]));
+  const cloudDeck = suppliedCloudMaps ? shuffleCloudMaps(cloudMaps) : cloudMaps;
   const clouds = [];
   for (let i = 0; i < 78; i++) {
-    const kind = cloudKinds[i % cloudKinds.length];
+    const map = cloudDeck[i % cloudDeck.length];
+    const kind = map.userData.cloudKind ?? cloudKinds[i % cloudKinds.length];
     const thin = kind === 'cirrus', patches = kind === 'altocumulus', tower = kind === 'tower';
     const azimuth = random() * Math.PI * 2;
     const radius = 700 + random() * 1150;
     const cloud = new THREE.Sprite(new THREE.SpriteMaterial({
-      map: cloudMaps[i % cloudMaps.length], transparent: true,
+      map, transparent: true,
       depthWrite: false, fog: false, opacity: 0.5,
     }));
     addCloudSunset(cloud.material);
