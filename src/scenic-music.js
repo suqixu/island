@@ -7,12 +7,12 @@ export function getScenicMusicSelection(env = {}) {
   const quiet = ['cloudy','rain','fog','storm','snow'].includes(env.weather)
     || (env.fog ?? 0) > .45 || (env.cloudiness ?? 0) > .65;
   if (!quiet && (env.daylight ?? 1) < .2 && (env.moonLight ?? 0) > .12) {
-    return { key: 'moon', label: '月夜', tracks: ['chunjiang','caiyun','liangzhu','nuerqing','wangningmei'] };
+    return { key: 'moon', label: '月夜', tracks: ['chunjiang','caiyun','liangzhu','nuerqing','wangningmei','yueer'] };
   }
   if (quiet || env.season === 'autumn' || (env.daylight ?? 1) < .2) {
-    return { key: 'quiet', label: '静景', tracks: ['pingsha','mengjiang','liangzhu','wangningmei'] };
+    return { key: 'quiet', label: '静景', tracks: ['pingsha','mengjiang','liangzhu','wangningmei','yueer'] };
   }
-  return { key: 'clear', label: '晴日', tracks: ['caiyun','shange','zuguo'] };
+  return { key: 'clear', label: '晴日', tracks: ['caiyun','shange','zuguo','molihua'] };
 }
 
 /** 复用两个流式媒体节点；准备下一首时保留旧曲，新曲在旧曲淡到零后才淡入。

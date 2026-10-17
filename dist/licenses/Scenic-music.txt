@@ -1,10 +1,10 @@
-浮屿场景音乐：器乐主题节选合成编配
+浮屿场景音乐：完整简谱及器乐主题节选合成编配
 
 春江花月夜 / 彩云追月 / 平沙落雁 / 孟姜女哭长城 / 山歌好比春江水 /
-我的祖国 / 梁祝 / 女儿情 / 枉凝眉
-本项目依记谱音高和时值制作主题节选，简化装饰音、移调，并独立编配伴奏。
+我的祖国 / 梁祝 / 女儿情 / 枉凝眉 / 茉莉花 / 月儿明风儿静
+本项目依记谱音高和时值制作，移调并独立编配伴奏。茉莉花、月儿明风儿静使用完整简谱曲式，其他曲目为主题节选。
 音色、泛音、立体声反射和余音由数学波形制作，无第三方演奏录音或音色采样。
-这些音源不是原演奏版本或完整全曲的复刻。
+这些音源不含原演奏版本录音；完整简谱曲目保留全部旋律段落及规定反复，左手伴奏独立制作。
 
 旋律主题参考：
 春江花月夜（传统器乐主题）：https://www.hkco.org/uploads/docs/5a8b86d5034b11.pdf
@@ -17,11 +17,17 @@ https://music.hgnu.edu.cn/_upload/article/files/09/d4/faf43ffb4e08b61cf64ee0adaf
 梁祝（何占豪、陈钢，选取爱情主题）：https://www.everyonepiano.cn/Number-439-1.html
 女儿情（许镜清，选取主歌主题）：https://www.everyonepiano.cn/Number-14828-2.html
 枉凝眉（王立平，选取器乐主题）：https://www.everyonepiano.cn/Number-2094-1.html
+茉莉花（江苏民歌，两页完整简谱，含谱面反复、八度变奏与减速结尾）：
+https://www.everyonepiano.cn/Number-102-1.html
+https://www.everyonepiano.cn/Number-102-2.html
+月儿明风儿静（摇篮曲，郑建春，三页完整简谱，含前奏、三段旋律与尾奏）：https://www.cangqiang.com.cn/changping.html?id=48915
+以上两首按完整简谱音高、时值及曲式直接合成，独立制作稀疏伴奏，无人声；不复制参考谱的完整钢琴左手伴奏。
 原作品归各自作者；本项目合成文件不含原版录音或参考钢琴编配的伴奏。
 未分发上述参考乐谱图片或PDF；没有复制其现代完整配器与伴奏。
 
 制作源码：scripts/render-scenic-music.py
 声部音高与时值：scripts/scenic-scores.json
-六首新增曲目输入：scripts/create-extra-scores.py
+八首新增曲目输入：scripts/create-extra-scores.py
+两首完整简谱及分段曲式：scripts/full-scores.json
 成品：src/assets/audio/*-synth.ogg
 浏览器播放版本：src/assets/audio/*-synth.mp3，由 scripts/export-mp3-audio.py 转码。

@@ -1,0 +1,46 @@
+{
+  "file": "/Users/zhangzaiyuan/Documents/work/tool/island/src/assets/audio/yueer-synth.ogg",
+  "seconds": 153.4,
+  "sampleRate": 32000,
+  "channels": 2,
+  "bytes": 1495827,
+  "melodySource": "https://www.cangqiang.com.cn/changping.html?id=48915",
+  "description": "按完整简谱曲式合成，含全部段落、规定反复及前后奏；伴奏与音色独立制作，无人声及第三方录音。",
+  "coverage": "full",
+  "form": [
+    {
+      "label": "前奏（第1页括号内）",
+      "bars": 5,
+      "repeat": 1,
+      "startBeat": 0,
+      "endBeat": 10.0
+    },
+    {
+      "label": "第一段（第1页第2至5行）",
+      "bars": 17,
+      "repeat": 1,
+      "startBeat": 10.0,
+      "endBeat": 44.0
+    },
+    {
+      "label": "第二、三段（第1页末行至第3页首行）",
+      "bars": 17,
+      "repeat": 2,
+      "startBeat": 44.0,
+      "endBeat": 112.0
+    },
+    {
+      "label": "尾奏（第3页末行）",
+      "bars": 5,
+      "repeat": 1,
+      "startBeat": 112.0,
+      "endBeat": 122.0
+    }
+  ],
+  "sourcePages": [
+    "https://y.milianshe.cn/uploads/ossweb/2025-11/25/17640789355554.png",
+    "https://y.milianshe.cn/uploads/ossweb/2025-11/25/17640789363145.png",
+    "https://y.milianshe.cn/uploads/ossweb/2025-11/25/17640789368773.png"
+  ],
+  "tempoChanges": []
+}

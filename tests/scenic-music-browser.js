@@ -8,19 +8,55 @@ import zuguo from '../src/assets/audio/zuguo-synth.mp3?url';
 import liangzhu from '../src/assets/audio/liangzhu-synth.mp3?url';
 import nuerqing from '../src/assets/audio/nuerqing-synth.mp3?url';
 import wangningmei from '../src/assets/audio/wangningmei-synth.mp3?url';
+import molihua from '../src/assets/audio/molihua-synth.mp3?url';
+import yueer from '../src/assets/audio/yueer-synth.mp3?url';
 import sunset from '../src/assets/audio/yuzhou-changwan-weather.mp3?url';
 const tracks={sunset:{url:sunset,title:'渔舟唱晚'},chunjiang:{url:chunjiang,title:'春江花月夜'},caiyun:{url:caiyun,title:'彩云追月'},pingsha:{url:pingsha,title:'平沙落雁'},mengjiang:{url:mengjiang,title:'孟姜女哭长城'},shange:{url:shange,title:'山歌好比春江水'},zuguo:{url:zuguo,title:'我的祖国'},liangzhu:{url:liangzhu,title:'梁祝'},nuerqing:{url:nuerqing,title:'女儿情'},wangningmei:{url:wangningmei,title:'枉凝眉'}};
-const audition=document.createElement('section');audition.innerHTML='<h2>新增器乐主题试听</h2>';document.body.append(audition);
-for(const id of ['mengjiang','shange','zuguo','liangzhu','nuerqing','wangningmei']){
- const row=document.createElement('div'),button=document.createElement('button'),audio=document.createElement('audio');
- button.textContent=`试听${tracks[id].title}`;audio.controls=true;audio.preload='none';audio.src=tracks[id].url;audio.dataset.track=id;
- button.onclick=async()=>{document.querySelectorAll('audio').forEach(e=>e.pause());try{await audio.play();}catch(error){row.dataset.error=error.message;}};
- row.append(button,audio);audition.append(row);
+tracks.molihua={url:molihua,title:'茉莉花'};
+tracks.yueer={url:yueer,title:'月儿明风儿静'};
+// 自动收录资产目录中的全部格式，新增音频文件后无需再手动添加试听控件。
+const audioFiles=import.meta.glob('../src/assets/audio/*.{mp3,ogg,wav}',{eager:true,query:'?url',import:'default'});
+const recordingTitles={
+ 'island-shange':'山歌好比春江水',
+ 'yueer-ming-fenger-jing':'月儿明风儿静',
+ 'lubinghua':'鲁冰花','hualian':'花恋','tuogao-song':'驼糕之歌',
+ 'songbie':'送别','jiegenghua':'桔梗花','bo-rulai':'波如来',
+ 'mengzhong-eji':'梦中的额吉','dabei-zhou':'大悲咒',
+ 'gongde-baoshan-zhou':'功德宝山咒','xinjing':'心经',
+};
+const groups=[['合成纯音乐 · MP3',[]],['专属录音 · MP3',[]],['合成源文件 · Ogg',[]],['其他音频',[]]];
+for(const [path,url]of Object.entries(audioFiles)){
+ const file=path.split('/').at(-1),stem=file.replace(/\.[^.]+$/,''),format=file.split('.').at(-1);
+ const id=stem==='yuzhou-changwan-weather'?'sunset':stem.replace(/-synth$/,'');
+ const title=tracks[id]?.title??recordingTitles[stem]??stem;
+ const group=format==='ogg'?2:format==='mp3'?(tracks[id]?0:1):3;
+ groups[group][1].push({url,file,id,title,format});
+}
+function pauseAuditions(){document.querySelectorAll('[data-audition]').forEach(e=>e.pause());}
+const audition=document.querySelector('#auditions');
+document.querySelector('#audio-count').textContent=`共 ${Object.keys(audioFiles).length} 个音频文件，点击试听或播放器的播放按钮即可。切换音频自动暂停上一首。`;
+for(const [label,files]of groups){
+ if(!files.length)continue;
+ const section=document.createElement('section'),heading=document.createElement('h2');
+ heading.textContent=`${label}（${files.length}）`;section.append(heading);audition.append(section);
+ for(const {url,file,id,title,format}of files){
+  const row=document.createElement('div'),button=document.createElement('button'),audio=document.createElement('audio'),filename=document.createElement('small'),error=document.createElement('span');
+  const displayTitle=tracks[id]&&['molihua','yueer'].includes(id)?`${title} · 完整版`:title;
+  row.className='audio-row';button.textContent=`试听${displayTitle}`;button.setAttribute('aria-label',`试听${displayTitle}（${label}）`);
+  audio.controls=true;audio.preload='none';audio.src=url;audio.dataset.track=id;audio.dataset.audition=format;
+  audio.setAttribute('aria-label',`${displayTitle}（${label}）`);filename.textContent=file;
+  error.className='audio-error';error.setAttribute('role','status');
+  audio.addEventListener('play',()=>{music?.setAvailable(false);document.querySelectorAll('audio').forEach(e=>{if(e!==audio)e.pause();});error.textContent='';});
+  audio.addEventListener('error',()=>{error.textContent=`加载失败：${audio.error?.message||'浏览器未能读取此音频'}`;});
+  button.onclick=async()=>{try{await audio.play();}catch(reason){error.textContent=`播放失败：${reason.message}`;}};
+  row.append(button,audio,filename,error);section.append(row);
+ }
 }
 let context,music,status,env={hour:12,daylight:1,moonLight:0,weather:'sunny',season:'summer',cloudiness:.12};
 const elements=[], gains=[];
 document.querySelector('#start').onclick=async()=>{
- if(context)return;
+ pauseAuditions();
+ if(context){music.setAvailable(true);return;}
  context=new AudioContext();await context.resume();
  const createGain=context.createGain.bind(context);
  context.createGain=()=>{const gain=createGain();gains.push(gain);return gain;};
@@ -34,7 +70,7 @@ document.querySelector('#night').onclick=()=>{env={...env,hour:22,daylight:0,moo
 document.querySelector('#sunset').onclick=()=>{env={...env,hour:18,daylight:.2,sun:[0,.02,1],weather:'sunny'};};
 document.querySelector('#quiet').onclick=()=>{env={...env,hour:12,daylight:1,moonLight:0,weather:'rain'};};
 document.querySelector('#mute').onclick=()=>music?.setAvailable(false);
-document.querySelector('#resume').onclick=()=>music?.setAvailable(true);
+document.querySelector('#resume').onclick=()=>{pauseAuditions();music?.setAvailable(true);};
 document.querySelector('#tail').onclick=()=>{const element=elements.find(e=>!e.paused&&Number.isFinite(e.duration));if(element)element.currentTime=Math.max(0,element.duration-1);};
 setInterval(()=>{if(!context)return;music.update(env);document.querySelector('#result').textContent=JSON.stringify({context:context.state,time:context.currentTime,status,gains:gains.map(g=>g.gain.value),media:elements.map(e=>({src:e.currentSrc,time:e.currentTime,paused:e.paused,ready:e.readyState,error:e.error?.message}))},null,2);},250);
 window.addEventListener('pagehide',()=>{music?.dispose();context?.close();});

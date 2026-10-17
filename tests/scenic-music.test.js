@@ -8,7 +8,7 @@ const day = {hour:12,daylight:1,moonLight:0,weather:'sunny',season:'summer',clou
 const night = {...day,hour:22,daylight:0,moonLight:1};
 const tracks = Object.fromEntries(Object.entries({chunjiang:'春江花月夜',caiyun:'彩云追月',pingsha:'平沙落雁',mengjiang:'孟姜女哭长城',shange:'山歌好比春江水',zuguo:'我的祖国',liangzhu:'梁祝',nuerqing:'女儿情',wangningmei:'枉凝眉'}).map(([id,title])=>[id,{url:`/${id}.ogg`,title}]));
 const settle = async()=>{for(let i=0;i<5;i++)await Promise.resolve();};
-function harness({ sunset = false, lighthouse = false, lighthousePlaylist = false, dock = false, cave = false, caveChant = false, caveSongs = false, pavilion = false, eastPavilion = false, islandSong = false, random } = {}){
+function harness({ sunset = false, lighthouse = false, lighthousePlaylist = false, dock = false, cave = false, caveChant = false, caveSongs = false, pavilion = false, eastPavilion = false, islandSong = false, instrumentals = false, random } = {}){
   const elements=[],nodes=[];
   const context={currentTime:0,createGain(){const n={gain:{value:0,calls:[],cancelScheduledValues(){},setValueAtTime(v,t){this.value=v;this.calls.push(['set',v,t]);},linearRampToValueAtTime(v,t){this.value=v;this.calls.push(['ramp',v,t]);}},connect(){},disconnect(){this.disconnected=true;}};nodes.push(n);return n;},
     createMediaElementSource(element){const n={element,connect(){},disconnect(){this.disconnected=true;}};nodes.push(n);return n;}};
@@ -16,7 +16,7 @@ function harness({ sunset = false, lighthouse = false, lighthousePlaylist = fals
     addEventListener(type,fn){listeners.set(type,fn);},removeEventListener(type){listeners.delete(type);},
     play(){this.paused=false;this.plays++;return Promise.resolve();},pause(){this.paused=true;},load(){this.loads++;},removeAttribute(){this.src='';},fire(type){listeners.get(type)?.();}};elements.push(el);return el;}
   const statuses=[];
-  const additions={...(islandSong?{islandSong:{url:'/island-shange.mp3',title:'山歌好比春江水'}}:{}),...(caveSongs?{caveDream:{url:'/eji.mp3',title:'梦中的额吉'},caveBoru:{url:'/boru.mp3',title:'波如来'}}:{}),
+  const additions={...(instrumentals?{molihua:{url:'/molihua-synth.mp3',title:'茉莉花'},yueer:{url:'/yueer-synth.mp3',title:'月儿明风儿静'}}:{}),...(islandSong?{islandSong:{url:'/island-shange.mp3',title:'山歌好比春江水'}}:{}),...(caveSongs?{caveDream:{url:'/eji.mp3',title:'梦中的额吉'},caveBoru:{url:'/boru.mp3',title:'波如来'}}:{}),
     ...(lighthousePlaylist?{lighthouseLubinghua:{url:'/lubinghua.mp3',title:'鲁冰花'},lighthouseHualian:{url:'/hualian.mp3',title:'花恋'},lighthouseTuogao:{url:'/tuogao.mp3',title:'驼糕之歌'}}:{})};
   const music=api().createScenicMusic(context,{}, {tracks:{...tracks,...additions,...(caveChant?{caveChant:{url:'/dabei.mp3',title:'大悲咒'}}:{}),...(eastPavilion?{eastPavilion:{url:'/xinjing.mp3',title:'心经'}}:{}),...(pavilion?{southPavilion:{url:'/gongde.mp3',title:'功德宝山咒'}}:{}),...(cave?{cave:{url:'/jiegenghua.mp3',title:'桔梗花'}}:{}),...(dock?{dock:{url:'/songbie.mp3',title:'送别'}}:{}),...(lighthouse?{lighthouse:{url:'/yueer.mp3',title:'月儿明风儿静'}}:{}),...(sunset?{sunset:{url:'/sunset.mp3',title:'渔舟唱晚'}}:{})},mediaFactory,random,clock:()=>context.wallTime??context.currentTime,onStatus:s=>statuses.push(s)});
   return {context,elements,nodes,statuses,music};
@@ -100,11 +100,35 @@ test('16倍速没有可播放录音时安静等待，不会访问不存在的媒
 
 test('晴日、月夜和安静的雨雾秋景匹配不同曲目，日落保留已在播放的背景组',()=>{
   const {getScenicMusicSelection}=api();
-  assert.deepEqual(getScenicMusicSelection(day).tracks,['caiyun','shange','zuguo']);
-  assert.deepEqual(getScenicMusicSelection(night).tracks,['chunjiang','caiyun','liangzhu','nuerqing','wangningmei']);
-  for(const weather of ['cloudy','rain','fog','snow','storm'])assert.deepEqual(getScenicMusicSelection({...day,weather}).tracks,['pingsha','mengjiang','liangzhu','wangningmei']);
-  assert.deepEqual(getScenicMusicSelection({...day,season:'autumn'}).tracks,['pingsha','mengjiang','liangzhu','wangningmei']);
+  assert.deepEqual(getScenicMusicSelection(day).tracks,['caiyun','shange','zuguo','molihua']);
+  assert.deepEqual(getScenicMusicSelection(night).tracks,['chunjiang','caiyun','liangzhu','nuerqing','wangningmei','yueer']);
+  for(const weather of ['cloudy','rain','fog','snow','storm'])assert.deepEqual(getScenicMusicSelection({...day,weather}).tracks,['pingsha','mengjiang','liangzhu','wangningmei','yueer']);
+  assert.deepEqual(getScenicMusicSelection({...day,season:'autumn'}).tracks,['pingsha','mengjiang','liangzhu','wangningmei','yueer']);
   assert.equal(getScenicMusicSelection({...day,hour:18,daylight:.2,sun:[0,.02,1]}).hold,true);
+});
+
+test('简谱纯音乐参与对应场景轮换，月儿明风儿静使用独立于灯塔演唱版的曲目',()=>{
+  const {getScenicMusicSelection}=api();
+  assert.ok(getScenicMusicSelection(day).tracks.includes('molihua'));
+  assert.ok(getScenicMusicSelection(night).tracks.includes('yueer'));
+  assert.ok(getScenicMusicSelection({...day,weather:'rain'}).tracks.includes('yueer'));
+  assert.ok(!getScenicMusicSelection(night).tracks.includes('lighthouse'));
+});
+
+test('新增纯音乐顺序播放后回到首曲，与灯塔同名录音独立，暂停保持原进度',async()=>{
+  const h=harness({instrumentals:true,lighthouse:true});
+  h.music.setPlaybackOptions({mode:'sequence',trackId:'molihua'});
+  h.music.setAvailable(true);h.music.update(day);await settle();
+  assert.equal(h.statuses.at(-1).title,'茉莉花');
+  h.context.currentTime=4;h.music.update(day);h.elements.find(e=>!e.paused).fire('ended');await settle();
+  assert.equal(h.statuses.at(-1).id,'yueer');
+  const lullaby=h.elements.find(e=>e.src==='/yueer-synth.mp3');
+  assert.ok(lullaby&&!lullaby.loop);
+  h.context.currentTime=8;h.music.update(day);lullaby.currentTime=27;
+  h.music.setPlaybackOptions({paused:true});assert.ok(h.elements.every(e=>e.paused));
+  h.music.setPlaybackOptions({paused:false});await settle();assert.equal(lullaby.currentTime,27);
+  lullaby.fire('ended');await settle();assert.equal(h.statuses.at(-1).id,'chunjiang');
+  assert.equal(h.elements.length,2);h.music.dispose();
 });
 
 test('用户开启后才加载流式音乐，暂停保留进度，释放媒体和节点',async()=>{

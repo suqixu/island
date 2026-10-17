@@ -41,6 +41,8 @@ import zuguoMusicUrl from './assets/audio/zuguo-synth.mp3?url';
 import liangzhuMusicUrl from './assets/audio/liangzhu-synth.mp3?url';
 import nuerqingMusicUrl from './assets/audio/nuerqing-synth.mp3?url';
 import wangningmeiMusicUrl from './assets/audio/wangningmei-synth.mp3?url';
+import molihuaMusicUrl from './assets/audio/molihua-synth.mp3?url';
+import yueerMusicUrl from './assets/audio/yueer-synth.mp3?url';
 import southPavilionMusicUrl from './assets/audio/gongde-baoshan-zhou.mp3?url';
 import eastPavilionMusicUrl from './assets/audio/xinjing.mp3?url';
 import caveChantMusicUrl from './assets/audio/dabei-zhou.mp3?url';
@@ -284,6 +286,8 @@ async function boot() {
       liangzhu: {url:liangzhuMusicUrl,title:'梁祝'},
       nuerqing: {url:nuerqingMusicUrl,title:'女儿情'},
       wangningmei: {url:wangningmeiMusicUrl,title:'枉凝眉'},
+      molihua: {url:molihuaMusicUrl,title:'茉莉花'},
+      yueer: {url:yueerMusicUrl,title:'月儿明风儿静'},
     },
     onSunsetMusicStatus: ({state}) => { sunsetStatus = state; updateMusicStatus(); },
     onBackgroundMusicStatus: status => {

@@ -21,9 +21,20 @@ def frequency(name):
     note = (int(name[-1]) + 1) * 12 + PITCHES[name[:-1]]
     return 440 * 2 ** ((note - 69) / 12)
 
+def score_time(score, position):
+    """Map score beats to seconds, retaining written changes of tempo."""
+    previous, bpm, seconds = 0, score['bpm'], 0
+    assert bpm > 0 and 0 <= position <= score['beats']
+    for change in score.get('tempoChanges', []):
+        assert previous <= change['beat'] <= score['beats'] and change['bpm'] > 0
+        if position <= change['beat']:
+            break
+        seconds += (change['beat'] - previous) * 60 / bpm
+        previous, bpm = change['beat'], change['bpm']
+    return seconds + (position - previous) * 60 / bpm
+
 def render(score):
-    beat = 60 / score['bpm']
-    duration = score['beats'] * beat + 7
+    duration = score_time(score, score['beats']) + 7
     mix = np.zeros((round(duration * RATE), 2), dtype=np.float32)
     random = np.random.default_rng(20261005)
 
@@ -82,10 +93,11 @@ def render(score):
         mix[begin:begin + count, 1] += signal * math.sqrt((1 + pan) / 2)
 
     for part in score['parts']:
-        time = part.get('start', 0) * beat
+        position = part.get('start', 0)
         for name, beats in part['notes']:
-            voice(name, time, beats * beat, part['level'], part['instrument'], part.get('pan', 0))
-            time += beats * beat
+            start, end = score_time(score, position), score_time(score, position + beats)
+            voice(name, start, end - start, part['level'], part['instrument'], part.get('pan', 0))
+            position += beats
 
     # Quiet early room reflections and a diffuse, non-rhythmic stereo tail.
     dry = mix.copy()
@@ -113,12 +125,14 @@ def render(score):
             handle.writeframes((mix * 32767).astype('<i2').tobytes())
         subprocess.run(['/opt/homebrew/bin/ffmpeg', '-hide_banner', '-loglevel', 'error',
             '-y', '-i', str(wav), '-af', 'loudnorm=I=-19:TP=-2:LRA=10', '-ar', str(RATE),
-            '-c:a', 'libvorbis', '-q:a', '4', '-metadata', 'title=' + score['title'] + '·主题合成版',
-            '-metadata', 'comment=Melody excerpt; original synthetic arrangement',
+            '-c:a', 'libvorbis', '-q:a', '4', '-metadata', 'title=' + score['title'] + ('·完整简谱合成版' if score.get('coverage') == 'full' else '·主题合成版'),
+            '-metadata', 'comment=' + ('Complete score; original synthetic arrangement' if score.get('coverage') == 'full' else 'Melody excerpt; original synthetic arrangement'),
             str(output)], check=True)
     result = {'file': str(output), 'seconds': round(duration, 3), 'sampleRate': RATE,
         'channels': 2, 'bytes': output.stat().st_size, 'melodySource': score['source'],
         'description': score['description']}
+    if score.get('coverage') == 'full':
+        result.update(coverage='full', form=score['form'], sourcePages=score['sourcePages'], tempoChanges=score['tempoChanges'])
     (ROOT / 'artifacts/audio' / (score['id'] + '-report.json')).write_text(json.dumps(result, ensure_ascii=False, indent=2) + '\n')
     print(json.dumps(result, ensure_ascii=False))
 
