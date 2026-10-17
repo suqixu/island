@@ -1,8 +1,0 @@
-{
-  "inputInvalid": 2,
-  "originalInvalid": 4096,
-  "guardedInvalid": 2,
-  "cleanBloomInvalid": 0,
-  "cleanDifference": 0,
-  "pass": true
-}
