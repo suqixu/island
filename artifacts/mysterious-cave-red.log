@@ -1,0 +1,142 @@
+TAP version 13
+# Subtest: 洞口面向默认镜头、路口贴近坡面，深处岩顶处于山体内
+ok 1 - 洞口面向默认镜头、路口贴近坡面，深处岩顶处于山体内
+  ---
+  duration_ms: 0.850833
+  type: 'test'
+  ...
+# Subtest: 预留区覆盖入口与隧道，邻近道路和岛外不被大范围屏蔽
+ok 2 - 预留区覆盖入口与隧道，邻近道路和岛外不被大范围屏蔽
+  ---
+  duration_ms: 0.213458
+  type: 'test'
+  ...
+# Subtest: 缺口真实移除地形三角形，可穿过洞口，同时保留邻近山坡与阴影几何
+ok 3 - 缺口真实移除地形三角形，可穿过洞口，同时保留邻近山坡与阴影几何
+  ---
+  duration_ms: 248.970208
+  type: 'test'
+  ...
+# Subtest: 隧道有顶壁地面和深处实体岩壁，入口空心且几何索引全部有效
+ok 4 - 隧道有顶壁地面和深处实体岩壁，入口空心且几何索引全部有效
+  ---
+  duration_ms: 76.749458
+  type: 'test'
+  ...
+# Subtest: 洞口预设镜头射向左右、屋顶及地面的光线全部被实体洞壁封闭
+ok 5 - 洞口预设镜头射向左右、屋顶及地面的光线全部被实体洞壁封闭
+  ---
+  duration_ms: 4268.523375
+  type: 'test'
+  ...
+# Subtest: 天然岩缘有有限轻微不规则形状，近景材质包含真实石纹和凹凸
+ok 6 - 天然岩缘有有限轻微不规则形状，近景材质包含真实石纹和凹凸
+  ---
+  duration_ms: 59.336042
+  type: 'test'
+  ...
+# Subtest: 关闭阴影时内部仍有平滑遮蔽，洞外落脚点保持正常受光
+not ok 7 - 关闭阴影时内部仍有平滑遮蔽，洞外落脚点保持正常受光
+  ---
+  duration_ms: 0.337167
+  type: 'test'
+  location: '/Users/zhangzaiyuan/Downloads/test/tests/cave-layout.test.js:165:1'
+  failureType: 'testCodeFailure'
+  error: '深处仅剩微弱轮廓，不应被入口光照亮'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (file:///Users/zhangzaiyuan/Downloads/test/tests/cave-layout.test.js:169:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: 洞道向山体延伸并转弯，洞口视线先遇到侧壁而非尽头
+not ok 8 - 洞道向山体延伸并转弯，洞口视线先遇到侧壁而非尽头
+  ---
+  duration_ms: 39.84475
+  type: 'test'
+  location: '/Users/zhangzaiyuan/Downloads/test/tests/cave-layout.test.js:179:1'
+  failureType: 'testCodeFailure'
+  error: '洞道应实际延伸到山体内部'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (file:///Users/zhangzaiyuan/Downloads/test/tests/cave-layout.test.js:187:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: 真实手机预设的两侧白边是封闭内壁，其烘焙明度低于外侧岩石
+ok 9 - 真实手机预设的两侧白边是封闭内壁，其烘焙明度低于外侧岩石
+  ---
+  duration_ms: 54.626959
+  type: 'test'
+  ...
+# Subtest: 山洞释放所有独占材质和几何，重复释放安全，异常地形回调不产生无效坐标
+ok 10 - 山洞释放所有独占材质和几何，重复释放安全，异常地形回调不产生无效坐标
+  ---
+  duration_ms: 37.631333
+  type: 'test'
+  ...
+# Subtest: 暮夜灯光由实际daylight平滑控制，正午关闭、夜间全亮、异常输入安全
+ok 11 - 暮夜灯光由实际daylight平滑控制，正午关闭、夜间全亮、异常输入安全
+  ---
+  duration_ms: 0.560959
+  type: 'test'
+  ...
+# Subtest: 两侧可见灯具和暖PointLight留在洞内且不堵口，灯光有真实距离衰减
+not ok 12 - 两侧可见灯具和暖PointLight留在洞内且不堵口，灯光有真实距离衰减
+  ---
+  duration_ms: 113.070666
+  type: 'test'
+  location: '/Users/zhangzaiyuan/Downloads/test/tests/cave-light.test.js:39:1'
+  failureType: 'testCodeFailure'
+  error: '火把只照附近，不照亮洞底'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (file:///Users/zhangzaiyuan/Downloads/test/tests/cave-light.test.js:54:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: 低中高质量及暂停不禁用夜灯，渐变过程中不重建材质或几何
+ok 13 - 低中高质量及暂停不禁用夜灯，渐变过程中不重建材质或几何
+  ---
+  duration_ms: 58.757459
+  type: 'test'
+  ...
+# Subtest: 释放暖灯时清理独占灯具资源和灯光，幂等且更新不会重新亮灯
+ok 14 - 释放暖灯时清理独占灯具资源和灯光，幂等且更新不会重新亮灯
+  ---
+  duration_ms: 56.070208
+  type: 'test'
+  ...
+1..14
+# tests 14
+# suites 0
+# pass 11
+# fail 3
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4867.492334

@@ -1,0 +1,29 @@
+{
+  "url": "http://127.0.0.1:4175/sometest/island/",
+  "observedSongStatuses": {
+    "cave3": "山洞花歌 · 桔梗花",
+    "cave5": "洞中清歌 · 波如来",
+    "cave10": "洞中梦曲 · 梦中的额吉",
+    "cave12": "洞中梵音 · 大悲咒",
+    "dock2": "洞中梵音 · 大悲咒",
+    "dock3": "码头送别 · 送别",
+    "lighthouse2": "码头送别 · 送别",
+    "lighthouse3": "灯塔夜曲 · 月儿明风儿静",
+    "lighthouse5": "灯塔夜曲 · 鲁冰花",
+    "lighthouse10": "灯塔夜曲 · 花恋",
+    "lighthouse12": "灯塔夜曲 · 驼糕之歌",
+    "lighthouse2AfterTransition": "月夜 · 春江花月夜"
+  },
+  "dockTwoClicksAfterTransition": "月夜 · 春江花月夜",
+  "caveFirstTwoClicks": "月夜 · 春江花月夜",
+  "lighthouseButtonReplacesAerial": true,
+  "poetryVisibleBeforeExclusiveMusic": true,
+  "exclusiveSongsHidePoetry": true,
+  "faintWarmTurnVisible": true,
+  "entranceHasNoLamp": true,
+  "screenshot": "artifacts/cave-visible-faint-turn-light-preview.png",
+  "consoleErrors": 0,
+  "consoleWarnings": 0,
+  "actualClipCompletionTestedInBrowser": false,
+  "onlineUnchanged": true
+}

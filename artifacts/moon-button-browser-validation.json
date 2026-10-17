@@ -1,0 +1,17 @@
+{
+  "cycle": [
+    "满月",
+    "亏凸月",
+    "下弦月",
+    "残月",
+    "新月",
+    "娥眉月",
+    "上弦月",
+    "盈凸月",
+    "满月"
+  ],
+  "manualSwitchStopsAuto": true,
+  "autoRestored": true,
+  "logs": [],
+  "screenshot": "artifacts/moon-button-preview.png"
+}

@@ -1,0 +1,68 @@
+[
+  {
+    "file": "src/assets/audio/caiyun-synth.ogg",
+    "format": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vorbis",
+          "sample_rate": "32000",
+          "channels": 2
+        }
+      ],
+      "format": {
+        "duration": "115.400000",
+        "size": "1089233"
+      }
+    },
+    "levels": [
+      "[Parsed_volumedetect_0 @ 0x7927021380] mean_volume: -21.7 dB",
+      "[Parsed_volumedetect_0 @ 0x7927021380] max_volume: -13.0 dB"
+    ]
+  },
+  {
+    "file": "src/assets/audio/chunjiang-synth.ogg",
+    "format": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vorbis",
+          "sample_rate": "32000",
+          "channels": 2
+        }
+      ],
+      "format": {
+        "duration": "96.000000",
+        "size": "916101"
+      }
+    },
+    "levels": [
+      "[Parsed_volumedetect_0 @ 0x758ec74840] mean_volume: -22.1 dB",
+      "[Parsed_volumedetect_0 @ 0x758ec74840] max_volume: -13.6 dB"
+    ]
+  },
+  {
+    "file": "src/assets/audio/pingsha-synth.ogg",
+    "format": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vorbis",
+          "sample_rate": "32000",
+          "channels": 2
+        }
+      ],
+      "format": {
+        "duration": "203.300000",
+        "size": "1634466"
+      }
+    },
+    "levels": [
+      "[Parsed_volumedetect_0 @ 0x7786c98840] mean_volume: -22.0 dB",
+      "[Parsed_volumedetect_0 @ 0x7786c98840] max_volume: -5.4 dB"
+    ]
+  }
+]

@@ -1,0 +1,28 @@
+{
+  "url": "http://127.0.0.1:4175/sometest/island/",
+  "tabs": [
+    "环境",
+    "声音与音乐"
+  ],
+  "clickTrackStartsPlayback": true,
+  "keyboardTabsVerified": true,
+  "pauseSurvivesTabChange": true,
+  "lastTrackAccessible": true,
+  "modeCycle": [
+    "随机播放",
+    "随景播放",
+    "单曲循环",
+    "顺序播放"
+  ],
+  "rateCycle": [
+    "1.25×",
+    "1.5×",
+    "2×",
+    "0.5×",
+    "0.75×",
+    "1×"
+  ],
+  "consoleErrors": 0,
+  "preview": "artifacts/music-tabs-preview.png",
+  "mobileHardwareTested": false
+}

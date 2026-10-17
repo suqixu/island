@@ -1,0 +1,16 @@
+{
+  "url": "http://127.0.0.1:4174/sometest/demo/island/",
+  "loaded": true,
+  "boatScale": 2.4,
+  "dolphinScale": 2,
+  "clearSailSilhouettesObserved": true,
+  "randomMotionPreserved": true,
+  "geometryAndDrawCallCountsUnchanged": true,
+  "consoleErrors": 0,
+  "observedFps": 65,
+  "automaticCyclesRestored": true,
+  "speed": 0.5,
+  "preview": "artifacts/far-silhouettes-preview.png",
+  "mobileHardwareTested": false,
+  "viewportSafetyTests": "artifacts/far-silhouettes-green.log"
+}

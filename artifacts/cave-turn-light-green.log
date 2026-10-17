@@ -1,0 +1,108 @@
+TAP version 13
+# Subtest: 洞内只有转角处的局部暖光，光照范围不触及洞口，外侧无灯具
+ok 1 - 洞内只有转角处的局部暖光，光照范围不触及洞口，外侧无灯具
+  ---
+  duration_ms: 89.612417
+  type: 'test'
+  ...
+# Subtest: 洞内转角光不影响实际洞壁和植被，释放与更新幂等
+ok 2 - 洞内转角光不影响实际洞壁和植被，释放与更新幂等
+  ---
+  duration_ms: 57.418917
+  type: 'test'
+  ...
+# Subtest: 洞口岩石断面有真实前后起伏，避免一片平滑圆管岩缘
+ok 3 - 洞口岩石断面有真实前后起伏，避免一片平滑圆管岩缘
+  ---
+  duration_ms: 85.9065
+  type: 'test'
+  ...
+# Subtest: 矿物颜色、凹凸高度和表面粗糙度分别驱动岩石材质
+ok 4 - 矿物颜色、凹凸高度和表面粗糙度分别驱动岩石材质
+  ---
+  duration_ms: 61.323167
+  type: 'test'
+  ...
+# Subtest: 细化岩石不破坏空心入口、封闭洞壁或低质量暖光
+not ok 5 - 细化岩石不破坏空心入口、封闭洞壁或低质量暖光
+  ---
+  duration_ms: 104.666542
+  type: 'test'
+  location: '/Users/zhangzaiyuan/Downloads/test/tests/cave-natural.test.js:61:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The expression evaluated to a falsy value:
+    
+      assert.ok(lights.every(light => light.intensity === 0))
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (file:///Users/zhangzaiyuan/Downloads/test/tests/cave-natural.test.js:80:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: 洞口小蕨和藤蔓根部实际贴岩，保留中央步行净空
+ok 6 - 洞口小蕨和藤蔓根部实际贴岩，保留中央步行净空
+  ---
+  duration_ms: 59.216
+  type: 'test'
+  ...
+# Subtest: 洞口绿植根部固定、真实时间风动及阴影使用同一风场，低画质仍保留
+ok 7 - 洞口绿植根部固定、真实时间风动及阴影使用同一风场，低画质仍保留
+  ---
+  duration_ms: 46.047667
+  type: 'test'
+  ...
+# Subtest: 分离的岩石纹理与共享资源只释放一次
+ok 8 - 分离的岩石纹理与共享资源只释放一次
+  ---
+  duration_ms: 41.457666
+  type: 'test'
+  ...
+# Subtest: 贴岩藤茎和蕨茎固定，强风叶梢位移小于叶片与岩面的净距
+ok 9 - 贴岩藤茎和蕨茎固定，强风叶梢位移小于叶片与岩面的净距
+  ---
+  duration_ms: 38.652
+  type: 'test'
+  ...
+# Subtest: 外露洞顶与两侧岩壁形成连续绿叶覆盖，仍有自然露岩且资源成本有界
+ok 10 - 外露洞顶与两侧岩壁形成连续绿叶覆盖，仍有自然露岩且资源成本有界
+  ---
+  duration_ms: 431.439
+  type: 'test'
+  ...
+# Subtest: 山洞第3、5、10、12次按用户指定顺序触发，其他次数不启动新歌曲
+ok 11 - 山洞第3、5、10、12次按用户指定顺序触发，其他次数不启动新歌曲
+  ---
+  duration_ms: 0.88075
+  type: 'test'
+  ...
+# Subtest: 码头只有第三次触发送别，离开再返回需重新点击三次
+ok 12 - 码头只有第三次触发送别，离开再返回需重新点击三次
+  ---
+  duration_ms: 0.126791
+  type: 'test'
+  ...
+# Subtest: 灯塔第3、5、10、12次依次播放四首指定曲目，超过次数不自动重新唱
+ok 13 - 灯塔第3、5、10、12次依次播放四首指定曲目，超过次数不自动重新唱
+  ---
+  duration_ms: 0.171833
+  type: 'test'
+  ...
+1..13
+# tests 13
+# suites 0
+# pass 12
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 941.951042

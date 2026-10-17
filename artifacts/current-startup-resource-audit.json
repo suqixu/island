@@ -1,0 +1,33 @@
+{
+  "scope": "当前海岛CPU构建，本机Node环境，不包括网络、浏览器排版、着色器编译、首帧、GPU和手机实测。",
+  "durationMs": 1013,
+  "maxBlockingSliceMs": 79,
+  "slowSlices": [
+    {
+      "stage": "terrain",
+      "durationMs": 22
+    },
+    {
+      "stage": "cave-opening",
+      "durationMs": 64
+    },
+    {
+      "stage": "cave",
+      "durationMs": 79
+    },
+    {
+      "stage": "palms",
+      "durationMs": 26
+    }
+  ],
+  "slices": 80,
+  "uniqueGeometries": 47,
+  "geometryBytes": 17601388,
+  "memory": {
+    "rss": 181239808,
+    "heapTotal": 106364928,
+    "heapUsed": 79140072,
+    "external": 22704178,
+    "arrayBuffers": 20951620
+  }
+}

@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: 洞口繁花贴合实际地形且留出入口与台阶，两批实例绘制覆盖多种花色
+ok 1 - 洞口繁花贴合实际地形且留出入口与台阶，两批实例绘制覆盖多种花色
+  ---
+  duration_ms: 14.067541
+  type: 'test'
+  ...
+# Subtest: 分阶段海岛保留现有全部顶点、索引、实例矩阵、颜色与数量，并在内部耗时循环中让步
+ok 2 - 分阶段海岛保留现有全部顶点、索引、实例矩阵、颜色与数量，并在内部耗时循环中让步
+  ---
+  duration_ms: 1667.453208
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2225.17325

@@ -1,0 +1,27 @@
+{
+  "url": "http://127.0.0.1:4175/sometest/island/",
+  "doubleClickFocusObserved": true,
+  "closeDetailsObserved": [
+    "山石",
+    "树干",
+    "草丛"
+  ],
+  "nativeOrbitDragVerified": true,
+  "nativeWheelZoomVerified": true,
+  "returnToFullIslandVerified": true,
+  "consoleErrors": 0,
+  "screenshots": {
+    "before": "artifacts/detail-focus-before.png",
+    "close": "artifacts/detail-focus-close.png",
+    "zoom": "artifacts/detail-focus-zoom.png",
+    "return": "artifacts/detail-focus-return.png"
+  },
+  "touchGestureTestsPassed": true,
+  "mobileHardwareTested": false,
+  "fullRegression": {
+    "passed": 401,
+    "failed": 0
+  },
+  "pickingOnlyOnGesture": true,
+  "soundRestoredOff": true
+}

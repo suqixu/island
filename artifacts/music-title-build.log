@@ -1,0 +1,28 @@
+
+> isola-island-experience@1.0.0 build
+> vite build
+
+vite v7.1.7 building for production...
+transforming...
+✓ 83 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                       9.46 kB │ gzip:   3.25 kB
+dist/assets/poetry-calligraphy-BnD_u3U0.ttf         108.28 kB
+dist/assets/moon-lroc-2k-CuNckXFP.jpg               457.94 kB
+dist/assets/liangzhu-synth-52MLztdd.mp3             535.47 kB
+dist/assets/yuzhou-changwan-weather-oBYKauIW.mp3    642.61 kB
+dist/assets/nuerqing-synth-6lDVe1IW.mp3             702.94 kB
+dist/assets/shange-synth-bGq6dCi8.mp3               725.37 kB
+dist/assets/mengjiang-synth-CfOJOHz5.mp3            748.56 kB
+dist/assets/wangningmei-synth-C3BSoFZl.mp3          818.25 kB
+dist/assets/zuguo-synth-DcnKQaBr.mp3                827.43 kB
+dist/assets/zzy-seal-CHETrsaw.png                   867.41 kB
+dist/assets/chunjiang-synth-x6urkH5Z.mp3          1,046.64 kB
+dist/assets/caiyun-synth-Ch2FKxN0.mp3             1,242.40 kB
+dist/assets/pingsha-synth-BOMsiTAg.mp3            1,504.09 kB
+dist/assets/index-qg5NijQY.css                       20.26 kB │ gzip:   5.55 kB
+dist/assets/index-DZ2EwmbX.js                         4.18 kB │ gzip:   2.20 kB
+dist/assets/main-cOmAgDlp.js                        537.54 kB │ gzip: 180.31 kB
+dist/assets/three-DHFGTe_p.js                       539.74 kB │ gzip: 139.36 kB
+✓ built in 1.13s

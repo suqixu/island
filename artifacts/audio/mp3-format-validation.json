@@ -1,0 +1,152 @@
+[
+  {
+    "file": "caiyun-synth.mp3",
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "codec_name": "mp3",
+        "sample_rate": "32000",
+        "channels": 2
+      }
+    ],
+    "format": {
+      "duration": "115.333344"
+    }
+  },
+  {
+    "file": "chunjiang-synth.mp3",
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "codec_name": "mp3",
+        "sample_rate": "32000",
+        "channels": 2
+      }
+    ],
+    "format": {
+      "duration": "95.965531"
+    }
+  },
+  {
+    "file": "liangzhu-synth.mp3",
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "codec_name": "mp3",
+        "sample_rate": "32000",
+        "channels": 2
+      }
+    ],
+    "format": {
+      "duration": "77.476188"
+    }
+  },
+  {
+    "file": "mengjiang-synth.mp3",
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "codec_name": "mp3",
+        "sample_rate": "32000",
+        "channels": 2
+      }
+    ],
+    "format": {
+      "duration": "68.875000"
+    }
+  },
+  {
+    "file": "nuerqing-synth.mp3",
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "codec_name": "mp3",
+        "sample_rate": "32000",
+        "channels": 2
+      }
+    ],
+    "format": {
+      "duration": "91.545469"
+    }
+  },
+  {
+    "file": "pingsha-synth.mp3",
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "codec_name": "mp3",
+        "sample_rate": "32000",
+        "channels": 2
+      }
+    ],
+    "format": {
+      "duration": "203.250000"
+    }
+  },
+  {
+    "file": "shange-synth.mp3",
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "codec_name": "mp3",
+        "sample_rate": "32000",
+        "channels": 2
+      }
+    ],
+    "format": {
+      "duration": "67.000000"
+    }
+  },
+  {
+    "file": "wangningmei-synth.mp3",
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "codec_name": "mp3",
+        "sample_rate": "32000",
+        "channels": 2
+      }
+    ],
+    "format": {
+      "duration": "75.307688"
+    }
+  },
+  {
+    "file": "yuzhou-changwan-weather.mp3",
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "codec_name": "mp3",
+        "sample_rate": "32000",
+        "channels": 2
+      }
+    ],
+    "format": {
+      "duration": "73.367438"
+    }
+  },
+  {
+    "file": "zuguo-synth.mp3",
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "codec_name": "mp3",
+        "sample_rate": "32000",
+        "channels": 2
+      }
+    ],
+    "format": {
+      "duration": "111.210531"
+    }
+  }
+]

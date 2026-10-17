@@ -1,0 +1,26 @@
+[
+  {
+    "page": "https://suqixu.github.io/sometest/island/",
+    "script": "https://suqixu.github.io/sometest/island/assets/index-CPkBe54b.js",
+    "phrases": [
+      "正在像海水里加盐"
+    ],
+    "oldTypoPresent": true
+  },
+  {
+    "page": "http://127.0.0.1:4174/sometest/demo/island/",
+    "script": "http://127.0.0.1:4174/sometest/demo/island/assets/index-RSoe9ffd.js",
+    "phrases": [
+      "正在向海水加盐"
+    ],
+    "oldTypoPresent": false
+  },
+  {
+    "package": "island-deploy.zip",
+    "script": "./assets/index-RSoe9ffd.js",
+    "phrases": [
+      "正在向海水加盐"
+    ],
+    "oldTypoPresent": false
+  }
+]

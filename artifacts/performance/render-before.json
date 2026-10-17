@@ -1,0 +1,33 @@
+{
+  "mode": "before",
+  "measuredFramesPerRound": 10000,
+  "durationsMs": [
+    185.45016699999996,
+    173.3165419999999,
+    186.52754200000004,
+    156.30550000000017,
+    163.60558400000014,
+    157.02774999999997,
+    147.9292089999999
+  ],
+  "medianUsPerFrame": 16.360558400000013,
+  "sampledAllocationBytes": 318983720,
+  "allocationByFunction": {
+    "update": 220420432,
+    "dot": 25254320,
+    "getSunsetState": 24335760,
+    "getGlyphMotion": 13787280,
+    "getCloudLayerSpeed": 12649520,
+    "exec": 4221304,
+    "setStyle": 3248392,
+    "weatherValue": 3169920,
+    "smoothstep": 2780960,
+    "advanceCloudMotion": 2426128,
+    "getMoonBackdropScale": 2065664,
+    "getPoemVisibility": 1298864,
+    "clamp": 851760,
+    "frameSky": 785760,
+    "post": 494440
+  },
+  "scope": "Node CPU update only; fixed moon view, 78 clouds and 14 poem glyphs; excludes GPU, startup and glyph cue changes"
+}

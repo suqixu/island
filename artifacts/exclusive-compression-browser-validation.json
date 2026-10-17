@@ -1,0 +1,13 @@
+{
+  "url": "http://127.0.0.1:4175/sometest/island/",
+  "observedPlaybackStatuses": [
+    "码头送别 · 送别",
+    "洞中梦曲 · 梦中的额吉"
+  ],
+  "screenshot": "artifacts/exclusive-compressed-playback-preview.png",
+  "consoleErrors": 0,
+  "consoleWarnings": 0,
+  "subjectiveListeningAssessment": false,
+  "actualClipCompletionTestedInBrowser": false,
+  "onlineUnchanged": true
+}
