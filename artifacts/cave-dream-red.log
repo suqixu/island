@@ -1,0 +1,434 @@
+TAP version 13
+# Subtest: 只有正在唱大悲咒时熄灯，暂停、关闭声音、失败和其他曲目均恢复
+ok 1 - 只有正在唱大悲咒时熄灯，暂停、关闭声音、失败和其他曲目均恢复
+  ---
+  duration_ms: 1.60325
+  type: 'test'
+  ...
+# Subtest: 全部专属曲仍隐藏诗句，普通曲或暂停后保留诗句
+not ok 2 - 全部专属曲仍隐藏诗句，普通曲或暂停后保留诗句
+  ---
+  duration_ms: 1.093833
+  type: 'test'
+  location: '/Users/zhangzaiyuan/Downloads/test/tests/music-scene-effects.test.js:27:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    false !== true
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///Users/zhangzaiyuan/Downloads/test/tests/music-scene-effects.test.js:31:14)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: 灯塔光束、路灯、亭灯、码头和洞内火光在一帧内全部熄灭，之后按当前昼夜恢复
+ok 3 - 灯塔光束、路灯、亭灯、码头和洞内火光在一帧内全部熄灭，之后按当前昼夜恢复
+  ---
+  duration_ms: 947.350209
+  type: 'test'
+  ...
+# Subtest: 山洞连续累计到第三、第五、第十次，各阶段互斥，切换视角清空全部阶段
+not ok 4 - 山洞连续累计到第三、第五、第十次，各阶段互斥，切换视角清空全部阶段
+  ---
+  duration_ms: 1.197917
+  type: 'test'
+  location: '/Users/zhangzaiyuan/Downloads/test/tests/pavilion-music-trigger.test.js:7:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    true !== false
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: false
+  actual: true
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///Users/zhangzaiyuan/Downloads/test/tests/pavilion-music-trigger.test.js:11:40)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: 南峰亭前两次点击不触发，第三次开始，其余视角打断计数
+ok 5 - 南峰亭前两次点击不触发，第三次开始，其余视角打断计数
+  ---
+  duration_ms: 0.233792
+  type: 'test'
+  ...
+# Subtest: 触发后等待镜头到亭子，离开亭子或取消时停止，不会靠近自动重启
+ok 6 - 触发后等待镜头到亭子，离开亭子或取消时停止，不会靠近自动重启
+  ---
+  duration_ms: 0.301583
+  type: 'test'
+  ...
+# Subtest: 東峰亭独立累计三击，南峰亭不会触发东峰音乐
+ok 7 - 東峰亭独立累计三击，南峰亭不会触发东峰音乐
+  ---
+  duration_ms: 0.12825
+  type: 'test'
+  ...
+# Subtest: 山洞三击独立计数，切换到凉亭清空，返回洞内不会自动再触发
+ok 8 - 山洞三击独立计数，切换到凉亭清空，返回洞内不会自动再触发
+  ---
+  duration_ms: 0.231417
+  type: 'test'
+  ...
+# Subtest: 16倍速随机选择一首原速循环，天气昼夜变化不会中断，退出后恢复随景轮换
+ok 9 - 16倍速随机选择一首原速循环，天气昼夜变化不会中断，退出后恢复随景轮换
+  ---
+  duration_ms: 3.720208
+  type: 'test'
+  ...
+# Subtest: 从正在播放的主题进入16倍速，固定曲的交接沿用不重叠的淡出淡入
+ok 10 - 从正在播放的主题进入16倍速，固定曲的交接沿用不重叠的淡出淡入
+  ---
+  duration_ms: 0.433375
+  type: 'test'
+  ...
+# Subtest: 16倍速曲目尚在申请播放时退出，迟到的播放许可不能抢回普通主题
+ok 11 - 16倍速曲目尚在申请播放时退出，迟到的播放许可不能抢回普通主题
+  ---
+  duration_ms: 0.263458
+  type: 'test'
+  ...
+# Subtest: 16倍速没有可播放录音时安静等待，不会访问不存在的媒体
+ok 12 - 16倍速没有可播放录音时安静等待，不会访问不存在的媒体
+  ---
+  duration_ms: 0.477792
+  type: 'test'
+  ...
+# Subtest: 晴日、月夜和安静的雨雾秋景匹配不同曲目，日落保留已在播放的背景组
+ok 13 - 晴日、月夜和安静的雨雾秋景匹配不同曲目，日落保留已在播放的背景组
+  ---
+  duration_ms: 1.286667
+  type: 'test'
+  ...
+# Subtest: 用户开启后才加载流式音乐，暂停保留进度，释放媒体和节点
+ok 14 - 用户开启后才加载流式音乐，暂停保留进度，释放媒体和节点
+  ---
+  duration_ms: 7.200375
+  type: 'test'
+  ...
+# Subtest: 天气变化等待当前曲目结束，月夜曲目按真实结束轮换并复用媒体
+ok 15 - 天气变化等待当前曲目结束，月夜曲目按真实结束轮换并复用媒体
+  ---
+  duration_ms: 1.573209
+  type: 'test'
+  ...
+# Subtest: 加载中和失败时不叠加另一层合成曲，静音后不再请求曲目
+ok 16 - 加载中和失败时不叠加另一层合成曲，静音后不再请求曲目
+  ---
+  duration_ms: 0.396625
+  type: 'test'
+  ...
+# Subtest: 等待播放许可时关闭声音，迟到的 Promise 不能重新开启音乐
+ok 17 - 等待播放许可时关闭声音，迟到的 Promise 不能重新开启音乐
+  ---
+  duration_ms: 0.527583
+  type: 'test'
+  ...
+# Subtest: 下一曲加载失败时保留仍在播放的上一曲，避免叠加合成底乐
+ok 18 - 下一曲加载失败时保留仍在播放的上一曲，避免叠加合成底乐
+  ---
+  duration_ms: 1.432875
+  type: 'test'
+  ...
+# Subtest: 音频设备时钟暂停前进时，稳定场景仍以真实时间选择曲目
+ok 19 - 音频设备时钟暂停前进时，稳定场景仍以真实时间选择曲目
+  ---
+  duration_ms: 0.25075
+  type: 'test'
+  ...
+# Subtest: 静景轮换在平沙落雁结束后进入孟姜女，失败曲目可跳过
+ok 20 - 静景轮换在平沙落雁结束后进入孟姜女，失败曲目可跳过
+  ---
+  duration_ms: 0.251208
+  type: 'test'
+  ...
+# Subtest: 日落时首次开启声音，保留真实低太阳方向也能初始化背景组且不重复重启
+ok 21 - 日落时首次开启声音，保留真实低太阳方向也能初始化背景组且不重复重启
+  ---
+  duration_ms: 0.162708
+  type: 'test'
+  ...
+# Subtest: 日落使用同一播放器，旧曲淡到零后新曲才开始淡入
+ok 22 - 日落使用同一播放器，旧曲淡到零后新曲才开始淡入
+  ---
+  duration_ms: 0.134208
+  type: 'test'
+  ...
+# Subtest: 等待媒体加载时不启动合成旋律，避免数秒后叠曲
+ok 23 - 等待媒体加载时不启动合成旋律，避免数秒后叠曲
+  ---
+  duration_ms: 0.044458
+  type: 'test'
+  ...
+# Subtest: 设备中断后恢复原曲和进度，不切换到另一首
+ok 24 - 设备中断后恢复原曲和进度，不切换到另一首
+  ---
+  duration_ms: 0.094166
+  type: 'test'
+  ...
+# Subtest: 切歌途中媒体暂停再恢复，仍等待旧曲淡出再淡入
+ok 25 - 切歌途中媒体暂停再恢复，仍等待旧曲淡出再淡入
+  ---
+  duration_ms: 0.105791
+  type: 'test'
+  ...
+# Subtest: 更换同一曲目的音源后，新音源从头播放
+ok 26 - 更换同一曲目的音源后，新音源从头播放
+  ---
+  duration_ms: 0.101375
+  type: 'test'
+  ...
+# Subtest: 关闭后立即开启，旧播放请求迟到不能暂停复用槽位的新请求
+ok 27 - 关闭后立即开启，旧播放请求迟到不能暂停复用槽位的新请求
+  ---
+  duration_ms: 0.112458
+  type: 'test'
+  ...
+# Subtest: 手动选曲、单曲循环和音乐倍速独立于16倍场景及天气
+ok 28 - 手动选曲、单曲循环和音乐倍速独立于16倍场景及天气
+  ---
+  duration_ms: 0.159459
+  type: 'test'
+  ...
+# Subtest: 顺序播放覆盖全部曲目并在末曲后回到首曲，随机播放避免连续重复
+ok 29 - 顺序播放覆盖全部曲目并在末曲后回到首曲，随机播放避免连续重复
+  ---
+  duration_ms: 0.120125
+  type: 'test'
+  ...
+# Subtest: 音乐独立暂停保留进度，天气更新和音频恢复不会取消暂停
+ok 30 - 音乐独立暂停保留进度，天气更新和音频恢复不会取消暂停
+  ---
+  duration_ms: 0.362791
+  type: 'test'
+  ...
+# Subtest: 暂停期间选曲不发声，恢复直接播放新曲，回到随景后恢复原场景策略
+ok 31 - 暂停期间选曲不发声，恢复直接播放新曲，回到随景后恢复原场景策略
+  ---
+  duration_ms: 0.270417
+  type: 'test'
+  ...
+# Subtest: 快速重新选曲取消旧申请，迟到许可不会覆盖新曲
+ok 32 - 快速重新选曲取消旧申请，迟到许可不会覆盖新曲
+  ---
+  duration_ms: 0.173416
+  type: 'test'
+  ...
+# Subtest: 新曲尚未加载时暂停后继续仍播放选定的新曲
+ok 33 - 新曲尚未加载时暂停后继续仍播放选定的新曲
+  ---
+  duration_ms: 0.270792
+  type: 'test'
+  ...
+# Subtest: 夜晚靠近灯塔稳定后播放上传曲，远离后恢复原曲进度，音量包络不重叠
+ok 34 - 夜晚靠近灯塔稳定后播放上传曲，远离后恢复原曲进度，音量包络不重叠
+  ---
+  duration_ms: 0.242917
+  type: 'test'
+  ...
+# Subtest: 白天靠近灯塔不切歌，夜晚短暂经过不切歌，尚未开启声音不加载
+ok 35 - 白天靠近灯塔不切歌，夜晚短暂经过不切歌，尚未开启声音不加载
+  ---
+  duration_ms: 0.10325
+  type: 'test'
+  ...
+# Subtest: 灯塔曲暂停保持进度，天亮后恢复正常场景音乐
+ok 36 - 灯塔曲暂停保持进度，天亮后恢复正常场景音乐
+  ---
+  duration_ms: 0.138083
+  type: 'test'
+  ...
+# Subtest: 手动选曲和16倍速继续原逻辑，灯塔专属歌曲不混入普通歌单
+ok 37 - 手动选曲和16倍速继续原逻辑，灯塔专属歌曲不混入普通歌单
+  ---
+  duration_ms: 0.739875
+  type: 'test'
+  ...
+# Subtest: 灯塔曲加载中远离，迟到的播放许可不能覆盖恢复的原曲
+ok 38 - 灯塔曲加载中远离，迟到的播放许可不能覆盖恢复的原曲
+  ---
+  duration_ms: 0.21025
+  type: 'test'
+  ...
+# Subtest: 灯塔夜曲播放时改为手动模式，交还普通歌单，失败音源也恢复原曲
+ok 39 - 灯塔夜曲播放时改为手动模式，交还普通歌单，失败音源也恢复原曲
+  ---
+  duration_ms: 0.189708
+  type: 'test'
+  ...
+# Subtest: 从16倍速返回灯塔夜景，远离后正常恢复原曲，不被旧固定循环取消
+ok 40 - 从16倍速返回灯塔夜景，远离后正常恢复原曲，不被旧固定循环取消
+  ---
+  duration_ms: 0.290792
+  type: 'test'
+  ...
+# Subtest: 码头近景白天和夜晚播放送别，远离后恢复原曲进度
+ok 41 - 码头近景白天和夜晚播放送别，远离后恢复原曲进度
+  ---
+  duration_ms: 0.822208
+  type: 'test'
+  ...
+# Subtest: 码头和灯塔之间切换只保留一首近景曲，返回全岛仍恢复最初背景曲
+ok 42 - 码头和灯塔之间切换只保留一首近景曲，返回全岛仍恢复最初背景曲
+  ---
+  duration_ms: 0.109292
+  type: 'test'
+  ...
+# Subtest: 送别不混入普通顺序歌单或16倍速随机曲目
+ok 43 - 送别不混入普通顺序歌单或16倍速随机曲目
+  ---
+  duration_ms: 0.223583
+  type: 'test'
+  ...
+# Subtest: 山洞近景播放桔梗花，离开后恢复背景曲，近景之间转换不覆盖最初背景曲
+ok 44 - 山洞近景播放桔梗花，离开后恢复背景曲，近景之间转换不覆盖最初背景曲
+  ---
+  duration_ms: 0.168042
+  type: 'test'
+  ...
+# Subtest: 山洞录音不加入普通随机与16倍速歌单，关闭声音时不加载
+ok 45 - 山洞录音不加入普通随机与16倍速歌单，关闭声音时不加载
+  ---
+  duration_ms: 0.254458
+  type: 'test'
+  ...
+# Subtest: 南峰亭三击触发的专属音乐立即播放，离开后保留手动模式并恢复原曲
+ok 46 - 南峰亭三击触发的专属音乐立即播放，离开后保留手动模式并恢复原曲
+  ---
+  duration_ms: 0.377625
+  type: 'test'
+  ...
+# Subtest: 未三击时功德宝山咒不参与普通歌单，即使在南峰亭近景也不自动播放
+ok 47 - 未三击时功德宝山咒不参与普通歌单，即使在南峰亭近景也不自动播放
+  ---
+  duration_ms: 0.458583
+  type: 'test'
+  ...
+# Subtest: 东峰亭三击立即播放心经，与南峰亭转换后仍恢复最初的普通音乐
+ok 48 - 东峰亭三击立即播放心经，与南峰亭转换后仍恢复最初的普通音乐
+  ---
+  duration_ms: 0.6725
+  type: 'test'
+  ...
+# Subtest: 16倍速中手动触发亭子音乐，离开后恢复原先固定曲目
+ok 49 - 16倍速中手动触发亭子音乐，离开后恢复原先固定曲目
+  ---
+  duration_ms: 0.498083
+  type: 'test'
+  ...
+# Subtest: 山洞三击播放大悲咒，替换洞口桔梗花，离开仍恢复最初原曲进度
+ok 50 - 山洞三击播放大悲咒，替换洞口桔梗花，离开仍恢复最初原曲进度
+  ---
+  duration_ms: 1.17675
+  type: 'test'
+  ...
+# Subtest: 大悲咒三击适用于手动模式，暂停保持进度，恢复后继续播放
+ok 51 - 大悲咒三击适用于手动模式，暂停保持进度，恢复后继续播放
+  ---
+  duration_ms: 0.452291
+  type: 'test'
+  ...
+# Subtest: 未三击时大悲咒不混入普通歌单或16倍速固定曲
+ok 52 - 未三击时大悲咒不混入普通歌单或16倍速固定曲
+  ---
+  duration_ms: 0.199042
+  type: 'test'
+  ...
+# Subtest: 山洞三级专属音乐依次替换，离开恢复原曲进度，后两首不混入普通歌单
+not ok 53 - 山洞三级专属音乐依次替换，离开恢复原曲进度，后两首不混入普通歌单
+  ---
+  duration_ms: 1.886833
+  type: 'test'
+  location: '/Users/zhangzaiyuan/Downloads/test/tests/scenic-music.test.js:486:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + 'caiyun'
+    - 'caveDream'
+         ^
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'caveDream'
+  actual: 'caiyun'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///Users/zhangzaiyuan/Downloads/test/tests/scenic-music.test.js:491:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: 灯塔四首夜曲随机入场，曲终随机换另一首，帧更新不重选，离开恢复原曲
+not ok 54 - 灯塔四首夜曲随机入场，曲终随机换另一首，帧更新不重选，离开恢复原曲
+  ---
+  duration_ms: 0.695042
+  type: 'test'
+  location: '/Users/zhangzaiyuan/Downloads/test/tests/scenic-music.test.js:501:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + 'lighthouse'
+    - 'lighthouseTuogao'
+                 ^
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'lighthouseTuogao'
+  actual: 'lighthouse'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///Users/zhangzaiyuan/Downloads/test/tests/scenic-music.test.js:505:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: 灯塔新增三首不加入普通或16倍速歌单，选曲失败可改选同组其他夜曲
+not ok 55 - 灯塔新增三首不加入普通或16倍速歌单，选曲失败可改选同组其他夜曲
+  ---
+  duration_ms: 0.374958
+  type: 'test'
+  location: '/Users/zhangzaiyuan/Downloads/test/tests/scenic-music.test.js:517:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + 'lighthouseTuogao'
+    - 'wangningmei'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'wangningmei'
+  actual: 'lighthouseTuogao'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///Users/zhangzaiyuan/Downloads/test/tests/scenic-music.test.js:519:67)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..55
+# tests 55
+# suites 0
+# pass 50
+# fail 5
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1587.698125

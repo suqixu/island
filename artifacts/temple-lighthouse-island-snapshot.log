@@ -1,0 +1,36 @@
+TAP version 13
+# Subtest: 分阶段海岛保留现有全部顶点、索引、实例矩阵、颜色与数量，并在内部耗时循环中让步
+not ok 1 - 分阶段海岛保留现有全部顶点、索引、实例矩阵、颜色与数量，并在内部耗时循环中让步
+  ---
+  duration_ms: 852.640375
+  type: 'test'
+  location: '/Users/zhangzaiyuan/Downloads/test/tests/island-startup.test.js:24:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + '48df3f0174bbcf2f63c9525c735134510b3d4f85f6f48fe5202dd075e7c0269f'
+    - '71e2790a047114d52c413581a6339e9291240e704550207546945d2598554c87'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: '71e2790a047114d52c413581a6339e9291240e704550207546945d2598554c87'
+  actual: '48df3f0174bbcf2f63c9525c735134510b3d4f85f6f48fe5202dd075e7c0269f'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///Users/zhangzaiyuan/Downloads/test/tests/island-startup.test.js:30:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1362.627167

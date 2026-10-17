@@ -1,0 +1,21 @@
+{
+  "url": "http://127.0.0.1:4175/sometest/island/",
+  "fullMoonInViewShowsPoetry": true,
+  "caveWithoutVisibleMoonHidesPoetry": true,
+  "quarterMoonHidesPoetry": true,
+  "fullMoonRestoresCurrentPoemCue": true,
+  "automaticMoonCycleRestored": true,
+  "consoleErrors": 0,
+  "consoleWarnings": 0,
+  "screenshots": {
+    "fullMoon": "artifacts/full-moon-in-view-poetry-preview.png",
+    "cave": "artifacts/cave-no-moon-no-poetry-preview.png",
+    "quarterMoon": "artifacts/quarter-moon-no-poetry-preview.png"
+  },
+  "fullRegression": {
+    "tests": 454,
+    "pass": 454,
+    "fail": 0
+  },
+  "onlineUnchanged": true
+}

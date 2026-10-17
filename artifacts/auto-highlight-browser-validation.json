@@ -1,0 +1,30 @@
+{
+  "defaults": {
+    "auto": [
+      {
+        "background": "rgba(225, 237, 177, 0.2)",
+        "checked": true,
+        "id": "auto-season"
+      },
+      {
+        "background": "rgba(225, 237, 177, 0.2)",
+        "checked": true,
+        "id": "auto-weather"
+      },
+      {
+        "background": "rgba(225, 237, 177, 0.2)",
+        "checked": true,
+        "id": "auto-moon"
+      }
+    ],
+    "season": "rgba(225, 237, 177, 0.2)",
+    "time": {
+      "background": "rgba(225, 237, 177, 0.2)",
+      "pressed": "true"
+    }
+  },
+  "highlightOpacity": 0.2,
+  "seasonMatchesAuto": true,
+  "logs": [],
+  "screenshot": "artifacts/auto-highlight-preview.png"
+}

@@ -1,0 +1,29 @@
+{
+  "url": "http://127.0.0.1:4175/sometest/island/",
+  "clickSteps": {
+    "3": "洞中梦曲 · 梦中的额吉",
+    "5": "洞中清歌 · 波如来",
+    "10": "洞中梵音 · 大悲咒"
+  },
+  "firstTwoClicksNormalCaveSong": true,
+  "fifthClickKeepsLightsOn": true,
+  "tenthClickExtinguishesLights": true,
+  "exclusiveSongsHidePoetry": true,
+  "farViewRestoresOriginalSong": true,
+  "returnStatus": "晴日 · 彩云追月",
+  "flowers": 886,
+  "flowerDrawBatches": 2,
+  "clearEntranceAndStairs": true,
+  "screenshots": {
+    "flowers": "artifacts/cave-flowers-preview.png",
+    "fifth": "artifacts/cave-boru-lights-on.png",
+    "tenth": "artifacts/cave-tenth-chant-lights-off.png",
+    "lighthouse": "artifacts/lighthouse-random-night-song.png"
+  },
+  "automaticCyclesRetained": true,
+  "uploadedRecordingsUnmodified": true,
+  "listeningAssessment": false,
+  "onlineUnchanged": true,
+  "lighthouseRandomPlaybackObserved": "灯塔夜曲 · 驼糕之歌",
+  "consoleErrors": 0
+}

@@ -1,0 +1,122 @@
+TAP version 13
+# Subtest: 日落录音只在用户开启后加载，午后低太阳才播放，晨光不会触发
+ok 1 - 日落录音只在用户开启后加载，午后低太阳才播放，晨光不会触发
+  ---
+  duration_ms: 4.06725
+  type: 'test'
+  ...
+# Subtest: 音源未就绪或请求失败保留原音乐，录音与旧背景音乐共享音乐音量
+ok 2 - 音源未就绪或请求失败保留原音乐，录音与旧背景音乐共享音乐音量
+  ---
+  duration_ms: 1.197459
+  type: 'test'
+  ...
+# Subtest: 隐藏与静音暂停录音并保留进度，时间快速回拨不叠加，退出日落后释放
+ok 3 - 隐藏与静音暂停录音并保留进度，时间快速回拨不叠加，退出日落后释放
+  ---
+  duration_ms: 1.156667
+  type: 'test'
+  ...
+# Subtest: 销毁和更换音源会作废旧请求，延迟解码不得重启旧录音
+ok 4 - 销毁和更换音源会作废旧请求，延迟解码不得重启旧录音
+  ---
+  duration_ms: 0.899125
+  type: 'test'
+  ...
+# Subtest: 拍岸与退潮浪花使用独立复用噪声层，环境音量控制全部海浪并可重开
+ok 5 - 拍岸与退潮浪花使用独立复用噪声层，环境音量控制全部海浪并可重开
+  ---
+  duration_ms: 1.344375
+  type: 'test'
+  ...
+# Subtest: 未提供音源不请求网络，坏录音解码失败后继续原背景音乐
+ok 6 - 未提供音源不请求网络，坏录音解码失败后继续原背景音乐
+  ---
+  duration_ms: 0.509542
+  type: 'test'
+  ...
+# Subtest: 浏览器无法启动录音时仅报告一次错误，不逐帧建立失败音源
+ok 7 - 浏览器无法启动录音时仅报告一次错误，不逐帧建立失败音源
+  ---
+  duration_ms: 2.742792
+  type: 'test'
+  ...
+# Subtest: 手动静音在淡出后暂停音频计算，快速开启取消等待且复用原音源
+ok 8 - 手动静音在淡出后暂停音频计算，快速开启取消等待且复用原音源
+  ---
+  duration_ms: 0.826084
+  type: 'test'
+  ...
+# Subtest: 隐藏页面快速淡出并暂停，页面恢复只恢复用户仍开启的声音
+ok 9 - 隐藏页面快速淡出并暂停，页面恢复只恢复用户仍开启的声音
+  ---
+  duration_ms: 0.613833
+  type: 'test'
+  ...
+# Subtest: 已开始的异步暂停晚于开启完成时，最终恢复声音且销毁后不影响新上下文
+ok 10 - 已开始的异步暂停晚于开启完成时，最终恢复声音且销毁后不影响新上下文
+  ---
+  duration_ms: 1.638916
+  type: 'test'
+  ...
+# Subtest: 延迟恢复期间再次静音时最终保持暂停，旧恢复完成不得重新开启声音
+ok 11 - 延迟恢复期间再次静音时最终保持暂停，旧恢复完成不得重新开启声音
+  ---
+  duration_ms: 0.671084
+  type: 'test'
+  ...
+# Subtest: 实际声场把日落曲接入同一流式播放器，不预加载第二条录音或叠加合成旋律
+not ok 12 - 实际声场把日落曲接入同一流式播放器，不预加载第二条录音或叠加合成旋律
+  ---
+  duration_ms: 1.472959
+  type: 'test'
+  location: '/Users/zhangzaiyuan/Downloads/test/tests/sunset-music-audio.test.js:311:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    不再解码另一路日落录音
+    
+    1 !== 0
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 1
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///Users/zhangzaiyuan/Downloads/test/tests/sunset-music-audio.test.js:320:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: 手机音频上下文被系统中断后恢复原曲，保留播放进度
+not ok 13 - 手机音频上下文被系统中断后恢复原曲，保留播放进度
+  ---
+  duration_ms: 0.516291
+  type: 'test'
+  location: '/Users/zhangzaiyuan/Downloads/test/tests/sunset-music-audio.test.js:328:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + 'undefined'
+    - 'function'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'function'
+  actual: 'undefined'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///Users/zhangzaiyuan/Downloads/test/tests/sunset-music-audio.test.js:335:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..13
+# tests 13
+# suites 0
+# pass 11
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 87.494083

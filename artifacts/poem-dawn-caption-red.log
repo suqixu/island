@@ -1,0 +1,100 @@
+TAP version 13
+# Subtest: 工具栏诗与禅都有真实书法字形，不会退回系统字体
+ok 1 - 工具栏诗与禅都有真实书法字形，不会退回系统字体
+  ---
+  duration_ms: 0.626208
+  type: 'test'
+  ...
+# Subtest: 完整十八联只出现一遍，末联淡出后通知结束；云层遮月和开关不重播
+not ok 2 - 完整十八联只出现一遍，末联淡出后通知结束；云层遮月和开关不重播
+  ---
+  duration_ms: 334.795
+  type: 'test'
+  location: '/Users/zhangzaiyuan/Downloads/test/tests/poetry.test.js:60:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    进入黎明时不能闪现开场标题
+    + actual - expected
+    
+    + '春江花月夜，唐 张若虚。春江花月夜唐 张若虚'
+    - ''
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: ''
+  actual: '春江花月夜，唐 张若虚。春江花月夜唐 张若虚'
+  operator: 'strictEqual'
+  stack: |-
+    withPoetry.moonView (file:///Users/zhangzaiyuan/Downloads/test/tests/poetry.test.js:70:12)
+    withPoetry (file:///Users/zhangzaiyuan/Downloads/test/tests/poetry.test.js:50:5)
+    TestContext.<anonymous> (file:///Users/zhangzaiyuan/Downloads/test/tests/poetry.test.js:62:3)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: 半速整首诗结束后平滑进入黎明，暂停不会推进且倍率保持不变
+ok 3 - 半速整首诗结束后平滑进入黎明，暂停不会推进且倍率保持不变
+  ---
+  duration_ms: 235.106542
+  type: 'test'
+  ...
+# Subtest: 关闭字幕跨过白天后，重新开启仍隐藏，再遇月夜从引言重启
+ok 4 - 关闭字幕跨过白天后，重新开启仍隐藏，再遇月夜从引言重启
+  ---
+  duration_ms: 23.706292
+  type: 'test'
+  ...
+# Subtest: 多云时实际明月可见，真实书法网格继续播放诗句；月盘消失后淡出
+ok 5 - 多云时实际明月可见，真实书法网格继续播放诗句；月盘消失后淡出
+  ---
+  duration_ms: 25.040875
+  type: 'test'
+  ...
+# Subtest: 引言中唐与张若虚之间留一字空格，不为留白生成空网格
+ok 6 - 引言中唐与张若虚之间留一字空格，不为留白生成空网格
+  ---
+  duration_ms: 13.155041
+  type: 'test'
+  ...
+# Subtest: 真实书法字有前面和厚度，首句在右列从上往下读，第二句在左列
+ok 7 - 真实书法字有前面和厚度，首句在右列从上往下读，第二句在左列
+  ---
+  duration_ms: 28.802292
+  type: 'test'
+  ...
+# Subtest: 1280×900赏月时，竖排诗句处于左上天空，并与月盘保留间距
+ok 8 - 1280×900赏月时，竖排诗句处于左上天空，并与月盘保留间距
+  ---
+  duration_ms: 26.616417
+  type: 'test'
+  ...
+# Subtest: 390×844赏月时，竖排诗句处于左上天空，并与月盘保留间距
+ok 9 - 390×844赏月时，竖排诗句处于左上天空，并与月盘保留间距
+  ---
+  duration_ms: 25.302
+  type: 'test'
+  ...
+# Subtest: 640×480横屏中，首联自动成为天空中的两行无标点汉字，保持可读
+ok 10 - 640×480横屏中，首联自动成为天空中的两行无标点汉字，保持可读
+  ---
+  duration_ms: 24.825417
+  type: 'test'
+  ...
+# Subtest: 缓存的书法几何只释放一次，移除字幕后不残留场景网格
+ok 11 - 缓存的书法几何只释放一次，移除字幕后不残留场景网格
+  ---
+  duration_ms: 24.341458
+  type: 'test'
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 10
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 859.945667

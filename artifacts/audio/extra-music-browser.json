@@ -1,0 +1,50 @@
+[
+  {
+    "duration": 68.904,
+    "error": null,
+    "id": "mengjiang",
+    "paused": true,
+    "ready": 4,
+    "src": "http://127.0.0.1:5173/src/assets/audio/mengjiang-synth.ogg"
+  },
+  {
+    "duration": 67.004,
+    "error": null,
+    "id": "shange",
+    "paused": true,
+    "ready": 4,
+    "src": "http://127.0.0.1:5173/src/assets/audio/shange-synth.ogg"
+  },
+  {
+    "duration": 111.304,
+    "error": null,
+    "id": "zuguo",
+    "paused": true,
+    "ready": 4,
+    "src": "http://127.0.0.1:5173/src/assets/audio/zuguo-synth.ogg"
+  },
+  {
+    "duration": 77.504,
+    "error": null,
+    "id": "liangzhu",
+    "paused": true,
+    "ready": 4,
+    "src": "http://127.0.0.1:5173/src/assets/audio/liangzhu-synth.ogg"
+  },
+  {
+    "duration": 91.604,
+    "error": null,
+    "id": "nuerqing",
+    "paused": true,
+    "ready": 4,
+    "src": "http://127.0.0.1:5173/src/assets/audio/nuerqing-synth.ogg"
+  },
+  {
+    "duration": 75.404,
+    "error": null,
+    "id": "wangningmei",
+    "paused": false,
+    "ready": 4,
+    "src": "http://127.0.0.1:5173/src/assets/audio/wangningmei-synth.ogg"
+  }
+]

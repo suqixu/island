@@ -1,0 +1,23 @@
+{
+  "files": 34,
+  "entryScript": "./assets/index-xg4m0WQd.js",
+  "archiveBytes": 29382878,
+  "sha256": "f99a5ec195c434b2bfd2d3fb07706710c64024552eea3525837e5f2bf1175ab5",
+  "backup": "/var/folders/bc/xvlb5zrn2xv11_vpdys6207c0000gp/T/island-before-auto-settings-2iar4ch_",
+  "pass": 458,
+  "fail": 0,
+  "playlistRemoved": true,
+  "soundTabRemoved": true,
+  "musicControlsInEnvironment": true,
+  "introRemoved": true,
+  "tourAfterSound": true,
+  "weatherIconsAndAutoSingleRow": true,
+  "settingsWidth": 280,
+  "headingsRemoved": true,
+  "allFourAutoControlsVerified": true,
+  "secondHeaderBackgroundRemoved": true,
+  "phone320AndDesktop1366FitWithoutPanelScroll": true,
+  "audioFilesUnchanged64kbps": true,
+  "zipMatchesDist": true,
+  "onlineUnchanged": true
+}

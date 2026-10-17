@@ -1,0 +1,187 @@
+TAP version 13
+# Subtest: 16倍速随机选择一首原速循环，天气昼夜变化不会中断，退出后恢复随景轮换
+ok 1 - 16倍速随机选择一首原速循环，天气昼夜变化不会中断，退出后恢复随景轮换
+  ---
+  duration_ms: 2.428167
+  type: 'test'
+  ...
+# Subtest: 从正在播放的主题进入16倍速，固定曲的交接沿用不重叠的淡出淡入
+ok 2 - 从正在播放的主题进入16倍速，固定曲的交接沿用不重叠的淡出淡入
+  ---
+  duration_ms: 0.355
+  type: 'test'
+  ...
+# Subtest: 16倍速曲目尚在申请播放时退出，迟到的播放许可不能抢回普通主题
+ok 3 - 16倍速曲目尚在申请播放时退出，迟到的播放许可不能抢回普通主题
+  ---
+  duration_ms: 0.901292
+  type: 'test'
+  ...
+# Subtest: 16倍速没有可播放录音时安静等待，不会访问不存在的媒体
+ok 4 - 16倍速没有可播放录音时安静等待，不会访问不存在的媒体
+  ---
+  duration_ms: 0.128375
+  type: 'test'
+  ...
+# Subtest: 晴日、月夜和安静的雨雾秋景匹配不同曲目，日落保留已在播放的背景组
+ok 5 - 晴日、月夜和安静的雨雾秋景匹配不同曲目，日落保留已在播放的背景组
+  ---
+  duration_ms: 0.74175
+  type: 'test'
+  ...
+# Subtest: 用户开启后才加载流式音乐，暂停保留进度，释放媒体和节点
+ok 6 - 用户开启后才加载流式音乐，暂停保留进度，释放媒体和节点
+  ---
+  duration_ms: 0.227458
+  type: 'test'
+  ...
+# Subtest: 天气变化等待当前曲目结束，月夜曲目按真实结束轮换并复用媒体
+ok 7 - 天气变化等待当前曲目结束，月夜曲目按真实结束轮换并复用媒体
+  ---
+  duration_ms: 0.354709
+  type: 'test'
+  ...
+# Subtest: 加载中和失败时不叠加另一层合成曲，静音后不再请求曲目
+ok 8 - 加载中和失败时不叠加另一层合成曲，静音后不再请求曲目
+  ---
+  duration_ms: 0.116583
+  type: 'test'
+  ...
+# Subtest: 等待播放许可时关闭声音，迟到的 Promise 不能重新开启音乐
+ok 9 - 等待播放许可时关闭声音，迟到的 Promise 不能重新开启音乐
+  ---
+  duration_ms: 0.309666
+  type: 'test'
+  ...
+# Subtest: 下一曲加载失败时保留仍在播放的上一曲，避免叠加合成底乐
+ok 10 - 下一曲加载失败时保留仍在播放的上一曲，避免叠加合成底乐
+  ---
+  duration_ms: 0.375125
+  type: 'test'
+  ...
+# Subtest: 音频设备时钟暂停前进时，稳定场景仍以真实时间选择曲目
+ok 11 - 音频设备时钟暂停前进时，稳定场景仍以真实时间选择曲目
+  ---
+  duration_ms: 0.15675
+  type: 'test'
+  ...
+# Subtest: 静景轮换在平沙落雁结束后进入孟姜女，失败曲目可跳过
+ok 12 - 静景轮换在平沙落雁结束后进入孟姜女，失败曲目可跳过
+  ---
+  duration_ms: 0.15025
+  type: 'test'
+  ...
+# Subtest: 日落时首次开启声音，保留真实低太阳方向也能初始化背景组且不重复重启
+ok 13 - 日落时首次开启声音，保留真实低太阳方向也能初始化背景组且不重复重启
+  ---
+  duration_ms: 0.1145
+  type: 'test'
+  ...
+# Subtest: 日落使用同一播放器，旧曲淡到零后新曲才开始淡入
+ok 14 - 日落使用同一播放器，旧曲淡到零后新曲才开始淡入
+  ---
+  duration_ms: 0.283083
+  type: 'test'
+  ...
+# Subtest: 等待媒体加载时不启动合成旋律，避免数秒后叠曲
+ok 15 - 等待媒体加载时不启动合成旋律，避免数秒后叠曲
+  ---
+  duration_ms: 0.047084
+  type: 'test'
+  ...
+# Subtest: 设备中断后恢复原曲和进度，不切换到另一首
+ok 16 - 设备中断后恢复原曲和进度，不切换到另一首
+  ---
+  duration_ms: 0.887917
+  type: 'test'
+  ...
+# Subtest: 切歌途中媒体暂停再恢复，仍等待旧曲淡出再淡入
+ok 17 - 切歌途中媒体暂停再恢复，仍等待旧曲淡出再淡入
+  ---
+  duration_ms: 0.158792
+  type: 'test'
+  ...
+# Subtest: 更换同一曲目的音源后，新音源从头播放
+ok 18 - 更换同一曲目的音源后，新音源从头播放
+  ---
+  duration_ms: 0.136708
+  type: 'test'
+  ...
+# Subtest: 关闭后立即开启，旧播放请求迟到不能暂停复用槽位的新请求
+ok 19 - 关闭后立即开启，旧播放请求迟到不能暂停复用槽位的新请求
+  ---
+  duration_ms: 0.109542
+  type: 'test'
+  ...
+# Subtest: 手动选曲、单曲循环和音乐倍速独立于16倍场景及天气
+ok 20 - 手动选曲、单曲循环和音乐倍速独立于16倍场景及天气
+  ---
+  duration_ms: 0.176791
+  type: 'test'
+  ...
+# Subtest: 顺序播放覆盖全部曲目并在末曲后回到首曲，随机播放避免连续重复
+ok 21 - 顺序播放覆盖全部曲目并在末曲后回到首曲，随机播放避免连续重复
+  ---
+  duration_ms: 0.11625
+  type: 'test'
+  ...
+# Subtest: 音乐独立暂停保留进度，天气更新和音频恢复不会取消暂停
+ok 22 - 音乐独立暂停保留进度，天气更新和音频恢复不会取消暂停
+  ---
+  duration_ms: 0.102209
+  type: 'test'
+  ...
+# Subtest: 暂停期间选曲不发声，恢复直接播放新曲，回到随景后恢复原场景策略
+ok 23 - 暂停期间选曲不发声，恢复直接播放新曲，回到随景后恢复原场景策略
+  ---
+  duration_ms: 0.120333
+  type: 'test'
+  ...
+# Subtest: 快速重新选曲取消旧申请，迟到许可不会覆盖新曲
+ok 24 - 快速重新选曲取消旧申请，迟到许可不会覆盖新曲
+  ---
+  duration_ms: 0.112792
+  type: 'test'
+  ...
+# Subtest: 新曲尚未加载时暂停后继续仍播放选定的新曲
+ok 25 - 新曲尚未加载时暂停后继续仍播放选定的新曲
+  ---
+  duration_ms: 0.086542
+  type: 'test'
+  ...
+# Subtest: 近距离寺院录音临时循环，离开恢复手动曲目与进度，暂停不被接近事件取消
+not ok 26 - 近距离寺院录音临时循环，离开恢复手动曲目与进度，暂停不被接近事件取消
+  ---
+  duration_ms: 4.833625
+  type: 'test'
+  location: '/Users/zhangzaiyuan/Downloads/test/tests/scenic-music.test.js:307:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The expression evaluated to a falsy value:
+    
+      assert.ok(temple&&!temple.paused&&temple.loop)
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (file:///Users/zhangzaiyuan/Downloads/test/tests/scenic-music.test.js:313:63)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: 没有佛经音源时接近寺院保持原曲，不把寺院录音加入随机和16倍普通歌单
+ok 27 - 没有佛经音源时接近寺院保持原曲，不把寺院录音加入随机和16倍普通歌单
+  ---
+  duration_ms: 0.163791
+  type: 'test'
+  ...
+1..27
+# tests 27
+# suites 0
+# pass 26
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 73.328167

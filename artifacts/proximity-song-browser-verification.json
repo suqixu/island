@@ -1,0 +1,28 @@
+{
+  "url": "http://127.0.0.1:4175/sometest/island/",
+  "observedStatuses": {
+    "lighthouse": "灯塔夜曲 · 月儿明风儿静",
+    "dock": "码头送别 · 送别",
+    "cave": "山洞花歌 · 桔梗花",
+    "southPavilion": "南峰亭 · 功德宝山咒",
+    "eastPavilion": "东峰亭 · 心经"
+  },
+  "pavilionFirstTwoClicksDoNotTrigger": true,
+  "pavilionThirdClickStartsPlayback": true,
+  "thirdClickEnablesSound": true,
+  "poetryHiddenWhileExclusiveMusic": true,
+  "poetryUserPreferencePreserved": true,
+  "farViewRestoresOriginalSong": true,
+  "pauseVerified": true,
+  "automaticCyclesRestored": true,
+  "consoleErrors": 0,
+  "listeningAssessment": false,
+  "onlineUnchanged": true,
+  "screenshots": {
+    "lighthouse": "artifacts/lighthouse-song-no-poetry.png",
+    "dock": "artifacts/dock-song-playing.png",
+    "cave": "artifacts/cave-song-no-poetry.png",
+    "southPavilion": "artifacts/south-pavilion-song.png",
+    "eastPavilion": "artifacts/east-pavilion-song.png"
+  }
+}

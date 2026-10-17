@@ -1,0 +1,248 @@
+TAP version 13
+# Subtest: 16倍速在十帧画面下仍显示鲸豚和落水事件，不能误判为后台中断
+ok 1 - 16倍速在十帧画面下仍显示鲸豚和落水事件，不能误判为后台中断
+  ---
+  duration_ms: 126.8575
+  type: 'test'
+  ...
+# Subtest: 三类近岸鱼在真实海床上方、水下渲染，前进体轴与游动方向一致
+ok 2 - 三类近岸鱼在真实海床上方、水下渲染，前进体轴与游动方向一致
+  ---
+  duration_ms: 7.503333
+  type: 'test'
+  ...
+# Subtest: 鱼群随机种子可复现、不同场景种子改变位置，质量和夜间控制实际实例数
+ok 3 - 鱼群随机种子可复现、不同场景种子改变位置，质量和夜间控制实际实例数
+  ---
+  duration_ms: 16.598
+  type: 'test'
+  ...
+# Subtest: 首次十二秒出现清楚的远海鲸喷，海豚随后独立跃水，四种画幅安全可见
+ok 4 - 首次十二秒出现清楚的远海鲸喷，海豚随后独立跃水，四种画幅安全可见
+  ---
+  duration_ms: 910.019541
+  type: 'test'
+  ...
+# Subtest: 清楚的首个喷水在8至12秒，整次活动固定锚点且事件位置跟随动物
+ok 5 - 清楚的首个喷水在8至12秒，整次活动固定锚点且事件位置跟随动物
+  ---
+  duration_ms: 153.913208
+  type: 'test'
+  ...
+# Subtest: 多种子跨轮鲸豚全身体留在深水镜头内，活动中的成员和锚点连续
+ok 6 - 多种子跨轮鲸豚全身体留在深水镜头内，活动中的成员和锚点连续
+  ---
+  duration_ms: 2604.794916
+  type: 'test'
+  ...
+# Subtest: 浅海及被岛挡住的窄海岸视角不拉近大动物，夜间雷暴及全陆地不触发活动
+ok 7 - 浅海及被岛挡住的窄海岸视角不拉近大动物，夜间雷暴及全陆地不触发活动
+  ---
+  duration_ms: 60.780875
+  type: 'test'
+  ...
+# Subtest: 共享几何及材质只释放一次，销毁后从场景移除且更新不再触发事件
+ok 8 - 共享几何及材质只释放一次，销毁后从场景移除且更新不再触发事件
+  ---
+  duration_ms: 4.219417
+  type: 'test'
+  ...
+# Subtest: 远海鲸豚跨周期变化数量和位置，首次分开出现且低质量仍可观察
+ok 9 - 远海鲸豚跨周期变化数量和位置，首次分开出现且低质量仍可观察
+  ---
+  duration_ms: 811.326
+  type: 'test'
+  ...
+# Subtest: 明亮月夜仍偶尔出现鲸豚，后台恢复不会重放旧群体的声音
+ok 10 - 明亮月夜仍偶尔出现鲸豚，后台恢复不会重放旧群体的声音
+  ---
+  duration_ms: 115.543916
+  type: 'test'
+  ...
+# Subtest: 空间声音位置来自当前活动成员，后台中途恢复不凭空出水
+ok 11 - 空间声音位置来自当前活动成员，后台中途恢复不凭空出水
+  ---
+  duration_ms: 476.78525
+  type: 'test'
+  ...
+# Subtest: 活动中转向相机背面会结束当前鲸轮并停止不可见音效，锚点不会重新贴到镜头
+ok 12 - 活动中转向相机背面会结束当前鲸轮并停止不可见音效，锚点不会重新贴到镜头
+  ---
+  duration_ms: 33.324917
+  type: 'test'
+  ...
+# Subtest: 已开始的鲸轮后台恢复跳过旧鲸喷，低帧率海豚音源仍跟随当帧身体
+ok 13 - 已开始的鲸轮后台恢复跳过旧鲸喷，低帧率海豚音源仍跟随当帧身体
+  ---
+  duration_ms: 31.342916
+  type: 'test'
+  ...
+# Subtest: 16倍速随机选择一首原速循环，天气昼夜变化不会中断，退出后恢复随景轮换
+ok 14 - 16倍速随机选择一首原速循环，天气昼夜变化不会中断，退出后恢复随景轮换
+  ---
+  duration_ms: 1.4705
+  type: 'test'
+  ...
+# Subtest: 从正在播放的主题进入16倍速，固定曲的交接沿用不重叠的淡出淡入
+ok 15 - 从正在播放的主题进入16倍速，固定曲的交接沿用不重叠的淡出淡入
+  ---
+  duration_ms: 0.38925
+  type: 'test'
+  ...
+# Subtest: 16倍速曲目尚在申请播放时退出，迟到的播放许可不能抢回普通主题
+not ok 16 - 16倍速曲目尚在申请播放时退出，迟到的播放许可不能抢回普通主题
+  ---
+  duration_ms: 2.726708
+  type: 'test'
+  location: '/Users/zhangzaiyuan/Downloads/test/tests/scenic-music.test.js:51:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The expression evaluated to a falsy value:
+    
+      assert.ok(current&&!current.paused&&!current.loop)
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (file:///Users/zhangzaiyuan/Downloads/test/tests/scenic-music.test.js:57:66)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: 16倍速没有可播放录音时安静等待，不会访问不存在的媒体
+not ok 17 - 16倍速没有可播放录音时安静等待，不会访问不存在的媒体
+  ---
+  duration_ms: 0.229208
+  type: 'test'
+  location: '/Users/zhangzaiyuan/Downloads/test/tests/scenic-music.test.js:62:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Got unwanted exception.
+    Actual message: "Cannot read properties of undefined (reading 'element')"
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  actual:
+  error: "Cannot read properties of undefined (reading 'element')"
+  name: 'TypeError'
+  stack: |-
+    Object.update (file:///Users/zhangzaiyuan/Downloads/test/src/scenic-music.js:172:16)
+    file:///Users/zhangzaiyuan/Downloads/test/tests/scenic-music.test.js:65:33
+    getActual (node:assert:609:5)
+    Function.doesNotThrow (node:assert:777:32)
+    TestContext.<anonymous> (file:///Users/zhangzaiyuan/Downloads/test/tests/scenic-music.test.js:65:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+  operator: 'doesNotThrow'
+  stack: |-
+    TestContext.<anonymous> (file:///Users/zhangzaiyuan/Downloads/test/tests/scenic-music.test.js:65:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: 晴日、月夜和安静的雨雾秋景匹配不同曲目，日落保留已在播放的背景组
+ok 18 - 晴日、月夜和安静的雨雾秋景匹配不同曲目，日落保留已在播放的背景组
+  ---
+  duration_ms: 0.604958
+  type: 'test'
+  ...
+# Subtest: 用户开启后才加载流式音乐，暂停保留进度，释放媒体和节点
+ok 19 - 用户开启后才加载流式音乐，暂停保留进度，释放媒体和节点
+  ---
+  duration_ms: 0.23175
+  type: 'test'
+  ...
+# Subtest: 天气变化等待当前曲目结束，月夜曲目按真实结束轮换并复用媒体
+ok 20 - 天气变化等待当前曲目结束，月夜曲目按真实结束轮换并复用媒体
+  ---
+  duration_ms: 0.366833
+  type: 'test'
+  ...
+# Subtest: 加载中和失败时不叠加另一层合成曲，静音后不再请求曲目
+ok 21 - 加载中和失败时不叠加另一层合成曲，静音后不再请求曲目
+  ---
+  duration_ms: 0.126208
+  type: 'test'
+  ...
+# Subtest: 等待播放许可时关闭声音，迟到的 Promise 不能重新开启音乐
+ok 22 - 等待播放许可时关闭声音，迟到的 Promise 不能重新开启音乐
+  ---
+  duration_ms: 0.277625
+  type: 'test'
+  ...
+# Subtest: 下一曲加载失败时保留仍在播放的上一曲，避免叠加合成底乐
+ok 23 - 下一曲加载失败时保留仍在播放的上一曲，避免叠加合成底乐
+  ---
+  duration_ms: 0.348458
+  type: 'test'
+  ...
+# Subtest: 音频设备时钟暂停前进时，稳定场景仍以真实时间选择曲目
+ok 24 - 音频设备时钟暂停前进时，稳定场景仍以真实时间选择曲目
+  ---
+  duration_ms: 0.547208
+  type: 'test'
+  ...
+# Subtest: 静景轮换在平沙落雁结束后进入孟姜女，失败曲目可跳过
+ok 25 - 静景轮换在平沙落雁结束后进入孟姜女，失败曲目可跳过
+  ---
+  duration_ms: 0.177167
+  type: 'test'
+  ...
+# Subtest: 日落时首次开启声音，保留真实低太阳方向也能初始化背景组且不重复重启
+ok 26 - 日落时首次开启声音，保留真实低太阳方向也能初始化背景组且不重复重启
+  ---
+  duration_ms: 0.123708
+  type: 'test'
+  ...
+# Subtest: 日落使用同一播放器，旧曲淡到零后新曲才开始淡入
+ok 27 - 日落使用同一播放器，旧曲淡到零后新曲才开始淡入
+  ---
+  duration_ms: 0.137041
+  type: 'test'
+  ...
+# Subtest: 等待媒体加载时不启动合成旋律，避免数秒后叠曲
+ok 28 - 等待媒体加载时不启动合成旋律，避免数秒后叠曲
+  ---
+  duration_ms: 0.052833
+  type: 'test'
+  ...
+# Subtest: 设备中断后恢复原曲和进度，不切换到另一首
+ok 29 - 设备中断后恢复原曲和进度，不切换到另一首
+  ---
+  duration_ms: 0.244542
+  type: 'test'
+  ...
+# Subtest: 切歌途中媒体暂停再恢复，仍等待旧曲淡出再淡入
+ok 30 - 切歌途中媒体暂停再恢复，仍等待旧曲淡出再淡入
+  ---
+  duration_ms: 0.116209
+  type: 'test'
+  ...
+# Subtest: 更换同一曲目的音源后，新音源从头播放
+ok 31 - 更换同一曲目的音源后，新音源从头播放
+  ---
+  duration_ms: 0.10475
+  type: 'test'
+  ...
+# Subtest: 关闭后立即开启，旧播放请求迟到不能暂停复用槽位的新请求
+ok 32 - 关闭后立即开启，旧播放请求迟到不能暂停复用槽位的新请求
+  ---
+  duration_ms: 0.095084
+  type: 'test'
+  ...
+1..32
+# tests 32
+# suites 0
+# pass 30
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5420.025583

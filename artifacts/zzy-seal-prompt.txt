@@ -1,0 +1,6 @@
+工具：内置 image_gen，transparent_background=true
+参考：用户附上的朱文印章图片
+项目成品：src/assets/images/zzy-seal.png（1254×1254，透明RGBA）
+
+最终提示词：
+Asset: a single traditional Chinese vermilion name seal for a website opening signature. Use the attached image as a style reference: irregular hand-carved square red border, red positive (朱文) seal-script strokes, subtle missing ink and antique carved stone character, authentic traditional 篆刻. Replace the entire seal lettering with EXACTLY the three Chinese name characters 张在元 and no other text. Traditional small-seal-script forms are appropriate but retain clearly correct glyph structures (张/張, 在, 元). Layout in traditional right-to-left order: right column 张 above 在, left column one taller 元 filling the left half, inside a nearly square frame. Match the reference ink style, understated natural hand-carved irregularity. Tight centered square composition with a small clear margin, flat orthographic ink imprint, no 3D stamp object. IMPORTANT: genuinely transparent alpha background throughout outside and between red strokes; no parchment/paper, no cream rectangle, no checkerboard baked in, no black or gray. Only dark cinnabar red ink marks and transparent negative space. Suitable for display at 80–120 CSS pixels, legible and elegant, not a modern font label.

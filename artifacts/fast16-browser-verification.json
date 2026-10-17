@@ -1,0 +1,16 @@
+{
+  "url": "http://127.0.0.1:4175/sometest/island/",
+  "fast16ButtonPressed": true,
+  "fixedMusic": "16×单曲循环 ·《梁祝》主题合成版",
+  "weatherAndNightChangedWithoutTrackSwitch": true,
+  "afterExitMusic": "夕阳 ·《渔舟唱晚》电子琴合成版",
+  "restoredSpeed": 0.5,
+  "automaticCyclesRestored": true,
+  "soundRestoredOff": true,
+  "consoleErrors": 0,
+  "observedFps": 56,
+  "preview": "artifacts/fast16-preview.png",
+  "exitPreview": "artifacts/fast16-exit-preview.png",
+  "nativeLoopAndPlaybackRateTests": "artifacts/fast16-green.log",
+  "mobileHardwareTested": false
+}

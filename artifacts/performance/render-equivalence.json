@@ -1,0 +1,41 @@
+{
+  "passed": true,
+  "simulatedFrames": 2400,
+  "comparedFrames": 240,
+  "scenarios": [
+    [
+      22,
+      "sunny"
+    ],
+    [
+      12,
+      "sunny"
+    ],
+    [
+      17.8,
+      "sunny"
+    ],
+    [
+      18.15,
+      "cloudy"
+    ],
+    [
+      0,
+      "storm"
+    ],
+    [
+      10,
+      "rain"
+    ],
+    [
+      12,
+      "sunny"
+    ],
+    [
+      22,
+      "snow"
+    ]
+  ],
+  "compared": "Actual object poses, visibility, geometry counts, light/material colours, opacity, all numeric/vector uniforms, fog and poem captions",
+  "excluded": "Intentional shader signed-square fix; Node has no GPU rendering"
+}

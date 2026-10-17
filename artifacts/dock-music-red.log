@@ -1,0 +1,325 @@
+TAP version 13
+# Subtest: 整段码头双击近景都能触发，远景和附近海水不触发
+not ok 1 - 整段码头双击近景都能触发，远景和附近海水不触发
+  ---
+  duration_ms: 1.711166
+  type: 'test'
+  location: '/Users/zhangzaiyuan/Downloads/test/tests/dock-music.test.js:6:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + 'undefined'
+    - 'function'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'function'
+  actual: 'undefined'
+  operator: 'strictEqual'
+  stack: |-
+    api (file:///Users/zhangzaiyuan/Downloads/test/tests/dock-music.test.js:5:23)
+    TestContext.<anonymous> (file:///Users/zhangzaiyuan/Downloads/test/tests/dock-music.test.js:7:14)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: 码头缩放与观察方向设退出缓冲，山顶和无效镜头不触发
+not ok 2 - 码头缩放与观察方向设退出缓冲，山顶和无效镜头不触发
+  ---
+  duration_ms: 0.527709
+  type: 'test'
+  location: '/Users/zhangzaiyuan/Downloads/test/tests/dock-music.test.js:12:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + 'undefined'
+    - 'function'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'function'
+  actual: 'undefined'
+  operator: 'strictEqual'
+  stack: |-
+    api (file:///Users/zhangzaiyuan/Downloads/test/tests/dock-music.test.js:5:23)
+    TestContext.<anonymous> (file:///Users/zhangzaiyuan/Downloads/test/tests/dock-music.test.js:13:14)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: 16倍速随机选择一首原速循环，天气昼夜变化不会中断，退出后恢复随景轮换
+ok 3 - 16倍速随机选择一首原速循环，天气昼夜变化不会中断，退出后恢复随景轮换
+  ---
+  duration_ms: 3.094958
+  type: 'test'
+  ...
+# Subtest: 从正在播放的主题进入16倍速，固定曲的交接沿用不重叠的淡出淡入
+ok 4 - 从正在播放的主题进入16倍速，固定曲的交接沿用不重叠的淡出淡入
+  ---
+  duration_ms: 0.512459
+  type: 'test'
+  ...
+# Subtest: 16倍速曲目尚在申请播放时退出，迟到的播放许可不能抢回普通主题
+ok 5 - 16倍速曲目尚在申请播放时退出，迟到的播放许可不能抢回普通主题
+  ---
+  duration_ms: 0.178708
+  type: 'test'
+  ...
+# Subtest: 16倍速没有可播放录音时安静等待，不会访问不存在的媒体
+ok 6 - 16倍速没有可播放录音时安静等待，不会访问不存在的媒体
+  ---
+  duration_ms: 0.455292
+  type: 'test'
+  ...
+# Subtest: 晴日、月夜和安静的雨雾秋景匹配不同曲目，日落保留已在播放的背景组
+ok 7 - 晴日、月夜和安静的雨雾秋景匹配不同曲目，日落保留已在播放的背景组
+  ---
+  duration_ms: 0.416
+  type: 'test'
+  ...
+# Subtest: 用户开启后才加载流式音乐，暂停保留进度，释放媒体和节点
+ok 8 - 用户开启后才加载流式音乐，暂停保留进度，释放媒体和节点
+  ---
+  duration_ms: 0.20725
+  type: 'test'
+  ...
+# Subtest: 天气变化等待当前曲目结束，月夜曲目按真实结束轮换并复用媒体
+ok 9 - 天气变化等待当前曲目结束，月夜曲目按真实结束轮换并复用媒体
+  ---
+  duration_ms: 0.340334
+  type: 'test'
+  ...
+# Subtest: 加载中和失败时不叠加另一层合成曲，静音后不再请求曲目
+ok 10 - 加载中和失败时不叠加另一层合成曲，静音后不再请求曲目
+  ---
+  duration_ms: 0.108291
+  type: 'test'
+  ...
+# Subtest: 等待播放许可时关闭声音，迟到的 Promise 不能重新开启音乐
+ok 11 - 等待播放许可时关闭声音，迟到的 Promise 不能重新开启音乐
+  ---
+  duration_ms: 0.304459
+  type: 'test'
+  ...
+# Subtest: 下一曲加载失败时保留仍在播放的上一曲，避免叠加合成底乐
+ok 12 - 下一曲加载失败时保留仍在播放的上一曲，避免叠加合成底乐
+  ---
+  duration_ms: 0.375625
+  type: 'test'
+  ...
+# Subtest: 音频设备时钟暂停前进时，稳定场景仍以真实时间选择曲目
+ok 13 - 音频设备时钟暂停前进时，稳定场景仍以真实时间选择曲目
+  ---
+  duration_ms: 0.150292
+  type: 'test'
+  ...
+# Subtest: 静景轮换在平沙落雁结束后进入孟姜女，失败曲目可跳过
+ok 14 - 静景轮换在平沙落雁结束后进入孟姜女，失败曲目可跳过
+  ---
+  duration_ms: 0.148917
+  type: 'test'
+  ...
+# Subtest: 日落时首次开启声音，保留真实低太阳方向也能初始化背景组且不重复重启
+ok 15 - 日落时首次开启声音，保留真实低太阳方向也能初始化背景组且不重复重启
+  ---
+  duration_ms: 0.649417
+  type: 'test'
+  ...
+# Subtest: 日落使用同一播放器，旧曲淡到零后新曲才开始淡入
+ok 16 - 日落使用同一播放器，旧曲淡到零后新曲才开始淡入
+  ---
+  duration_ms: 0.14725
+  type: 'test'
+  ...
+# Subtest: 等待媒体加载时不启动合成旋律，避免数秒后叠曲
+ok 17 - 等待媒体加载时不启动合成旋律，避免数秒后叠曲
+  ---
+  duration_ms: 0.153167
+  type: 'test'
+  ...
+# Subtest: 设备中断后恢复原曲和进度，不切换到另一首
+ok 18 - 设备中断后恢复原曲和进度，不切换到另一首
+  ---
+  duration_ms: 0.119292
+  type: 'test'
+  ...
+# Subtest: 切歌途中媒体暂停再恢复，仍等待旧曲淡出再淡入
+ok 19 - 切歌途中媒体暂停再恢复，仍等待旧曲淡出再淡入
+  ---
+  duration_ms: 0.140792
+  type: 'test'
+  ...
+# Subtest: 更换同一曲目的音源后，新音源从头播放
+ok 20 - 更换同一曲目的音源后，新音源从头播放
+  ---
+  duration_ms: 0.10375
+  type: 'test'
+  ...
+# Subtest: 关闭后立即开启，旧播放请求迟到不能暂停复用槽位的新请求
+ok 21 - 关闭后立即开启，旧播放请求迟到不能暂停复用槽位的新请求
+  ---
+  duration_ms: 0.09575
+  type: 'test'
+  ...
+# Subtest: 手动选曲、单曲循环和音乐倍速独立于16倍场景及天气
+ok 22 - 手动选曲、单曲循环和音乐倍速独立于16倍场景及天气
+  ---
+  duration_ms: 0.144417
+  type: 'test'
+  ...
+# Subtest: 顺序播放覆盖全部曲目并在末曲后回到首曲，随机播放避免连续重复
+ok 23 - 顺序播放覆盖全部曲目并在末曲后回到首曲，随机播放避免连续重复
+  ---
+  duration_ms: 0.116291
+  type: 'test'
+  ...
+# Subtest: 音乐独立暂停保留进度，天气更新和音频恢复不会取消暂停
+ok 24 - 音乐独立暂停保留进度，天气更新和音频恢复不会取消暂停
+  ---
+  duration_ms: 0.208375
+  type: 'test'
+  ...
+# Subtest: 暂停期间选曲不发声，恢复直接播放新曲，回到随景后恢复原场景策略
+ok 25 - 暂停期间选曲不发声，恢复直接播放新曲，回到随景后恢复原场景策略
+  ---
+  duration_ms: 0.147375
+  type: 'test'
+  ...
+# Subtest: 快速重新选曲取消旧申请，迟到许可不会覆盖新曲
+ok 26 - 快速重新选曲取消旧申请，迟到许可不会覆盖新曲
+  ---
+  duration_ms: 0.130916
+  type: 'test'
+  ...
+# Subtest: 新曲尚未加载时暂停后继续仍播放选定的新曲
+ok 27 - 新曲尚未加载时暂停后继续仍播放选定的新曲
+  ---
+  duration_ms: 0.09925
+  type: 'test'
+  ...
+# Subtest: 夜晚靠近灯塔稳定后播放上传曲，远离后恢复原曲进度，音量包络不重叠
+ok 28 - 夜晚靠近灯塔稳定后播放上传曲，远离后恢复原曲进度，音量包络不重叠
+  ---
+  duration_ms: 0.151958
+  type: 'test'
+  ...
+# Subtest: 白天靠近灯塔不切歌，夜晚短暂经过不切歌，尚未开启声音不加载
+ok 29 - 白天靠近灯塔不切歌，夜晚短暂经过不切歌，尚未开启声音不加载
+  ---
+  duration_ms: 0.091166
+  type: 'test'
+  ...
+# Subtest: 灯塔曲暂停保持进度，天亮后恢复正常场景音乐
+ok 30 - 灯塔曲暂停保持进度，天亮后恢复正常场景音乐
+  ---
+  duration_ms: 0.10675
+  type: 'test'
+  ...
+# Subtest: 手动选曲和16倍速继续原逻辑，灯塔专属歌曲不混入普通歌单
+ok 31 - 手动选曲和16倍速继续原逻辑，灯塔专属歌曲不混入普通歌单
+  ---
+  duration_ms: 0.247541
+  type: 'test'
+  ...
+# Subtest: 灯塔曲加载中远离，迟到的播放许可不能覆盖恢复的原曲
+ok 32 - 灯塔曲加载中远离，迟到的播放许可不能覆盖恢复的原曲
+  ---
+  duration_ms: 0.115083
+  type: 'test'
+  ...
+# Subtest: 灯塔夜曲播放时改为手动模式，交还普通歌单，失败音源也恢复原曲
+ok 33 - 灯塔夜曲播放时改为手动模式，交还普通歌单，失败音源也恢复原曲
+  ---
+  duration_ms: 0.186292
+  type: 'test'
+  ...
+# Subtest: 从16倍速返回灯塔夜景，远离后正常恢复原曲，不被旧固定循环取消
+ok 34 - 从16倍速返回灯塔夜景，远离后正常恢复原曲，不被旧固定循环取消
+  ---
+  duration_ms: 0.163417
+  type: 'test'
+  ...
+# Subtest: 码头近景白天和夜晚播放送别，远离后恢复原曲进度
+not ok 35 - 码头近景白天和夜晚播放送别，远离后恢复原曲进度
+  ---
+  duration_ms: 0.545167
+  type: 'test'
+  location: '/Users/zhangzaiyuan/Downloads/test/tests/scenic-music.test.js:386:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    'caiyun' !== 'dock'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'dock'
+  actual: 'caiyun'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///Users/zhangzaiyuan/Downloads/test/tests/scenic-music.test.js:390:35)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: 码头和灯塔之间切换只保留一首近景曲，返回全岛仍恢复最初背景曲
+not ok 36 - 码头和灯塔之间切换只保留一首近景曲，返回全岛仍恢复最初背景曲
+  ---
+  duration_ms: 0.367042
+  type: 'test'
+  location: '/Users/zhangzaiyuan/Downloads/test/tests/scenic-music.test.js:396:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + 'chunjiang'
+    - 'dock'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'dock'
+  actual: 'chunjiang'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///Users/zhangzaiyuan/Downloads/test/tests/scenic-music.test.js:400:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: 送别不混入普通顺序歌单或16倍速随机曲目
+not ok 37 - 送别不混入普通顺序歌单或16倍速随机曲目
+  ---
+  duration_ms: 0.209542
+  type: 'test'
+  location: '/Users/zhangzaiyuan/Downloads/test/tests/scenic-music.test.js:404:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected "actual" to be strictly unequal to:
+    
+    'dock'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'dock'
+  actual: 'dock'
+  operator: 'notStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///Users/zhangzaiyuan/Downloads/test/tests/scenic-music.test.js:406:83)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..37
+# tests 37
+# suites 0
+# pass 32
+# fail 5
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 82.791

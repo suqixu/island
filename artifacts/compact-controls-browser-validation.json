@@ -1,0 +1,59 @@
+{
+  "phone320": {
+    "auto": [
+      {
+        "checked": true,
+        "id": "auto-season"
+      },
+      {
+        "checked": true,
+        "id": "auto-weather"
+      },
+      {
+        "checked": true,
+        "id": "auto-moon"
+      }
+    ],
+    "autoIcons": 4,
+    "clientWidth": 278,
+    "height": 448.5,
+    "musicRate": "1×",
+    "musicRow": [
+      {
+        "height": 14.84375,
+        "top": 470.078125
+      },
+      {
+        "height": 26,
+        "top": 464.5
+      }
+    ],
+    "oldRateRow": 0,
+    "sceneRate": "0.5×",
+    "scrollHeight": 447,
+    "scrollWidth": 278,
+    "timeAuto": "true",
+    "width": 280
+  },
+  "rateCycle": [
+    "0.5×",
+    "1×",
+    "2×",
+    "3×",
+    "4×",
+    "8×",
+    "16×",
+    "0.5×"
+  ],
+  "qualityCycle": [
+    "精细",
+    "均衡",
+    "流畅",
+    "精细"
+  ],
+  "autoTogglesVerified": true,
+  "musicModeRatePauseResumeVerified": true,
+  "logs": [],
+  "viewportReset": true,
+  "screenshot": "artifacts/compact-controls-preview.png"
+}
