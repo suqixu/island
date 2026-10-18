@@ -1,0 +1,54 @@
+{
+  "tracks": [
+    { "id": "chunjiang", "title": "春江花月夜", "file": "chunjiang-synth.mp3" },
+    { "id": "caiyun", "title": "彩云追月", "file": "caiyun-synth.mp3" },
+    { "id": "pingsha", "title": "平沙落雁", "file": "pingsha-synth.mp3" },
+    { "id": "mengjiang", "title": "孟姜女哭长城", "file": "mengjiang-synth.mp3" },
+    { "id": "shange", "title": "山歌好比春江水", "file": "shange-synth.mp3" },
+    { "id": "zuguo", "title": "我的祖国", "file": "zuguo-synth.mp3" },
+    { "id": "liangzhu", "title": "梁祝", "file": "liangzhu-synth.mp3" },
+    { "id": "nuerqing", "title": "女儿情", "file": "nuerqing-synth.mp3" },
+    { "id": "wangningmei", "title": "枉凝眉", "file": "wangningmei-synth.mp3" },
+    { "id": "molihua", "title": "茉莉花", "file": "molihua-synth.mp3" },
+    { "id": "yueer", "title": "月儿明风儿静", "file": "yueer-synth.mp3" },
+    { "id": "sunset", "title": "渔舟唱晚", "file": "yuzhou-changwan-weather.mp3" }
+  ],
+  "playlists": {
+    "scenic": { "key": "shuffle", "label": "随机音乐", "excludeTrackIds": ["sunset"] },
+    "sunset": { "key": "sunset", "label": "夕阳", "trackId": "sunset", "mixThreshold": 0.05 }
+  },
+  "playback": {
+    "defaultMode": "scenic",
+    "defaultTrackId": "chunjiang",
+    "rate": 1,
+    "paused": false,
+    "rateLimits": { "min": 0.5, "max": 2 },
+    "transitionSeconds": 1.5,
+    "resumeFadeSeconds": 0.5,
+    "sceneHoldSeconds": 4,
+    "minSunsetTrackSeconds": 20,
+    "modes": [
+      { "id": "scenic", "label": "随景播放", "path": "M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0" },
+      { "id": "single", "label": "单曲循环", "path": "m17 2 4 4-4 4M3 11V8a2 2 0 0 1 2-2h16M7 22l-4-4 4-4M21 13v3a2 2 0 0 1-2 2H3M11 10l1-1v6" },
+      { "id": "sequence", "label": "顺序播放", "path": "m17 2 4 4-4 4M3 11V8a2 2 0 0 1 2-2h16M7 22l-4-4 4-4M21 13v3a2 2 0 0 1-2 2H3" },
+      { "id": "random", "label": "随机播放", "path": "m17 3 4 4-4 4M3 7h3c5 0 7 10 12 10h3M3 17h3c5 0 7-10 12-10h3m-4 6 4 4-4 4" }
+    ]
+  },
+  "volume": { "music": 0.8, "ambient": 0.3 },
+  "sunset": {
+    "mixSmoothingSeconds": 0.65,
+    "releaseSeconds": 3,
+    "audibleThreshold": 0.01,
+    "synthesizeThreshold": 0.98
+  },
+  "sounds": {
+    "wildlife": {
+      "whale-blow": { "duration": 1.8, "frequency": 1000, "volume": 0.24, "attack": 0.16 },
+      "splash": { "duration": 0.8, "frequency": 2800, "volume": 0.15, "attack": 0.025 },
+      "flying-fish": { "duration": 0.28, "frequency": 4200, "volume": 0.075, "attack": 0.018 },
+      "dolphin": { "duration": 0.48, "frequency": 1600, "volume": 0.055, "attack": 0.04, "tonal": true }
+    },
+    "chimePitches": [659.25, 783.99, 880, 1046.5, 1174.66],
+    "synthNotes": [130.81, 196, 261.63, 329.63, 392, 440, 523.25, 659.25]
+  }
+}

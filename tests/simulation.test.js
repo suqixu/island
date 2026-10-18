@@ -31,7 +31,8 @@ test('随机天气遵守季节候选，非冬无雪、冬季无雷暴，换季�
 test('每轮天气重新随机持续时长，并保留跨轮剩余时间',()=>{
   const fast=createSimulation({speed:1,autoSeason:false,weatherDuration:1});
   const slow=createSimulation({speed:1,autoSeason:false,weatherDuration:1});
-  advanceSimulation(fast,1,()=>0);advanceSimulation(slow,1,()=>.99);
+  const slowSamples = [.9, .99];
+  advanceSimulation(fast,1,()=>0);advanceSimulation(slow,1,()=>slowSamples.shift());
   advanceSimulation(fast,40,()=>.9);advanceSimulation(slow,40,()=>.9);
   assert.equal(fast.weather,'storm','短时长应已进入下一种天气');
   assert.equal(slow.weather,'storm','长时长仍保持首次抽中的天气');
@@ -148,4 +149,47 @@ test('正午和午夜照明有明显差异，冬季气温低于夏季', () => {
   assert.ok(noon.daylight > .95);
   assert.ok(midnight.daylight < .05);
   assert.ok(noon.temperature > midnight.temperature);
+});
+
+test('台风环境独立标记，强风保持归一化并给出真实风速与适中能见度', () => {
+  for (const weather of ['sunny', 'cloudy', 'rain', 'fog', 'storm', 'snow', 'typhoon']) {
+    for (const elapsed of [0, 7, 30, 65, 120]) {
+      const env = getEnvironment(createSimulation({ weather, elapsed, windSeed: 381 }));
+      assert.equal(env.typhoon, weather === 'typhoon' ? 1 : 0);
+      assert.ok(env.wind >= 0 && env.wind <= 1);
+      if (weather === 'typhoon') {
+        assert.ok(env.windSpeed >= 35 && env.windSpeed <= 60);
+        assert.ok(env.cloudiness >= .95 && env.rain >= .95 && env.storm >= .8);
+        assert.ok(env.fog <= .3, '保留巨浪与全岛轮廓');
+        assert.ok(env.gust >= .55, '强风持续施加于现有植被风场');
+      } else assert.ok(env.windSpeed >= 1.5 && env.windSpeed <= 21);
+    }
+  }
+});
+
+test('自动台风仅在夏秋以约百分之五概率出现，且不会连续重复', () => {
+  for (const seasonIndex of [0, 1, 2, 3]) {
+    let count = 0;
+    for (let i = 0; i < 1000; i++) {
+      const state = createSimulation({ speed: 1, autoSeason: false, seasonIndex, weather: 'sunny', weatherDuration: 1 });
+      advanceSimulation(state, 1, () => (i + .5) / 1000);
+      if (state.weather === 'typhoon') count++;
+    }
+    assert.equal(count, seasonIndex === 1 || seasonIndex === 2 ? 50 : 0);
+  }
+  const repeated = createSimulation({ speed: 1, autoSeason: false, seasonIndex: 1, weather: 'typhoon', weatherDuration: 1 });
+  advanceSimulation(repeated, 1, () => .99);
+  assert.notEqual(repeated.weather, 'typhoon');
+});
+
+test('手动台风可跨季选择，换入春冬的自动天气会清理台风', () => {
+  const manual = createSimulation({ autoSeason: false, autoWeather: false, seasonIndex: 3, weather: 'typhoon' });
+  advanceSimulation(manual, 500, () => .99);
+  assert.equal(manual.weather, 'typhoon');
+  for (const seasonIndex of [0, 3]) {
+    const automatic = createSimulation({ running: false, autoSeason: false, seasonIndex: 1, weather: 'typhoon' });
+    automatic.seasonIndex = seasonIndex;
+    advanceSimulation(automatic, 0, () => .99);
+    assert.notEqual(automatic.weather, 'typhoon');
+  }
 });

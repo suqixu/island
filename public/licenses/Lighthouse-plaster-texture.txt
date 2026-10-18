@@ -1,0 +1,8 @@
+Lighthouse limewashed plaster texture
+
+Generated for this project with the built-in OpenAI image_gen tool on 2026-10-18.
+No external photographs or material libraries were used.
+Asset: src/assets/textures/structures/lighthouse-plaster-v1.webp
+Exact prompt: prompts/textures/lighthouse-plaster-prompt.json
+512 x 512 WebP, quality 82. The original generated PNG remains outside the application source.
+The application derives shared wall color and scalar surface relief once after loading.

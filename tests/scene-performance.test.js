@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import { createIsland } from '../src/island.js';
+import { createIsland } from '../src/models/island.js';
 
 function release(island) {
   const resources = new Set();

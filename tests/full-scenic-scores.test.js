@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-const scores=JSON.parse(readFileSync(new URL('../scripts/scenic-scores.json',import.meta.url),'utf8'));
+const scores=JSON.parse(readFileSync(new URL('../scripts/music/scores/scenic-scores.json',import.meta.url),'utf8'));
 for(const [id,bars,beats,pages,lastNote] of [['molihua',37,148,2,'C5'],['yueer',61,122,3,'C4']]){
   test(`${id} 使用全部谱页及规定反复，完整旋律抵达结尾`,()=>{
     const score=scores.find(value=>value.id===id);

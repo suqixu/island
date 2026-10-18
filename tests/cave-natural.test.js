@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import { createIslandCave } from '../src/island-cave.js';
+import { createIslandCave } from '../src/models/island-cave.js';
 import { CAVE_LAYOUT, caveToWorld, caveToLocal } from '../src/cave-layout.js';
 import { heightAt } from '../src/terrain.js';
 import { getVegetationDisplacement } from '../src/vegetation-motion.js';

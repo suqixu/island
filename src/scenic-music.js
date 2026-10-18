@@ -1,39 +1,46 @@
 import { getSunsetMusicMix } from './sunset-music.js';
-import { getAnimationRate } from './animation-time.js';
-import { isExclusiveMusicTrack, LIGHTHOUSE_MUSIC_IDS } from './music-scene-effects.js';
+import musicConfig from './config/music.json' with { type: 'json' };
+
+const sunsetPlaylist = musicConfig.playlists.sunset;
 
 export function getScenicMusicSelection(env = {}) {
-  if (getSunsetMusicMix(env) > .05) return { key: 'sunset', hold: true };
-  const quiet = ['cloudy','rain','fog','storm','snow'].includes(env.weather)
-    || (env.fog ?? 0) > .45 || (env.cloudiness ?? 0) > .65;
-  if (!quiet && (env.daylight ?? 1) < .2 && (env.moonLight ?? 0) > .12) {
-    return { key: 'moon', label: '月夜', tracks: ['chunjiang','caiyun','liangzhu','nuerqing','wangningmei','yueer'] };
-  }
-  if (quiet || env.season === 'autumn' || (env.daylight ?? 1) < .2) {
-    return { key: 'quiet', label: '静景', tracks: ['pingsha','mengjiang','liangzhu','wangningmei','yueer'] };
-  }
-  return { key: 'clear', label: '晴日', tracks: ['caiyun','shange','zuguo','molihua'] };
+  if (getSunsetMusicMix(env) > sunsetPlaylist.mixThreshold) return { key: sunsetPlaylist.key, hold: true };
+  const { key, label, excludeTrackIds } = musicConfig.playlists.scenic;
+  return { key, label, tracks: musicConfig.tracks.filter(track => !excludeTrackIds.includes(track.id)).map(track => track.id) };
 }
 
 /** 复用两个流式媒体节点；准备下一首时保留旧曲，新曲在旧曲淡到零后才淡入。
- * 普通天气变化只更新下一首的选择；日落用同一播放器，避免独立音乐总线叠曲。 */
+ * 普通曲从完整曲库随机轮换；日落用同一播放器，避免独立音乐总线叠曲。 */
 export function createScenicMusic(context, destination, {
   tracks = {}, onStatus, mediaFactory = () => new window.Audio(), clock = () => performance.now() / 1000, random = Math.random,
 } = {}) {
+  tracks = Object.fromEntries(Object.entries(tracks).map(([id, track]) => [id, { ...track }]));
+  const playback = musicConfig.playback;
   const slots = [], offsets = new Map(), failed = new Set();
   let available = false, disposed = false, revision = 0, active, pending, selection;
   let candidate, candidateAt = 0, startedAt = -Infinity, outgoing, fadeEnd = 0;
   let lastStatus = '';
-  let fixedSelection;
-  let proximityActive, proximityCandidate, proximityCandidateAt = 0;
-  let completedProximity;
-  let proximityReturnId, proximityReturnSelection, proximityReturnFixedSelection;
-  const playlistIds = () => Object.keys(tracks).filter(id => !isExclusiveMusicTrack(id));
-  let permitted = false, musicPaused = false, mode = 'scenic', playbackRate = 1, requestedTrack, restoreRequestedTrack = false, lastEnvironment = {};
-  const modeLabels = { single: '单曲循环', sequence: '顺序播放', random: '随机播放' };
+  let queuedNextId, sunsetSkipped = false;
+  const playlistIds = () => musicConfig.tracks.map(track => track.id).filter(id => tracks[id]?.url);
+  let permitted = false, musicPaused = playback.paused, mode = playback.defaultMode, playbackRate = playback.rate, requestedTrack, lastEnvironment = {};
+  const modeLabels = Object.fromEntries(playback.modes.map(({ id, label }) => [id, label]));
   const hasRecordings = Object.values(tracks).some(track => track?.url);
   const eligible = desired => (desired?.tracks ?? []).filter(id => tracks[id]?.url && !failed.has(id));
-  const loops = () => selection?.key === 'fast16' || (mode === 'single' && !isExclusiveMusicTrack(selection?.key));
+  const loops = () => mode === 'single';
+  function scenicSelection(env) {
+    const next = getScenicMusicSelection(env);
+    if (!next.hold) sunsetSkipped = false;
+    return next.hold && sunsetSkipped ? getScenicMusicSelection({ ...env, hour: 11 }) : next;
+  }
+  function chooseTrack(desired, previous) {
+    const options = eligible(desired);
+    const alternatives = options.filter(id => id !== previous);
+    const choices = alternatives.length ? alternatives : options;
+    if ((mode === 'scenic' || mode === 'random') && choices.length > 1 && desired?.key !== sunsetPlaylist.key) {
+      return choices[Math.min(choices.length - 1, Math.max(0, Math.floor(random() * choices.length)))];
+    }
+    return choices[0];
+  }
   function report(state, slot = active) {
     const status = { state, id: slot?.id, title: tracks[slot?.id]?.title, label: slot?.label ?? selection?.label };
     const key = JSON.stringify(status);
@@ -51,16 +58,9 @@ export function createScenicMusic(context, destination, {
         if (slot !== active || !available || disposed) return;
         slot.finished = true; slot.playing = false; slot.element.pause(); offsets.set(slot.id, 0);
         if (pending) return;
-        if (isExclusiveMusicTrack(slot.id) && proximityActive) {
-          completedProximity = { key: proximityActive, revision: lastEnvironment.viewMusicRevision ?? 0 };
-          report('ended', slot);
-          update(lastEnvironment);
-          return;
-        }
         const options = eligible(selection), at = slot.selectionKey === selection?.key ? options.indexOf(slot.id) : -1;
-        const alternatives = options.filter(id => id !== slot.id);
-        const next = mode === 'random' && alternatives.length
-          ? alternatives[Math.min(alternatives.length - 1, Math.floor(random() * alternatives.length))]
+        const next = mode === 'scenic' || mode === 'random'
+          ? chooseTrack(selection, slot.id)
           : mode === 'single' ? slot.id : options[(at + 1) % options.length];
         if (next) switchTrack(next, true);
       };
@@ -133,10 +133,10 @@ export function createScenicMusic(context, destination, {
       slot.element.removeEventListener('loadedmetadata', slot.seek); slot.seek = undefined;
       pending = undefined; active = slot;
       const now = context.currentTime;
-      const finish = previous?.playing && !previous.element.paused ? now + 1.5 : now;
+      const finish = previous?.playing && !previous.element.paused ? now + playback.transitionSeconds : now;
       slot.gain.gain.cancelScheduledValues(now); slot.gain.gain.setValueAtTime(0, now);
       // 两条音量包络不相交；即使渲染线程暂时忙碌，也由音频时钟完成交接。
-      slot.gain.gain.setValueAtTime(0, finish); slot.gain.gain.linearRampToValueAtTime(1, finish + 1.5);
+      slot.gain.gain.setValueAtTime(0, finish); slot.gain.gain.linearRampToValueAtTime(1, finish + playback.transitionSeconds);
       startedAt = clock();
       if (previous) {
         if (finish > now) {
@@ -149,7 +149,7 @@ export function createScenicMusic(context, destination, {
     });
   }
   function resume() {
-    if (!active || pending || failed.has(active.id) || (requestedTrack && requestedTrack !== active.id)) return;
+    if (!active || pending || queuedNextId || failed.has(active.id) || (requestedTrack && requestedTrack !== active.id)) return;
     const slot = active, token = ++revision;
     slot.interrupted = false;
     play(slot, token, () => {
@@ -158,7 +158,7 @@ export function createScenicMusic(context, destination, {
       slot.gain.gain.cancelScheduledValues(now);
       slot.gain.gain.setValueAtTime(0, now);
       slot.gain.gain.setValueAtTime(0, start);
-      slot.gain.gain.linearRampToValueAtTime(1, start + .5);
+      slot.gain.gain.linearRampToValueAtTime(1, start + playback.resumeFadeSeconds);
     });
   }
   function applyAvailable(value) {
@@ -181,16 +181,14 @@ export function createScenicMusic(context, destination, {
   }
   function setPlaybackOptions(options = {}) {
     if (disposed) return;
-    const changedMode = ['scenic','single','sequence','random'].includes(options.mode) && options.mode !== mode;
-    if (changedMode) { mode = options.mode; fixedSelection = undefined; candidate = undefined; }
-    if (Number.isFinite(options.rate)) playbackRate = Math.min(2, Math.max(.5, options.rate));
+    const changedMode = Object.hasOwn(modeLabels, options.mode) && options.mode !== mode;
+    if (changedMode || options.trackId) queuedNextId = undefined;
+    if (changedMode) { mode = options.mode; candidate = undefined; }
+    if (Number.isFinite(options.rate)) playbackRate = Math.min(playback.rateLimits.max, Math.max(playback.rateLimits.min, options.rate));
     if (options.trackId && tracks[options.trackId]?.url) {
-      requestedTrack = options.trackId; restoreRequestedTrack = false;
+      requestedTrack = options.trackId;
       failed.delete(options.trackId);
       if (mode === 'scenic') mode = 'sequence';
-    }
-    if ((changedMode || options.trackId) && proximityActive) {
-      completedProximity = { key: proximityActive, revision: lastEnvironment.viewMusicRevision ?? 0 };
     }
     if (mode === 'scenic') requestedTrack = undefined;
     if (changedMode || (pending && requestedTrack && pending.id !== requestedTrack)) {
@@ -208,129 +206,70 @@ export function createScenicMusic(context, destination, {
     if (!pending) return;
     revision++; const old = pending; pending = undefined; retire(old);
   }
-  function updateProximity(env) {
-    const lighthouseClicked = LIGHTHOUSE_MUSIC_IDS.find(id => env[`${id}Music`] === true && tracks[id]?.url && !failed.has(id));
-    const clickedMusic = lighthouseClicked ?? (env.southPavilionMusic === true && tracks.southPavilion?.url && !failed.has('southPavilion') ? 'southPavilion'
-      : env.eastPavilionMusic === true && tracks.eastPavilion?.url && !failed.has('eastPavilion') ? 'eastPavilion'
-      : env.caveDreamMusic === true && tracks.caveDream?.url && !failed.has('caveDream') ? 'caveDream'
-      : env.caveBoruMusic === true && tracks.caveBoru?.url && !failed.has('caveBoru') ? 'caveBoru'
-      : env.caveChantMusic === true && tracks.caveChant?.url && !failed.has('caveChant') ? 'caveChant'
-      : env.caveMusic === true && tracks.cave?.url && !failed.has('cave') ? 'cave'
-      : env.dockMusic === true && tracks.dock?.url && !failed.has('dock') ? 'dock'
-      : env.islandSongMusic === true && tracks.islandSong?.url && !failed.has('islandSong') ? 'islandSong' : undefined);
-    const scenicAllowed = mode === 'scenic' && getAnimationRate(env) !== 16;
-    const requested = clickedMusic;
-    if (completedProximity && (requested !== completedProximity.key || (env.viewMusicRevision ?? 0) !== completedProximity.revision)) completedProximity = undefined;
-    const completed = completedProximity?.key === requested && requested !== undefined;
-    const allowed = Boolean(clickedMusic && !completed) || scenicAllowed;
-    const desired = completed ? undefined : requested;
-    const now = clock();
-    if (desired !== proximityCandidate) { proximityCandidate = desired; proximityCandidateAt = now; }
-    // 用户改为手动播放、16倍速或音源失败时立即交还原播放器。
-    if (desired !== proximityActive && (completed || clickedMusic || !allowed || failed.has(proximityActive) || now - proximityCandidateAt >= 1.2)) {
-      if (desired) {
-        if (!proximityActive) {
-          proximityReturnId = active?.id;
-          proximityReturnSelection = selection?.key === 'fast16' ? undefined : selection;
-          proximityReturnFixedSelection = fixedSelection;
-        }
-        fixedSelection = undefined;
-        cancelPending(); proximityActive = desired;
-        selection = {key:desired,label:({lighthouse:'灯塔夜曲',lighthouseLubinghua:'灯塔夜曲',lighthouseHualian:'灯塔夜曲',lighthouseTuogao:'灯塔夜曲',islandSong:'全岛歌声',dock:'码头送别',cave:'山洞花歌',caveDream:'洞中梦曲',caveBoru:'洞中清歌',southPavilion:'南峰亭',eastPavilion:'东峰亭',caveChant:'洞中梵音'})[desired],tracks:[desired]};
-        candidate = undefined;
-        switchTrack(desired, true);
-      } else {
-        proximityActive = undefined; cancelPending(); candidate = undefined;
-        if (allowed) {
-          const next = getScenicMusicSelection(env);
-          selection = proximityReturnSelection ?? (next.hold
-            ? {key:'sunset',label:'夕阳',tracks:['sunset']} : next);
-          const id = tracks[proximityReturnId]?.url && !failed.has(proximityReturnId)
-            ? proximityReturnId : eligible(selection)[0];
-          if (id && active?.id !== id) switchTrack(id);
-          else if (active) { active.label = selection.label; active.selectionKey = selection.key;
-            active.element.loop = false; report(active.playing ? 'playing' : 'paused',active); }
-        }
-        if (!allowed && mode !== 'scenic' && !requestedTrack) {
-          requestedTrack = tracks[proximityReturnId]?.url ? proximityReturnId : eligible({tracks:playlistIds()})[0];
-          restoreRequestedTrack = true;
-        }
-        if (mode === 'scenic' && getAnimationRate(env) === 16) fixedSelection = proximityReturnFixedSelection;
-        proximityReturnId = proximityReturnSelection = proximityReturnFixedSelection = undefined;
-      }
-    }
-    if (proximityActive && !pending && (!selection.tracks.includes(active?.id) || failed.has(active?.id))) {
-      const options = eligible(selection);
-      const next = options[0];
-      if (next) switchTrack(next, true);
-    }
+  function nextTrack() {
+    if (disposed) return;
+    const previous = queuedNextId ?? pending?.id ?? active?.id;
+    requestedTrack = undefined;
+    if (mode === 'scenic' && getSunsetMusicMix(lastEnvironment) > sunsetPlaylist.mixThreshold) sunsetSkipped = true;
+    cancelPending();
+    const next = scenicSelection(lastEnvironment);
+    selection = mode === 'scenic' ? next : { key: mode, label: modeLabels[mode], tracks: playlistIds() };
+    const options = eligible(selection);
+    const alternatives = options.filter(id => id !== previous && id !== active?.id);
+    const desired = alternatives.length ? { ...selection, tracks: alternatives } : selection;
+    const id = mode === 'sequence' || mode === 'single'
+      ? options[(options.indexOf(previous) + 1) % options.length] : chooseTrack(desired, previous);
+    if (!id) return;
+    queuedNextId = id; candidate = undefined;
+    if (available) update(lastEnvironment);
+    else report('paused', { id, label: selection.label });
   }
   function update(env) {
     lastEnvironment = env;
     if (!available || disposed) return;
     if (outgoing && context.currentTime >= fadeEnd) { const old = outgoing; outgoing = undefined; retire(old); }
     if (active?.interrupted && !pending) resume();
-    updateProximity(env);
-    if (proximityActive) return;
+    if (queuedNextId) {
+      const id = queuedNextId; queuedNextId = undefined;
+      cancelPending(); switchTrack(id, true); return;
+    }
     if (mode !== 'scenic') {
       selection = {key:mode, label:modeLabels[mode], tracks:playlistIds()};
       candidate = undefined;
       if (requestedTrack) {
-        const id = requestedTrack, restart = !restoreRequestedTrack; requestedTrack = undefined; restoreRequestedTrack = false;
-        if (active?.id !== id) switchTrack(id, restart);
+        const id = requestedTrack; requestedTrack = undefined;
+        if (active?.id !== id) switchTrack(id, true);
         else if (active.element.paused) resume();
       }
       if ((!active || failed.has(active.id)) && !pending) {
-        const id = eligible(selection)[0]; if (id) switchTrack(id, true);
+        const id = chooseTrack(selection, active?.id); if (id) switchTrack(id, true);
       } else if (active) {
         active.label = selection.label; active.selectionKey = selection.key;
         if (active.playing && !pending) report('playing', active);
       }
       return;
     }
-    if (getAnimationRate(env) === 16) {
-      if (!fixedSelection || !eligible(fixedSelection).length) {
-        const options = eligible({tracks:playlistIds()});
-        const id = options[Math.min(options.length - 1, Math.max(0, Math.floor(random() * options.length)))];
-        fixedSelection = {key:'fast16',label:'16×单曲循环',tracks:id ? [id] : []};
-        // A scene track still loading cannot later take over the fixed loop.
-        if (pending) { revision++; const old = pending; pending = undefined; retire(old); }
-      }
-      selection = fixedSelection; candidate = undefined;
-      const id = eligible(selection)[0];
-      if (active && active.id === id) {
-        active.element.loop = true; active.label = selection.label; active.selectionKey = selection.key;
-        if (active.playing) report('playing', active);
-      } else if (id && !pending) switchTrack(id, true);
-      return;
-    }
-    if (fixedSelection) {
-      fixedSelection = undefined; candidate = undefined;
-      for (const slot of slots) slot.element.loop = false;
-      if (pending?.selectionKey === 'fast16') { revision++; const old = pending; pending = undefined; retire(old); }
-      if (active) { active.label = '随景音乐'; report(active.playing ? 'playing' : 'paused', active); }
-    }
-    const next = getScenicMusicSelection(env);
-    if (next.hold && !tracks.sunset?.url && active) { candidate = undefined; return; }
-    const desired = next.hold ? tracks.sunset?.url
-      ? { key: 'sunset', label: '夕阳', tracks: ['sunset'] }
+    const next = scenicSelection(env);
+    if (next.hold && !tracks[sunsetPlaylist.trackId]?.url && active) { candidate = undefined; return; }
+    const desired = next.hold ? tracks[sunsetPlaylist.trackId]?.url
+      ? { key: sunsetPlaylist.key, label: sunsetPlaylist.label, tracks: [sunsetPlaylist.trackId] }
       : getScenicMusicSelection({ ...env, hour: 11, daylight: 1 }) : next;
     if (!active || (!active.playing && failed.has(active.id))) {
       if (pending) return;
       selection = desired;
-      const id = eligible(desired)[0]; if (id) switchTrack(id);
+      const id = chooseTrack(desired, active?.id); if (id) switchTrack(id);
       return;
     }
     if (selection?.key === desired.key) { candidate = undefined; return; }
     const now = clock();
     if (candidate?.key !== desired.key) { candidate = desired; candidateAt = now; return; }
-    if (now - candidateAt < 4 || pending || outgoing) return;
-    const sunsetTransition = desired.key === 'sunset' || active.id === 'sunset';
-    if (sunsetTransition && (now - startedAt < 20 || !active.playing)) return;
+    if (now - candidateAt < playback.sceneHoldSeconds || pending || outgoing) return;
+    const sunsetTransition = desired.key === sunsetPlaylist.key || active.id === sunsetPlaylist.trackId;
+    if (sunsetTransition && (now - startedAt < playback.minSunsetTrackSeconds || !active.playing)) return;
     selection = desired; candidate = undefined;
-    // 天气、季节、昼夜只是更新后续曲目，正在播放的主题保持完整。
+    // 普通曲完整播放后随机换歌；落日进入或结束时才交接主题。
     if (sunsetTransition) {
-      const id = eligible(desired)[0]; if (id && id !== active.id) switchTrack(id);
+      const id = chooseTrack(desired, active.id); if (id && id !== active.id) switchTrack(id);
     }
   }
   function dispose() {
@@ -352,5 +291,5 @@ export function createScenicMusic(context, destination, {
     offsets.delete(id);
   }
   // 有器乐主题时只播放这一条音乐链路，等待网络也不临时叠加振荡器旋律。
-  return { setAvailable, setPlaybackOptions, update, dispose, setTrackUrl, shouldSynthesize: () => !hasRecordings };
+  return { setAvailable, setPlaybackOptions, nextTrack, update, dispose, setTrackUrl, shouldSynthesize: () => !hasRecordings };
 }

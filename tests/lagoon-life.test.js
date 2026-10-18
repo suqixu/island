@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { heightAt } from '../src/terrain.js';
 import { getIslandPathLayout } from '../src/path-layout.js';
 
-const module = await import('../src/lagoon-life.js').catch(error => {
+const module = await import('../src/models/lagoon-life.js').catch(error => {
   if (error.code === 'ERR_MODULE_NOT_FOUND') return null;
   throw error;
 });

@@ -1,0 +1,16 @@
+Cave limestone surface texture
+
+File: src/assets/textures/terrain/cave-rock-albedo-v1.webp
+Generated for this project with OpenAI image_gen on 2026-10-18.
+No external photograph or material library was used.
+This is an AI-generated photorealistic material, not a photograph of an actual cave.
+Prompt provenance: prompts/textures/cave-surface-prompt.json
+
+1024 x 1024 WebP, quality 82. The original generated PNG is kept outside the
+application source. The material describes flat, seamless limestone with natural
+fractures, subdued mineral detail and sparse moss traces. It contains no cave
+entrance, perspective view, directional illumination or baked specular highlights.
+The application derives two shared 512 x 512 linear single-channel maps once:
+relief, and roughness with restrained damp patches. World-space triplanar mapping
+is shared by the entrance, inner walls, floor and loose stones. Existing cave
+occlusion and lighting provide the depth and darkness.

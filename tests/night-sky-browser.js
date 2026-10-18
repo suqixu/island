@@ -3,6 +3,7 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {createNightSky} from '../src/night-sky.js';
 import {ZODIAC_CONSTELLATIONS} from '../src/zodiac-constellations.js';
 import {COMET_STYLES} from '../src/comet-styles.js';
+import {getConstellationViewFov} from '../src/constellation-framing.js';
 
 const scene=new THREE.Scene();scene.background=new THREE.Color('#070f25');
 const renderer=new THREE.WebGLRenderer({canvas:document.getElementById('sky'),antialias:true});
@@ -22,7 +23,7 @@ function reset(){
   scene.add(night.group);night.setQuality(document.getElementById('quality').value);night.setConstellationsVisible(guides.checked);elapsed=0;
 }
 function preset(kind){
-  constellation.value='';camera.fov=66;camera.updateProjectionMatrix();
+  constellation.value='';camera.fov=getConstellationViewFov(66,camera.aspect,guides.checked);camera.updateProjectionMatrix();
   reset();env={hour:22,season:'summer',daylight:0,cloudiness:0,skyCloudCover:0,fog:0,moonLight:0,sun:[-.4,-.7,.2]};
   camera.position.set(0,0,.001);controls.target.set(.39,.44,-.81);
   if(kind==='orion'){env.season='winter';controls.target.set(.37,.8,-.47);}
@@ -81,8 +82,8 @@ document.querySelectorAll('[data-event]').forEach(button=>button.onclick=()=>{
 });
 cometVariant.onchange=()=>document.querySelector('[data-event="comet"]').click();
 document.getElementById('quality').onchange=event=>{night.setQuality(event.target.value);renderer.setPixelRatio(Math.min(devicePixelRatio,event.target.value==='low'?.8:1.7));resize();};
-guides.onchange=()=>{night.setConstellationsVisible(guides.checked);render();};
-function resize(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();if(constellation.value)fitConstellation(night.group.getObjectByName('constellation-guides').getObjectByName(constellation.value));renderer.setSize(innerWidth,innerHeight);render();}
+guides.onchange=()=>{night.setConstellationsVisible(guides.checked);camera.fov=getConstellationViewFov(66,camera.aspect,guides.checked);camera.updateProjectionMatrix();if(constellation.value)fitConstellation(night.group.getObjectByName('constellation-guides').getObjectByName(constellation.value));render();};
+function resize(){camera.aspect=innerWidth/innerHeight;camera.fov=getConstellationViewFov(66,camera.aspect,guides.checked);camera.updateProjectionMatrix();if(constellation.value)fitConstellation(night.group.getObjectByName('constellation-guides').getObjectByName(constellation.value));renderer.setSize(innerWidth,innerHeight);render();}
 window.addEventListener('resize',resize);
 window.addEventListener('pagehide',()=>{renderer.setAnimationLoop(null);controls.dispose();night.dispose();renderer.dispose();});
 preset('milky');resize();let previous=performance.now();

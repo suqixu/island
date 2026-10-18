@@ -6,3 +6,9 @@ node_modules/
 
 # Local screenshots, generated previews and validation reports
 /artifacts/
+
+# Generated and temporary project outputs
+/tmp/
+.DS_Store
+__pycache__/
+*.pyc

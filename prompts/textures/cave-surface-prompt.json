@@ -1,0 +1,10 @@
+{
+  "tool": "built-in OpenAI image_gen",
+  "generatedDate": "2026-10-18",
+  "asset": "cave-rock-albedo-v1.webp",
+  "sourceGeneration": "exec-dce73390-d6a8-4d1c-8ef1-8508559dffa7.png",
+  "promptType": "exact prompt sent to the built-in imagegen tool",
+  "prompt": "Use case: photorealistic-natural\nAsset type: seamless tileable albedo texture for a real-time 3D coastal island cave, one square material texture only, intended for triplanar repeating mapping over entrance arch, interior walls and floor.\nPrimary request: photorealistic damp coastal basalt and weathered dark limestone rock surface, irregular fine branching fissures, softened eroded layered mineral grains, small muted olive moss traces in some crevices, subtle uneven wet mineral patches. Real rock, natural and mysterious through surface detail, without theatrical scene lighting.\nComposition/framing: orthographic face-on close-up of a continuous rocky surface filling the entire image, uniform texel density, medium-scale geological structure plus fine pores. Texture must wrap seamlessly on all four sides with no visible borders. Keep broad forms subdued and irregular, no repeated obvious circles or uniform stripes.\nLighting: soft flat diffuse cross-polarized material capture, low-contrast neutral lighting with no cast shadows, no baked glow, no directional highlights. Preserve detail in every part.\nColor palette: mid charcoal gray with restrained warm gray and cool mineral variations, limited desaturated olive traces, no pure black voids, no bright white veins.\nConstraints: only surface material, no cave entrance silhouette, no landscape, no perspective, no objects, no plants protruding, no text, no watermark, no frame. Not a cave photo or scene. No large boulders, no brickwork, no cracked dried mud. Opaque texture.",
+  "encoding": {"width": 1024, "height": 1024, "format": "WebP", "quality": 82},
+  "runtimeDerivation": "Once after successful loading, derive 512px relief and roughness RedFormat textures from the albedo. Deep contrasting cracks remain rough; only smoother moderately dark patches receive restrained dampness."
+}

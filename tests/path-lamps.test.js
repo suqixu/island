@@ -5,7 +5,7 @@ import { getIslandPathLayout } from '../src/path-layout.js';
 import { CAVE_LAYOUT, isCaveReserved } from '../src/cave-layout.js';
 import { isLighthouseReserved } from '../src/lighthouse-layout.js';
 
-const lampsModule = await import('../src/path-lamps.js').catch(error => {
+const lampsModule = await import('../src/models/path-lamps.js').catch(error => {
   if (error.code === 'ERR_MODULE_NOT_FOUND') return null;
   throw error;
 });
@@ -210,4 +210,47 @@ test('危险横坡或水面没有强行架灯，空路网可以更新与释放',
   const { lamps } = create({ layout: { routes: [] } });
   assert.equal(lamps.group.userData.lampAnchors.length, 0);
   lamps.update(1, { daylight: 0 }); lamps.dispose();
+});
+
+// The real camera and PointLights expose wasted work without production-only counters.
+test('白天或关闭全部灯光时不查询相机、不改写灯位，恢复夜间后选最近固定灯芯', () => {
+  const { lamps, lights } = create();
+  const camera = new THREE.PerspectiveCamera();camera.position.set(59,16,-60);
+  const getPosition=camera.getWorldPosition;let queries=0;
+  camera.getWorldPosition=function(target){queries++;return getPosition.call(this,target);};
+  let writes=0;
+  for(const light of lights){const set=light.position.set;light.position.set=function(...args){writes++;return set.apply(this,args);};}
+  try{
+    lamps.update(0,{daylight:1},camera);
+    lamps.update(1,{daylight:0,artificialLightsOff:true},camera);
+    assert.equal(queries,0,'不发光时无需查询或选择附近灯位');assert.equal(writes,0);
+    assert.ok(lights.every(light=>!light.visible&&light.intensity===0));
+    lamps.update(2,{daylight:0},camera);assert.ok(lights.every(light=>light.visible));
+    const selected=lights.map(light=>light.userData.lampIndex);
+    lamps.update(3,{daylight:1},camera);camera.position.x=129;
+    lamps.update(4,{daylight:0,artificialLightsOff:true},camera);
+    assert.ok(lights.every(light=>!light.visible&&light.intensity===0));
+    lamps.update(5,{daylight:0},camera);
+    assert.notDeepEqual(lights.map(light=>light.userData.lampIndex),selected,'再次入夜必须采用当前相机附近灯位');
+  }finally{lamps.dispose();}
+});
+
+test('静止夜景复用选灯与位置，亮度继续变化，移动父相机与改变画质及时更新灯池', () => {
+  const {lamps,lights}=create(),camera=new THREE.PerspectiveCamera(),parent=new THREE.Group();parent.add(camera);camera.position.set(59,16,-60);
+  const anchors=lamps.group.userData.lampAnchors;
+  let reads=0,writes=0;
+  for(const anchor of anchors){const p=anchor.lightPosition,x=p.x;Object.defineProperty(p,'x',{get(){reads++;return x;}});}
+  for(const light of lights){const set=light.position.set;light.position.set=function(...args){writes++;return set.apply(this,args);};}
+  try{
+    lamps.update(0,{daylight:0},camera);const selected=lights.map(light=>light.userData.lampIndex),beforeReads=reads,beforeWrites=writes,night=lights[0].intensity;
+    for(let i=1;i<=100;i++)lamps.update(i,{daylight:.2},camera);
+    assert.equal(reads,beforeReads,'相机未移动时不重新扫描全部灯位');assert.equal(writes,beforeWrites,'固定灯芯位置不必逐帧改写');
+    assert.ok(lights[0].intensity>0&&lights[0].intensity<night,'缓存选灯不能冻结日夜亮度');
+    parent.position.x=70;lamps.update(101,{daylight:0},camera);
+    assert.notDeepEqual(lights.map(light=>light.userData.lampIndex),selected,'相机父节点的移动也需重选');
+    lamps.setQuality('low');lamps.update(102,{daylight:0},camera);assert.equal(lights.filter(light=>light.visible).length,2);
+    lamps.setQuality('high');lamps.update(103,{daylight:0},camera);assert.equal(lights.filter(light=>light.visible).length,4);
+    lamps.update(104,{daylight:0});const noCamera=lights.map(light=>light.userData.lampIndex);
+    lamps.update(105,{daylight:0},camera);assert.notDeepEqual(lights.map(light=>light.userData.lampIndex),noCamera,'有无相机切换不能沿用错误选择');
+  }finally{lamps.dispose();}
 });

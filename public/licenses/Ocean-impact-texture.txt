@@ -1,0 +1,13 @@
+Ocean impact splash atlas
+
+File: src/assets/textures/water/ocean-impact-atlas-v1.webp
+Created: 2026-10-18 with OpenAI's built-in imagegen tool for this project.
+Original output: 1254 x 1254 RGBA PNG, preserved without image edits.
+Runtime encoding: lossless WebP with identical dimensions and RGBA bytes.
+Prompt: prompts/textures/ocean-impact-prompt.json
+
+Four transparent cutouts share one 2 x 2 atlas: impact crown, torn water sheet,
+sea mist, and fragmented droplets. Fine spray particles and a limited pool of
+shore impact billboards share the texture. Runtime shading uses image detail
+and transparency with weather-dependent lighting; no scene background is baked
+into the splash. Ocean foam on the water retains its separate lace texture.

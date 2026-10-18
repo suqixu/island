@@ -1,0 +1,26 @@
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {createIsland} from '../src/models/island.js';
+import {caveToWorld} from '../src/cave-layout.js';
+import {loadCaveSurface} from '../src/cave-surface.js';
+import {loadRockSurface} from '../src/rock-surface.js';
+const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.setSize(innerWidth,innerHeight);
+renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;
+document.body.prepend(renderer.domElement);
+const scene=new THREE.Scene();scene.background=new THREE.Color('#bdd9e5');
+scene.add(new THREE.HemisphereLight(0xc9e5fa,0x3c4135,2.3));
+const sunlight=new THREE.DirectionalLight(0xffe6c7,2.8);sunlight.position.set(-60,110,80);scene.add(sunlight);
+const camera=new THREE.PerspectiveCamera(46,innerWidth/innerHeight,.2,1500);
+const controls=new OrbitControls(camera,renderer.domElement);controls.minDistance=3;controls.maxDistance=100;
+const island=createIsland(scene);island.update(0,{daylight:1,season:'summer',wind:0,windSpeed:0});
+const presets={front:[[0,6,20],[0,2.3,0]],right:[[4,10,12],[2.4,6.4,0]],left:[[-4,10,12],[-.4,6.4,0]],top:[[0,9,12],[2,6.2,0]]};
+const set=(vector,local)=>{const p=caveToWorld(...local);vector.set(p.x,p.y,p.z);};
+const render=()=>renderer.render(scene,camera);
+function view(name){const [from,to]=presets[name];set(camera.position,from);set(controls.target,to);controls.update();render();}
+controls.addEventListener('change',render);
+document.querySelectorAll('[data-view]').forEach(button=>button.onclick=()=>view(button.dataset.view));
+window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);render();});
+view('right');
+const [rock,cave]=await Promise.all([loadRockSurface(),loadCaveSurface()]);island.setRockMap(rock);island.setCaveMaps(cave);
+document.querySelector('#status').textContent='岩壁就绪 · 拖动可从不同角度检查';render();
+window.addEventListener('pagehide',()=>{controls.dispose();island.dispose();renderer.dispose();renderer.forceContextLoss();},{once:true});

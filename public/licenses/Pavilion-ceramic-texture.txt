@@ -1,0 +1,5 @@
+Pavilion ceramic surface texture
+Generated with the built-in OpenAI image_gen tool on 2026-10-18 for this project.
+Project asset: src/assets/textures/structures/pavilion-ceramic-albedo-v1.webp
+Exact generation prompt: prompts/textures/pavilion-ceramic-prompt.json
+The source was resized and encoded as 512×512 WebP for optional, deferred loading.

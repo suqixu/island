@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
 const FOAM_SIZE = 512;
-const foamUrl = new URL('./assets/images/ocean-foam-lace-v1.png', import.meta.url).href;
+const foamUrl = new URL('./assets/textures/water/ocean-foam-lace-v1.webp', import.meta.url).href;
 
 // Alpha contains foam density; transparent pixels can retain arbitrary RGB.
 export function extractFoamMask({ data, width, height }) {

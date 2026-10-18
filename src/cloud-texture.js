@@ -1,41 +1,49 @@
 import volumes from './assets/data/cloud-volumes.json' with { type: 'json' };
 import * as THREE from 'three';
+import {loadOptionalResource} from './resource-loading.js';
 
+// Default startup loads v1. The other sheets are requested only for all-cloud mode.
 const atlasUrls = [
-  new URL('./assets/images/cloud-atlas-v1.png', import.meta.url).href,
-  new URL('./assets/images/cloud-atlas-v2.png', import.meta.url).href,
-  new URL('./assets/images/cloud-atlas-v3.png', import.meta.url).href,
-  new URL('./assets/images/cloud-atlas-v4.png', import.meta.url).href,
-  new URL('./assets/images/cloud-atlas-v5.png', import.meta.url).href,
-  new URL('./assets/images/cloud-atlas-v6.png', import.meta.url).href,
-  new URL('./assets/images/cloud-atlas-v7.png', import.meta.url).href,
-  new URL('./assets/images/cloud-atlas-v8.png', import.meta.url).href,
+  new URL('./assets/textures/sky/cloud-atlas-v1.webp', import.meta.url).href,
+  new URL('./assets/textures/sky/cloud-atlas-v2.webp', import.meta.url).href,
+  new URL('./assets/textures/sky/cloud-atlas-v3.webp', import.meta.url).href,
+  new URL('./assets/textures/sky/cloud-atlas-v4.webp', import.meta.url).href,
+  new URL('./assets/textures/sky/cloud-atlas-v5.webp', import.meta.url).href,
+  new URL('./assets/textures/sky/cloud-atlas-v6.webp', import.meta.url).href,
+  new URL('./assets/textures/sky/cloud-atlas-v7.webp', import.meta.url).href,
+  new URL('./assets/textures/sky/cloud-atlas-v8.webp', import.meta.url).href,
 ];
 const cloudKinds = ['cumulus', 'cumulus', 'tower', 'cumulus', 'altocumulus', 'cirrus', 'cumulus', 'altocumulus'];
 
-export async function loadCloudTextures() {
-  const loader = new THREE.TextureLoader();
-  // Wait for every request so a failed load cannot strand completed GPU assets.
-  const results = await Promise.allSettled(atlasUrls.map(url => loader.loadAsync(url)));
-  const failure = results.find(result => result.status === 'rejected');
-  if (failure) {
-    for (const result of results) if (result.status === 'fulfilled') result.value.dispose();
-    throw failure.reason;
-  }
-  return results.flatMap(({ value: atlas }, sheet) => {
-    atlas.colorSpace = THREE.SRGBColorSpace;
-    atlas.minFilter = THREE.LinearFilter;
-    atlas.magFilter = THREE.LinearFilter;
-    atlas.generateMipmaps = false;
-    return cloudKinds.map((kind, cell) => {
-      const map = cell === 0 ? atlas : atlas.clone();
-      map.repeat.set(.248, .496);
-      map.offset.set((cell % 4) * .25 + .001, cell < 4 ? .502 : .002);
-      map.userData = { cloudKind: kind, cloudId: sheet * 8 + cell };
-      map.needsUpdate = true;
-      return map;
+export async function loadCloudTextures({signal, atlas = 1}={}) {
+  const sheets=atlas==='all'?atlasUrls.map((_,index)=>index):atlas==='additional'
+    ? atlasUrls.slice(1).map((_,index)=>index+1)
+    : [Number.isInteger(atlas)&&atlas>=1&&atlas<=atlasUrls.length?atlas-1:0];
+  return loadOptionalResource(async()=>{
+    const loader = new THREE.TextureLoader();
+    const results=await Promise.allSettled(sheets.map(sheet=>loader.loadAsync(atlasUrls[sheet])));
+    const failure=results.find(result=>result.status==='rejected');
+    if(failure){
+      results.forEach(result=>{if(result.status==='fulfilled')result.value.dispose();});
+      throw failure.reason;
+    }
+    return results.flatMap(({value:mapAtlas},index)=>{
+      const sheet=sheets[index];
+      mapAtlas.colorSpace = THREE.SRGBColorSpace;
+      mapAtlas.minFilter = THREE.LinearFilter;
+      mapAtlas.magFilter = THREE.LinearFilter;
+      mapAtlas.generateMipmaps = false;
+      return cloudKinds.map((kind, cell) => {
+        const map = cell === 0 ? mapAtlas : mapAtlas.clone();
+        map.repeat.set(.248, .496);
+        map.offset.set((cell % 4) * .25 + .001, cell < 4 ? .502 : .002);
+        map.userData = { cloudKind: kind, cloudId: sheet * 8 + cell };
+        map.needsUpdate = true;
+        return map;
+      });
     });
-  });
+  },{signal,fallback:undefined,dispose:maps=>maps?.forEach(map=>map.dispose()),
+    onFallback:error=>console.warn('云图未就绪，保留本地云体',error)});
 }
 
 // Deal every silhouette once before reusing it; shuffling never mutates the
@@ -68,7 +76,7 @@ function unpack(volume) {
   return result;
 }
 
-// Original 3D density volumes are baked by scripts/render-cloud-volumes.py.
+// Original 3D density volumes are baked by scripts/assets/render-cloud-volumes.py.
 // Their view-ray extinction and sunlight scattering retain soft internal
 // shadows. Synchronous decoding keeps them ready before the first frame.
 export function createCloudTextureData(seed, { kind = 'cumulus', width, height } = {}) {

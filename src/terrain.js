@@ -63,7 +63,12 @@ function naturalHeightAt(x, z, distance) {
 
 export function heightAt(x, z) {
   const distance = shoreDistance(x, z);
-  return applyLagoonHeight(x, z, naturalHeightAt(x, z, distance), distance);
+  const original=naturalHeightAt(x,z,distance);
+  // A continuous, soft sand apron crosses sea level without the former
+  // -9cm/+10cm step. Blend back before reaching the established island paths.
+  const apron=distance*.11+Math.max(0,distance)**2*.004;
+  const blend=1-smooth(4,8,Math.abs(distance));
+  return applyLagoonHeight(x,z,original+(apron-original)*blend,distance);
 }
 
 export function slopeAt(x, z) {

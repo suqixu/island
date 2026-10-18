@@ -1,9 +1,13 @@
+import loadingConfig from './config/loading.json' with {type:'json'};
 import './style.css';
 import { createLoadingScreen } from './loading-screen.js';
 
 export const loadingScreen = createLoadingScreen({
   root: document.getElementById('loading'),
   message: document.getElementById('loading-message'),
+  phase: document.getElementById('loading-phase'),
+  retryButton: document.getElementById('loading-retry'),
+  onRetry: () => window.location.reload(),
 });
 
 loadingScreen.start();
@@ -16,5 +20,5 @@ if (import.meta.hot) import.meta.hot.dispose(() => loadingScreen.dispose());
 
 import('./main.js').catch(error => {
   console.error(error);
-  loadingScreen.fail('海岛资源未能加载，请检查网络后刷新页面重试。');
+  loadingScreen.fail(loadingConfig.errors.module);
 });

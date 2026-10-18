@@ -1,13 +1,10 @@
 import { createSunsetMusic } from './sunset-music.js';
 import { createScenicMusic } from './scenic-music.js';
 import { getAnimationRate } from './animation-time.js';
+import musicConfig from './config/music.json' with { type: 'json' };
 
-const WILDLIFE_SOUNDS = {
-  'whale-blow': { duration: 1.8, frequency: 1000, volume: .24, attack: .16 },
-  splash: { duration: .8, frequency: 2800, volume: .15, attack: .025 },
-  'flying-fish': { duration: .28, frequency: 4200, volume: .075, attack: .018 },
-  dolphin: { duration: .48, frequency: 1600, volume: .055, attack: .04, tonal: true },
-};
+const WILDLIFE_SOUNDS = musicConfig.sounds.wildlife;
+const SUNSET_TRACK_ID = musicConfig.playlists.sunset.trackId;
 
 export function getWildlifeSoundProfile(event = {}) {
   if (!Object.hasOwn(WILDLIFE_SOUNDS, event.type)) return null;
@@ -21,7 +18,7 @@ export function getWildlifeSoundProfile(event = {}) {
     pan: Number.isFinite(event.pan) ? Math.max(-1, Math.min(1, event.pan)) : 0 };
 }
 
-const CHIME_PITCHES = [659.25, 783.99, 880, 1046.5, 1174.66];
+const CHIME_PITCHES = musicConfig.sounds.chimePitches;
 export function getChimeSoundProfile(event = {}) {
   const distance = Number.isFinite(event.distance) ? Math.max(0, event.distance) : 30;
   const strength = Number.isFinite(event.strength) ? Math.max(0, Math.min(1, event.strength)) : .6;
@@ -34,11 +31,11 @@ export function getChimeSoundProfile(event = {}) {
 }
 
 // 环境声本地合成；场景音乐仅在点击开启后加载。
-export function createAudio({ sunsetMusicUrl, lighthouseMusicUrl, dockMusicUrl, caveMusicUrl, caveChantMusicUrl, caveDreamMusicUrl, caveBoruMusicUrl, lighthouseLubinghuaUrl, lighthouseHualianUrl, lighthouseTuogaoUrl, southPavilionMusicUrl, eastPavilionMusicUrl, islandSongMusicUrl, onSunsetMusicStatus, backgroundTracks, onBackgroundMusicStatus } = {}) {
+export function createAudio({ sunsetMusicUrl, onSunsetMusicStatus, backgroundTracks, onBackgroundMusicStatus } = {}) {
   let context, master, music, synthMusic, ambient, reverb, chimeReverb, sunsetMusic, scenicMusic, enabled = false, initialized = false;
-  let musicVolume = .8, ambientVolume = .3, lastNote = -10, lastBird = -20;
-  let musicPlayback = { mode: 'scenic', rate: 1, paused: false };
-  let waveGain, foamGain, foamFilter, windGain, rainGain, windFilter, rainFilter;
+  let musicVolume = musicConfig.volume.music, ambientVolume = musicConfig.volume.ambient, lastNote = -10, lastBird = -20;
+  let musicPlayback = { mode: musicConfig.playback.defaultMode, rate: musicConfig.playback.rate, paused: musicConfig.playback.paused };
+  let waveGain, waveFilter, foamGain, foamFilter, windGain, rainGain, windFilter, rainFilter;
   let waveBuffer, noiseBuffer;
   let lifecycle = 0, listeningForVisibility = false, playbackRevision = 0, suspendTimer;
   let transportQueue = Promise.resolve();
@@ -47,7 +44,7 @@ export function createAudio({ sunsetMusicUrl, lighthouseMusicUrl, dockMusicUrl, 
   const sources = [];
   const effects = new Set();
   const chimeVoices = new Set();
-  const notes = [130.81, 196, 261.63, 329.63, 392, 440, 523.25, 659.25];
+  const notes = musicConfig.sounds.synthNotes;
   function gain(value, destination) {
     const node = context.createGain(); node.gain.value = value; node.connect(destination); return node;
   }
@@ -198,7 +195,7 @@ export function createAudio({ sunsetMusicUrl, lighthouseMusicUrl, dockMusicUrl, 
       chimeReverb = context.createConvolver(); chimeReverb.buffer = impulse;
       chimeReverb.connect(gain(.14, ambient));
       noiseBuffer = noise(9); waveBuffer = noise(10, true);
-      waveGain = noiseLoop(waveBuffer, 650, .22).node;
+      const waves = noiseLoop(waveBuffer, 650, .22); waveGain = waves.node; waveFilter = waves.filter;
       // 拍岸低频之后延迟出现的细碎浪花，复用噪声与滤波节点。
       const foam = noiseLoop(noiseBuffer, 1900, .018); foamGain = foam.node; foamFilter = foam.filter;
       const wind = noiseLoop(noiseBuffer, 390, .015); windGain = wind.node; windFilter = wind.filter;
@@ -206,21 +203,10 @@ export function createAudio({ sunsetMusicUrl, lighthouseMusicUrl, dockMusicUrl, 
       if (backgroundTracks && Object.values(backgroundTracks).some(track=>track?.url)) {
         let sunsetStreaming = false;
         scenicMusic = createScenicMusic(context, synthMusic, {
-          tracks: { ...backgroundTracks, sunset: { url: sunsetMusicUrl, title: '渔舟唱晚' },
-            lighthouse: { url: lighthouseMusicUrl, title: '月儿明风儿静' },
-            islandSong: { url: islandSongMusicUrl, title: '山歌好比春江水' },
-            dock: { url: dockMusicUrl, title: '送别' },
-            cave: { url: caveMusicUrl, title: '桔梗花' },
-            caveChant: { url: caveChantMusicUrl, title: '大悲咒' },
-            caveDream: { url: caveDreamMusicUrl, title: '梦中的额吉' },
-            caveBoru: { url: caveBoruMusicUrl, title: '波如来' },
-            lighthouseLubinghua: { url: lighthouseLubinghuaUrl, title: '鲁冰花' },
-            lighthouseHualian: { url: lighthouseHualianUrl, title: '花恋' },
-            lighthouseTuogao: { url: lighthouseTuogaoUrl, title: '驼糕之歌' },
-            southPavilion: { url: southPavilionMusicUrl, title: '功德宝山咒' },
-            eastPavilion: { url: eastPavilionMusicUrl, title: '心经' } },
+          tracks: { ...backgroundTracks, [SUNSET_TRACK_ID]: { url: sunsetMusicUrl,
+            title: musicConfig.tracks.find(track => track.id === SUNSET_TRACK_ID)?.title } },
           onStatus(status) {
-            if (status.id === 'sunset') {
+            if (status.id === SUNSET_TRACK_ID) {
               sunsetStreaming = true;
               onSunsetMusicStatus?.({ state: status.state, url: sunsetMusicUrl });
             } else if (sunsetStreaming) {
@@ -297,7 +283,7 @@ export function createAudio({ sunsetMusicUrl, lighthouseMusicUrl, dockMusicUrl, 
   function setSunsetMusicUrl(value) {
     sunsetMusicUrl = typeof value === 'string' ? value.trim() : undefined;
     if (sunsetMusic) sunsetMusic.setUrl(sunsetMusicUrl);
-    else if (scenicMusic) scenicMusic.setTrackUrl('sunset', sunsetMusicUrl);
+    else if (scenicMusic) scenicMusic.setTrackUrl(SUNSET_TRACK_ID, sunsetMusicUrl);
     else onSunsetMusicStatus?.({ state: sunsetMusicUrl ? 'idle' : 'missing', url: sunsetMusicUrl ?? '' });
   }
   function setMusicVolume(value) { musicVolume = value; if (music) music.gain.setTargetAtTime(value, context.currentTime, .15); }
@@ -305,6 +291,7 @@ export function createAudio({ sunsetMusicUrl, lighthouseMusicUrl, dockMusicUrl, 
     musicPlayback = { ...musicPlayback, ...options };
     scenicMusic?.setPlaybackOptions(options);
   }
+  function nextMusicTrack() { scenicMusic?.nextTrack(); }
   function setAmbientVolume(value) { ambientVolume = value; if (ambient) ambient.gain.setTargetAtTime(value, context.currentTime, .15); }
   function setAnimationRate(rate) {
     const next = rate === 16;
@@ -328,12 +315,14 @@ export function createAudio({ sunsetMusicUrl, lighthouseMusicUrl, dockMusicUrl, 
     const backwash = Math.pow(.5 + .5 * Math.sin(time * .48 - .95 + Math.sin(time * .13)), 2);
     const swell = Number.isFinite(env.swell) ? env.swell * (.65 + pulse * .35) : pulse;
     const foam = backwash * (.3 + swell * .7);
-    waveGain.gain.setTargetAtTime(.14 + swell * .24 + env.wind * .06 + env.storm * .08, now, .35);
+    const typhoon = Number.isFinite(env.typhoon) ? Math.max(0, Math.min(1, env.typhoon)) : 0;
+    waveGain.gain.setTargetAtTime(.14 + swell * .24 + env.wind * .06 + env.storm * .08 + typhoon * (.19 + pulse * .10), now, .35);
+    waveFilter.frequency.setTargetAtTime(650 - typhoon * 310, now, .6);
     foamGain.gain.setTargetAtTime(.018 + foam * .13 + env.wind * .05 + env.storm * .04, now, .45);
     foamFilter.frequency.setTargetAtTime(1250 + foam * 1600 + env.wind * 450, now, .5);
-    windGain.gain.setTargetAtTime(.015 + env.wind * .095, now, .3);
-    windFilter.frequency.setTargetAtTime(250 + env.wind * 650, now, .4);
-    rainGain.gain.setTargetAtTime(env.rain * .17, now, .4);
+    windGain.gain.setTargetAtTime(.015 + env.wind * .095 + typhoon * .12, now, .3);
+    windFilter.frequency.setTargetAtTime(250 + env.wind * 650 + typhoon * 260, now, .4);
+    rainGain.gain.setTargetAtTime(env.rain * (.17 + typhoon * .09), now, .4);
     rainFilter.frequency.setTargetAtTime(2400 + env.rain * 1200, now, .4);
     if (time - lastNote > 3.4 && sunsetMusic?.shouldSynthesize() !== false && scenicMusic?.shouldSynthesize() !== false) {
       lastNote = time;
@@ -359,8 +348,8 @@ export function createAudio({ sunsetMusicUrl, lighthouseMusicUrl, dockMusicUrl, 
     sources.length = 0;
     if (context) { context.removeEventListener?.('statechange', audioContextChanged); context.close(); }
     context = undefined; initialized = false; enabled = false; lastNote = -10; lastBird = -20;
-    master = music = synthMusic = ambient = reverb = chimeReverb = waveGain = foamGain = foamFilter = windGain = rainGain = windFilter = rainFilter = undefined;
+    master = music = synthMusic = ambient = reverb = chimeReverb = waveGain = waveFilter = foamGain = foamFilter = windGain = rainGain = windFilter = rainFilter = undefined;
     waveBuffer = noiseBuffer = undefined;
   }
-  return { start, setEnabled, setMusicVolume, setMusicPlayback, setAmbientVolume, setSunsetMusicUrl, setAnimationRate, update, thunder, wildlife, chime, dispose };
+  return { start, setEnabled, setMusicVolume, setMusicPlayback, nextMusicTrack, setAmbientVolume, setSunsetMusicUrl, setAnimationRate, update, thunder, wildlife, chime, dispose };
 }

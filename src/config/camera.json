@@ -1,0 +1,139 @@
+{
+  "mobileBreakpoint": 760,
+  "fov": {
+    "desktop": 46,
+    "mobile": 54,
+    "moon": 66,
+    "aurora": 90
+  },
+  "near": 0.5,
+  "far": 65000,
+  "mobileScale": 1.48,
+  "initialView": "island",
+  "orbit": {
+    "enableDamping": true,
+    "dampingFactor": 0.05,
+    "minDistance": 38,
+    "maxDistance": 480,
+    "minPolarAngle": 0.08,
+    "maxPolarAnglePi": 0.49,
+    "enablePan": true,
+    "autoRotateSpeed": 0.32
+  },
+  "viewMinDistances": {
+    "pavilion": 7,
+    "lighthouse": 10,
+    "cave": 12,
+    "reef": 16,
+    "lagoon": 16
+  },
+  "moonMaxDistance": 310,
+  "transitionDuration": 1.8,
+  "views": {
+    "island": {
+      "position": [
+        160,
+        68,
+        200
+      ],
+      "target": [
+        0,
+        15,
+        0
+      ]
+    },
+    "beach": {
+      "position": [
+        -48,
+        22,
+        133
+      ],
+      "target": [
+        -9,
+        5,
+        48
+      ]
+    },
+    "dock": {
+      "position": [
+        40,
+        12,
+        128
+      ],
+      "target": [
+        5,
+        5,
+        60
+      ]
+    },
+    "reef": {
+      "position": [
+        115,
+        17,
+        51
+      ],
+      "target": [
+        89,
+        -1.15,
+        26
+      ]
+    },
+    "lagoon": {
+      "position": [
+        88,
+        24,
+        120
+      ],
+      "target": [
+        54,
+        -0.6,
+        82
+      ]
+    },
+    "moon": {
+      "position": [
+        150,
+        24,
+        200
+      ],
+      "target": [
+        0,
+        65,
+        0
+      ]
+    },
+    "aurora": {
+      "position": [
+        150,
+        24,
+        200
+      ],
+      "target": [
+        0,
+        274,
+        0
+      ]
+    }
+  },
+  "caveView": {
+    "distance": 20,
+    "height": 6,
+    "targetHeight": 2.3
+  },
+  "lighthouseView": {
+    "positionOffset": [
+      24,
+      14,
+      27
+    ],
+    "targetHeight": 5.5
+  },
+  "pavilionView": {
+    "forward": 13,
+    "side": 7.8,
+    "height": 6.4,
+    "targetHeight": 1.3
+  },
+  "auroraMaxPolarAnglePi": 0.98,
+  "focusMinDistance": 3
+}

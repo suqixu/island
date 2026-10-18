@@ -6,6 +6,32 @@ function create(options={groupRandom:()=>.5}){assert.ok(module?.createMeteorShow
 function camera(){const value=new THREE.PerspectiveCamera(54,1280/720,.5,7000);value.position.set(150,24,200);value.lookAt(0,65,0);value.updateMatrixWorld();return value;}
 const count=shower=>shower.group.getObjectByName('meteor').geometry.drawRange.count/6;
 
+test('流星在横屏、竖屏和仰望视角中穿过画面中央，保持亮度直到飞出屏幕',()=>{
+  for(const [fov,aspect,target] of [[46,16/9,[0,15,0]],[54,390/844,[0,15,0]],[66,16/9,[0,350,-200]]]){
+    for(const bearing of [0,.5,.99]){
+      let draws=0;
+      const shower=create({groupRandom:()=>draws++%2===0?0:bearing}),view=camera();
+      view.fov=fov;view.aspect=aspect;view.lookAt(...target);view.updateProjectionMatrix();view.updateMatrixWorld();
+      shower.setMode('instant');const samples=[];
+      try{
+        for(let frame=0;frame<150;frame++){
+          shower.update(.01,1,view);
+          const geometry=shower.group.getObjectByName('meteor-head').geometry;
+          if(!geometry.drawRange.count)continue;
+          const point=new THREE.Vector3().fromBufferAttribute(geometry.attributes.position,0).add(view.position).project(view);
+          samples.push({point,alpha:geometry.attributes.aOpacity.getX(0)});
+        }
+        const label=`fov=${fov}, aspect=${aspect}, bearing=${bearing}`;
+        assert.ok(samples.some(({point,alpha})=>Math.abs(point.x)<.6&&Math.abs(point.y)<.6&&alpha>.5),`流星必须划过画面中部：${label}`);
+        assert.ok(samples.some(({point,alpha})=>(point.y< -1.03||Math.abs(point.x)>1.03)&&alpha>.5),`亮头必须飞出屏幕后才消失：${label}`);
+        const visible=samples.filter(({point})=>Math.abs(point.x)<=1&&Math.abs(point.y)<=1);
+        assert.ok(visible.length>10,`画面中应能清楚看到完整飞行：${label}`);
+        assert.ok(visible.every(({alpha})=>alpha>.5),`不能在画面内提前淡出：${label}`);
+      }finally{shower.dispose();}
+    }
+  }
+});
+
 test('即时流星跳过随机等待并接续下一轮，白天隐藏后晴夜立即恢复',()=>{
   const shower=create({groupRandom:()=>.5,timeRandom:()=>.99}),view=camera();
   try{
@@ -101,9 +127,6 @@ test('流星整体同向、比例较小，资源在整轮事件与低画质中�
         assert.ok(p.array.every(Number.isFinite));
         const a=new THREE.Vector3().fromBufferAttribute(p,0),b=new THREE.Vector3().fromBufferAttribute(p,1);
         assert.ok(a.distanceTo(b)/a.length()>.003,'软化前的尾迹宽度不能窄到完全亚像素');
-        const headPoint=a.clone().add(b).normalize();
-        const tailPoint=new THREE.Vector3().fromBufferAttribute(p,2).add(new THREE.Vector3().fromBufferAttribute(p,3)).normalize();
-        assert.ok(headPoint.y>.26&&tailPoint.y>.26,'整条流星轨迹应保持在高于海平线的天空中');
         assert.ok(a.distanceTo(b)/a.length()<.012,'尾迹宽度应缩小，避免显得过近');
         const tipWidth=new THREE.Vector3().fromBufferAttribute(p,2).distanceTo(new THREE.Vector3().fromBufferAttribute(p,3));
         assert.ok(tipWidth<a.distanceTo(b)*.5,'尾迹末端应比亮头处更细');

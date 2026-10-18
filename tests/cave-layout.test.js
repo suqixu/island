@@ -7,7 +7,7 @@ const layoutModule = await import('../src/cave-layout.js').catch(error => {
   if (error.code === 'ERR_MODULE_NOT_FOUND') return null;
   throw error;
 });
-const caveModule = await import('../src/island-cave.js').catch(error => {
+const caveModule = await import('../src/models/island-cave.js').catch(error => {
   if (error.code === 'ERR_MODULE_NOT_FOUND') return null;
   throw error;
 });
@@ -67,14 +67,15 @@ test('预留区覆盖入口与隧道，邻近道路和岛外不被大范围屏�
 test('缺口真实移除地形三角形，可穿过洞口，同时保留邻近山坡与阴影几何', () => {
   const { CAVE_LAYOUT, applyCaveOpening, caveToWorld } = api();
   const mesh = terrain();
-  const original = Array.from(mesh.geometry.index.array);
   const origin = new THREE.Vector3(160, 68, 200);
   const inside = caveToWorld(0, 2.1, -4);
   const target = new THREE.Vector3(inside.x, inside.y, inside.z);
   assert.ok(hits(mesh, origin, target).length > 0, '未开洞的坡面应挡住内部');
   const removed = applyCaveOpening(mesh);
   assert.ok(removed > 0 && removed < 100, '只删除洞口周围有限网格');
-  assert.equal(mesh.geometry.index.count, original.length - removed * 3);
+  for(const attribute of Object.values(mesh.geometry.attributes))assert.equal(attribute.count,mesh.geometry.attributes.position.count,
+    '局部裁切产生的新顶点需要保留匹配的表面属性');
+  assert.ok(Array.from(mesh.geometry.index.array).every(index=>index<mesh.geometry.attributes.position.count));
   assert.equal(hits(mesh, origin, target).length, 0, '地形不应继续挡住真实洞口');
   const nearby = caveToWorld(7, 1.5, -4);
   assert.ok(hits(mesh, origin, new THREE.Vector3(nearby.x, nearby.y, nearby.z)).length > 0);

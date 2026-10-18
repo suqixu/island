@@ -17,9 +17,11 @@ export function advanceCloudMotion(state, elapsed, env = {}, output) {
   const delta = first ? 0 : getAnimationDelta(now - state.lastTime, .25, env);
   state.lastTime = now;
   env ??= {};
-  const windSpeed = Number.isFinite(env.windSpeed) ? clamp(env.windSpeed, 0, 22)
+  const typhoon = unit(env.typhoon, env.weather === 'typhoon' ? 1 : 0);
+  const windSpeed = Number.isFinite(env.windSpeed) ? clamp(env.windSpeed, 0, 22 + typhoon * 38)
     : 1.5 + unit(env.wind, .22) * 19.5;
-  const targetSpeed = clamp(2 + windSpeed * .42 + unit(env.gust) * .65, 2, 9);
+  const targetSpeed = clamp(2 + windSpeed * .42 + unit(env.gust) * .65, 2, 9)
+    + typhoon * (20 + windSpeed * .48 + unit(env.gust) * 8);
   const direction = env.windDirection;
   const x = Array.isArray(direction) ? direction[0] : direction?.x;
   const z = Array.isArray(direction) ? direction[1] : direction?.y;
@@ -46,11 +48,12 @@ export function advanceCloudMotion(state, elapsed, env = {}, output) {
   return result;
 }
 
-/** 高层薄云略快，个体差异固定；返回实际世界速度，始终为 2–9 米/秒。 */
-export function getCloudLayerSpeed(speed, { height = 280, thin = false, variation = .5 } = {}) {
-  const base = Number.isFinite(speed) ? clamp(speed, 2, 9) : 5;
+/** 高层云快、低云慢，台风突破普通云速上限；个体差异保持固定。 */
+export function getCloudLayerSpeed(speed, { height = 280, thin = false, variation = .5 } = {}, typhoon = 0) {
+  const maximum = 9 + unit(typhoon) * 63;
+  const base = Number.isFinite(speed) ? clamp(speed, 2, maximum) : 5;
   const altitude = Number.isFinite(height) ? unit((height - 175) / 230) : .5;
   const layer = .90 + altitude * .16 + (thin ? .12 : 0);
   const individual = .84 + unit(variation, .5) * .32;
-  return clamp(base * layer * individual, 2, 9);
+  return clamp(base * layer * individual, 2, maximum);
 }

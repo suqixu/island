@@ -365,3 +365,84 @@ test('松散海豚小群保留游动间距，随机布局不能让可见身体�
     }
   }
 });
+
+test('长时鲸豚调度保留原种子结果，包括跨日跳时与绝对活动周期', async () => {
+  const { createHash } = await import('node:crypto');
+  const { createMarineTimeline } = api();
+  // Captured from the original scheduler before bounding its history. Include
+  // every episode/member property so pruning cannot silently reset cycles.
+  const expected = new Map([
+    [0, 'b91c007613bad3e902b17812cc44b2b292ca4092a9cb93610b11a36033feb671'],
+    [42, 'ce71cf114d86f0ec9825badbebafe99641f803d63934a6a43efe057bf5df7a7e'],
+    [2718, '15a04ffa2fae13d87c23b9f7a7357c0c9a3d0033e63e8a59b76fc9513d66163f'],
+  ]);
+  for (const [seed, signature] of expected) {
+    const timeline = createMarineTimeline(seed), results = [];
+    for (const time of [0, 7.5, 12, 25, 90, 3599, 3600, 21600, 86400, 86400.25]) {
+      for (const kind of ['whale', 'dolphin']) results.push(timeline.getEpisode(kind, time));
+    }
+    assert.equal(createHash('sha256').update(JSON.stringify(results)).digest('hex'), signature);
+  }
+});
+
+test('十帧画面的16倍速连续六小时后，活动缓存有界且无需重建历史', () => {
+  const { createMarineTimeline } = api();
+  const timeline = createMarineTimeline(42);
+  assert.ok(timeline.stats, '时间线提供只读缓存诊断');
+  for (let frame = 0; frame <= 13500; frame++) {
+    const now = frame * 1.6;
+    for (const kind of ['whale', 'dolphin']) timeline.getEpisode(kind, now);
+    if (frame % 750 !== 0) continue;
+    const stats = timeline.stats;
+    assert.ok(stats.cachedWhales <= 16 && stats.cachedDolphins <= 16);
+    assert.equal(stats.historyRebuilds, 0);
+    const fresh = createMarineTimeline(42);
+    for (const kind of ['whale', 'dolphin']) assert.deepEqual(timeline.getEpisode(kind, now), fresh.getEpisode(kind, now));
+  }
+  const stats = timeline.stats;
+  assert.ok(stats.whaleCycles > 500 && stats.dolphinCycles > 500);
+  assert.ok(Object.isFrozen(stats));
+  assert.throws(() => { stats.cachedWhales = 999; }, TypeError);
+});
+
+test('缓存淘汰后的任意过去时间仍可回拨查询，当前前进缓存不被历史查询覆盖', () => {
+  const { createMarineTimeline } = api();
+  for (const seed of [0, 42, 2718]) {
+    const timeline = createMarineTimeline(seed);
+    const currentWhale = timeline.getEpisode('whale', 86400);
+    const currentDolphin = timeline.getEpisode('dolphin', 86400);
+    const cached = timeline.stats;
+    assert.ok(cached);
+    for (const now of [3600, 0, 12, 42, 21600, 7.5, 3599]) {
+      const fresh = createMarineTimeline(seed);
+      for (const kind of ['dolphin', 'whale']) {
+        assert.deepEqual(timeline.getEpisode(kind, now), fresh.getEpisode(kind, now));
+      }
+    }
+    assert.ok(timeline.stats.historyRebuilds > 0);
+    assert.equal(timeline.stats.whaleCycles, cached.whaleCycles);
+    assert.equal(timeline.stats.dolphinCycles, cached.dolphinCycles);
+    assert.equal(timeline.getEpisode('whale', 86400), currentWhale);
+    assert.equal(timeline.getEpisode('dolphin', 86400), currentDolphin);
+    for (const kind of ['whale', 'dolphin']) {
+      assert.deepEqual(timeline.getEpisode(kind, 86416), createMarineTimeline(seed).getEpisode(kind, 86416));
+    }
+  }
+});
+
+test('跨多日大步跳时与逐步推进均保留完整鲸豚避让间隔', () => {
+  const { createMarineTimeline } = api();
+  for (const seed of [0, 42, 77, 2718, 2147483646]) {
+    const timeline = createMarineTimeline(seed);
+    for (const time of [86400, 86401.6, 86403.2, 172800, 172801.6, 259200]) {
+      const pod = timeline.getEpisode('dolphin', time);
+      assert.ok(pod.cycle > 1000);
+      for (const boundary of [pod.start, pod.end + 1.8]) {
+        const whale = timeline.getEpisode('whale', boundary);
+        assert.ok(pod.start >= whale.end + 1.8 || pod.end <= whale.start - 1.8,
+          `seed=${seed} dolphin=${pod.cycle} whale=${whale.cycle}`);
+      }
+      assert.deepEqual(pod, createMarineTimeline(seed).getEpisode('dolphin', time));
+    }
+  }
+});

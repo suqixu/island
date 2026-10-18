@@ -1,3 +1,5 @@
+import musicConfig from './config/music.json' with { type: 'json' };
+
 const clamp = value => Math.max(0, Math.min(1, value));
 const smooth = (value, low, high) => {
   const t = clamp((value - low) / (high - low));
@@ -39,7 +41,7 @@ export function createSunsetMusic(context, musicBus, synthBus, { url, onStatus }
     for (const [param, target] of [[recordingGain.gain, next], [synthBus.gain, 1 - next]]) {
       param.cancelScheduledValues?.(now);
       if (immediate) param.setValueAtTime(target, now);
-      else param.setTargetAtTime(target, now, .65);
+      else param.setTargetAtTime(target, now, musicConfig.sunset.mixSmoothingSeconds);
     }
   }
   function stopSource(preserveOffset = true) {
@@ -92,7 +94,7 @@ export function createSunsetMusic(context, musicBus, synthBus, { url, onStatus }
   function update(environment) {
     if (!available || disposed) return;
     const desired = buffer && state !== 'error' ? getSunsetMusicMix(environment) : 0;
-    if (desired > .01) {
+    if (desired > musicConfig.sunset.audibleThreshold) {
       fadeEnd = null;
       if (!source) {
         const next = context.createBufferSource(); next.buffer = buffer; next.loop = true;
@@ -105,7 +107,7 @@ export function createSunsetMusic(context, musicBus, synthBus, { url, onStatus }
     } else {
       setMix(0);
       if (source) {
-        fadeEnd ??= context.currentTime + 3;
+        fadeEnd ??= context.currentTime + musicConfig.sunset.releaseSeconds;
         if (context.currentTime >= fadeEnd) { stopSource(); report('ready'); }
       } else if (buffer && state !== 'error') report('ready');
     }
@@ -117,5 +119,5 @@ export function createSunsetMusic(context, musicBus, synthBus, { url, onStatus }
     stopSource(false); setMix(0, true); buffer = undefined; recordingGain.disconnect(); report('idle');
   }
   setUrl(url);
-  return { setUrl, setAvailable, update, dispose, shouldSynthesize: () => targetMix < .98 };
+  return { setUrl, setAvailable, update, dispose, shouldSynthesize: () => targetMix < musicConfig.sunset.synthesizeThreshold };
 }

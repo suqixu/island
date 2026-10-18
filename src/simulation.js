@@ -1,22 +1,17 @@
+import { DEFAULTS, WEATHER_CONFIG } from './runtime-config.js';
 import { getMoonState, getMoonNightVisibility, LUNAR_CYCLE_DAYS } from './moon.js';
 import { getWindState } from './wind.js';
 import { getAnimationRate } from './animation-time.js';
+import {getCloudMode} from './weather-controls.js';
 
-export const SEASONS = ['spring', 'summer', 'autumn', 'winter'];
-export const WEATHER = {
-  sunny:  { cloudiness: .12, rain: 0, snow: 0, fog: 0, storm: 0, wind: .22 },
-  cloudy: { cloudiness: .86, rain: 0, snow: 0, fog: .1, storm: 0, wind: .38 },
-  rain:   { cloudiness: .92, rain: .75, snow: 0, fog: .24, storm: 0, wind: .58 },
-  fog:    { cloudiness: .52, rain: 0, snow: 0, fog: .9, storm: 0, wind: .12 },
-  storm:  { cloudiness: 1, rain: 1, snow: 0, fog: .35, storm: 1, wind: .95 },
-  snow:   { cloudiness: .76, rain: 0, snow: 1, fog: .25, storm: 0, wind: .36 },
-};
+export const SEASONS = WEATHER_CONFIG.seasons;
+export const WEATHER = WEATHER_CONFIG.presets;
 export function createSimulation(overrides = {}) {
-  return { hour: 14.5, dayIndex: 0, holdSunClock: false, elapsed: 0, running: true, speed: .5, dayDuration: 360,
-    seasonIndex: 1, seasonProgress: 0, seasonDuration: 240, autoSeason: true,
-    weather: 'sunny', autoWeather: true, weatherProgress: 0, weatherDuration: undefined,
-    weatherSeasonIndex: overrides.seasonIndex ?? 1,
-    lunarDay: LUNAR_CYCLE_DAYS / 2, autoMoon: true, windSeed: Math.floor(Math.random() * 2147483647), ...overrides };
+  const { moonPhase, sceneRates, ...simulation } = DEFAULTS.simulation;
+  return { ...simulation, weatherDuration: undefined,
+    weatherSeasonIndex: overrides.seasonIndex ?? simulation.seasonIndex,
+    lunarDay: LUNAR_CYCLE_DAYS * moonPhase,
+    windSeed: Math.floor(Math.random() * 2147483647), ...overrides };
 }
 
 /** 末联消隐后用真实时间收束月夜，保留用户选择的昼夜倍率。 */
@@ -45,7 +40,7 @@ export function advanceSimulation(state, delta, random = Math.random) {
     const hour=state.hour+scaled*24/state.dayDuration;
     state.dayIndex=(state.dayIndex??0)+Math.floor(hour/24);state.hour=((hour%24)+24)%24;
   }
-  if (state.running && state.autoMoon) {
+  if (state.running && state.autoMoon && !state.holdMoonClock) {
     state.lunarDay = getMoonState(state.lunarDay + scaled / state.dayDuration).moonAge;
   }
   if (state.running && state.autoSeason) {
@@ -55,13 +50,23 @@ export function advanceSimulation(state, delta, random = Math.random) {
     state.seasonProgress %= state.seasonDuration;
   }
   if (state.autoWeather) {
-    const forecast = state.seasonIndex === 3
-      ? ['sunny', 'cloudy', 'rain', 'fog', 'snow']
-      : ['sunny', 'cloudy', 'rain', 'fog', 'storm'];
+    const automatic = WEATHER_CONFIG.automatic;
+    const typhoonSeason = automatic.typhoonSeasonIndices.includes(state.seasonIndex);
+    const forecast = automatic.forecasts[state.seasonIndex];
+    const ordinaryProbability = 1 - automatic.typhoonProbability;
+    const nextDuration = () => automatic.durationSeconds.min + random() * automatic.durationSeconds.range;
     const nextWeather = () => {
-      const candidates = forecast.filter(weather => weather !== state.weather);
-      state.weather = candidates[Math.floor(random() * candidates.length)];
-      state.weatherDuration = 35 + random() * 50;
+      const candidates = forecast.filter(weather => weather !== state.weather && weather !== 'typhoon');
+      const canSelectTyphoon = typhoonSeason && state.weather !== 'typhoon';
+      const sample = random();
+      // 台风只占夏秋抽样的 5%，普通天气继续均匀抽取且不连续重复。
+      state.weather = canSelectTyphoon && sample >= ordinaryProbability ? 'typhoon'
+        : candidates[Math.min(candidates.length - 1, Math.floor(sample / (canSelectTyphoon ? ordinaryProbability : 1) * candidates.length))];
+      state.weatherDuration = nextDuration();
+      const cloudModes=WEATHER_CONFIG.cloudModes;
+      state.cloudMode=state.weather==='cloudy'
+        ? cloudModes[Math.min(cloudModes.length-1,Math.floor(random()*cloudModes.length))].value
+        : DEFAULTS.simulation.cloudMode;
     };
     // Reconcile season changes, while letting manual selections last until
     // their next automatic change even when outside the season's candidates.
@@ -70,7 +75,7 @@ export function advanceSimulation(state, delta, random = Math.random) {
       if (!forecast.includes(state.weather)) { nextWeather(); state.weatherProgress = 0; }
     }
     if (state.running) {
-      state.weatherDuration ??= 35 + random() * 50;
+      state.weatherDuration ??= nextDuration();
       state.weatherProgress += scaled;
       while (state.weatherProgress >= state.weatherDuration) {
         state.weatherProgress -= state.weatherDuration;
@@ -84,7 +89,10 @@ export function getEnvironment(state) {
   const elevation = Math.sin((state.hour - 6) / 24 * Math.PI * 2);
   const daylight = Math.max(0, Math.min(1, (elevation + .12) / .5));
   const weather = WEATHER[state.weather] || WEATHER.sunny;
-  const temperatures = [23, 29, 21, 8];
+  const cloudMode=getCloudMode(state.weather==='cloudy'?state.cloudMode:DEFAULTS.simulation.cloudMode);
+  const cloudSettings=Number.isFinite(cloudMode.coverage)
+    ? {cloudCoverTarget:cloudMode.coverage,cloudiness:cloudMode.cloudiness,fog:cloudMode.fog}:{};
+  const temperatures = WEATHER_CONFIG.seasonTemperatures;
   const moonState = getMoonState(state.lunarDay);
   const moonVisibility = getMoonNightVisibility(daylight);
   // 为赏月保留固定的夜间可见轨迹；月相独立于这一展示轨迹。
@@ -94,7 +102,14 @@ export function getEnvironment(state) {
   const moon = [Math.sin(moonAzimuth) * Math.cos(moonAltitude), Math.sin(moonAltitude), Math.cos(moonAzimuth) * Math.cos(moonAltitude)];
   const moonLight = moonState.moonIllumination * Math.max(0, Math.min(1, moon[1] / .5)) * moonVisibility;
   const wind = getWindState(state.elapsed, weather.wind, state.windSeed);
-  return { ...weather, ...wind, ...moonState, animationRate: getAnimationRate(state), dayIndex:state.dayIndex??0, hour: state.hour, daylight, moon, moonAltitude, moonVisibility, moonLight,
+  const typhoon = state.weather === 'typhoon' ? 1 : 0;
+  if (typhoon) {
+    // 普通风场保持原有单位；独立台风分支提供强风及持续阵风。
+    wind.windSpeed = 35 + wind.gust * 12 + wind.swell * 13;
+    wind.wind = .9 + wind.gust * .1;
+    wind.gust = .55 + wind.gust * .45;
+  }
+  return { ...weather, ...cloudSettings, cloudMode:cloudMode.value, ...wind, typhoon, ...moonState, animationRate: getAnimationRate(state), dayIndex:state.dayIndex??0, hour: state.hour, daylight, moon, moonAltitude, moonVisibility, moonLight,
     season: SEASONS[state.seasonIndex], seasonIndex: state.seasonIndex,
     weather: state.weather, temperature: temperatures[state.seasonIndex] - (1 - daylight) * 5 - weather.rain * 4 - weather.snow * 12,
     sun: [Math.cos((state.hour - 6) / 24 * Math.PI * 2) * .7, elevation, .55] };

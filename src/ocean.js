@@ -1,9 +1,14 @@
 import * as THREE from 'three';
 import { getAnimationDelta } from './animation-time.js';
 import { createOceanFoamTexture } from './ocean-foam.js';
+import { TYPHOON_WAVES_GLSL } from './typhoon-waves.js';
+import { createOceanSpray } from './ocean-spray.js';
+import { createCameraWaterSampler } from './ocean-height.js';
+import { BEACH_SWASH_GLSL } from './beach-swash.js';
 import { getSunVisibility } from './sun-framing.js';
 import { getSunsetState } from './sunset.js';
 import { getSeaHorizonState, SEA_HORIZON_GLSL } from './sea-horizon.js';
+import { SEABED_TRANSMISSION_GLSL, OFFSHORE_BLEND_GLSL } from './ocean-optics.js';
 
 const COAST_EXTENT = 240;
 const COAST_RESOLUTION = 256;
@@ -68,7 +73,12 @@ function createBathymetry(heightAt, shelterAt) {
   texture.magFilter = THREE.LinearFilter;
   texture.generateMipmaps = false;
   texture.needsUpdate = true;
-  return texture;
+  // R16F preserves millimetre-scale depth near sea level; the old 8-bit
+  // height channel has 63cm steps and cannot place a thin swash film.
+  const heightMap=new THREE.DataTexture(Uint16Array.from(heights,THREE.DataUtils.toHalfFloat),size,size,THREE.RedFormat,THREE.HalfFloatType);
+  heightMap.name='浅滩连续高度';heightMap.minFilter=heightMap.magFilter=THREE.LinearFilter;
+  heightMap.generateMipmaps=false;heightMap.needsUpdate=true;
+  return {texture,heightMap};
 }
 
 // Exponentially spaced rings spend geometry at the island, not at the horizon.
@@ -105,14 +115,18 @@ function createOceanGeometry() {
 }
 
 const vertexShader = /* glsl */ `
+  ${BEACH_SWASH_GLSL}
+  ${OFFSHORE_BLEND_GLSL}
   uniform float uTime;
   uniform float uWaveTime;
+  uniform float uTyphoon;
   uniform float uWind;
   uniform float uStorm;
   uniform float uSwell;
   uniform float uGust;
   uniform vec2 uWindDirection;
   uniform sampler2D uBathymetry;
+  uniform sampler2D uTerrainHeight;
   uniform float uCoastExtent;
   varying vec3 vWorldPosition;
   varying vec3 vNormal;
@@ -136,8 +150,9 @@ const vertexShader = /* glsl */ `
     vec2 uv = point / (uCoastExtent * 2.0) + 0.5;
     if (any(lessThan(uv, vec2(0.0))) || any(greaterThan(uv, vec2(1.0)))) return vec2(48.0, 1.0);
     vec4 bathymetry = texture2D(uBathymetry, uv);
-    float edgeBlend = smoothstep(0.76, 0.99, max(abs(point.x), abs(point.y)) / uCoastExtent);
-    return mix(vec2(bathymetry.r * 48.0, bathymetry.a), vec2(48.0, 1.0), edgeBlend);
+    float edgeBlend = offshoreBlend(point, uCoastExtent);
+    float floorHeight=texture2D(uTerrainHeight,uv).r;
+    return mix(vec2(max(-floorHeight,0.0),bathymetry.a),vec2(48.0,1.0),edgeBlend);
   }
 
   vec2 turn(vec2 direction, float angle) {
@@ -175,6 +190,7 @@ const vertexShader = /* glsl */ `
     breaking += pow(max(s, 0.0), 7.0) * a * k;
   }
 
+  ${TYPHOON_WAVES_GLSL}
   void main() {
     vec3 p = position;
     vec2 base = position.xz;
@@ -197,6 +213,17 @@ const vertexShader = /* glsl */ `
     wave(p, tangent, binormal, turn(uWindDirection, -1.12), 5.0, 0.065, 2.3, 21.6, base, coast, depth, exposure, crest, breaking);
     wave(p, tangent, binormal, turn(uWindDirection, 1.48), 3.0, 0.035, 1.9, 27.1, base, coast, depth, exposure, crest, breaking);
     wave(p, tangent, binormal, turn(uWindDirection, 1.18), 62.0, 0.35, 7.6, 31.8, base, coast, depth, exposure, crest, breaking);
+    vec2 floorUv=clamp(base/(uCoastExtent*2.0)+0.5,0.0,1.0);
+    float landHeight=texture2D(uTerrainHeight,floorUv).r;
+    p.y+=beachSwashHeight(base,uTime,depth,exposure,uTyphoon)*(1.0-smoothstep(0.5,1.2,landHeight));
+    if (uTyphoon > 0.001) {
+      vec3 surge = surgeSurface(base, depth, exposure);
+      vec2 uv = base / (uCoastExtent * 2.0) + 0.5;
+      float landMask = 1.0 - smoothstep(0.2, 2.8, landHeight);
+      p.y += surge.x * landMask;
+      tangent.y += surge.y * landMask;
+      binormal.y += surge.z * landMask;
+    }
     vNormal = normalize(cross(binormal, tangent));
     vCrest = crest;
     vBreaking = breaking;
@@ -208,8 +235,12 @@ const vertexShader = /* glsl */ `
 `;
 
 const fragmentShader = /* glsl */ `
+  ${BEACH_SWASH_GLSL}
+  ${SEABED_TRANSMISSION_GLSL}
+  ${OFFSHORE_BLEND_GLSL}
   uniform float uTime;
   uniform float uWaveTime;
+  uniform float uTyphoon;
   uniform float uWind;
   uniform float uSwell;
   uniform float uGust;
@@ -226,6 +257,8 @@ const fragmentShader = /* glsl */ `
   uniform vec3 uSunDirection;
   uniform vec3 uMoonDirection;
   uniform float uMoonLight;
+  uniform vec3 uMoonTint;
+  uniform float uLunarWorldTint;
   uniform vec3 uShallowColor;
   uniform vec3 uDeepColor;
   uniform vec3 uHorizonColor;
@@ -240,6 +273,7 @@ const fragmentShader = /* glsl */ `
   uniform vec3 uSunsetCloudRose;
   uniform vec3 uSunsetCloudShadow;
   uniform sampler2D uBathymetry;
+  uniform sampler2D uTerrainHeight;
   uniform sampler2D uFoamMap;
   uniform float uFoamReady;
   uniform float uCoastExtent;
@@ -363,11 +397,12 @@ const fragmentShader = /* glsl */ `
     float foamFiltered = 1.0 - smoothstep(0.35, 1.5, footprint);
     breaking += pow(max(s, 0.0), 7.0) * a * k * foamFiltered;
   }
+  ${TYPHOON_WAVES_GLSL}
   vec4 coastSample(vec2 p) {
     vec2 uv = p / (uCoastExtent * 2.0) + 0.5;
     if (any(lessThan(uv, vec2(0.0))) || any(greaterThan(uv, vec2(1.0)))) return vec4(1.0, 1.0, 0.0, 1.0);
     vec4 bathymetry = texture2D(uBathymetry, uv);
-    float edgeBlend = smoothstep(0.76, 0.99, max(abs(p.x), abs(p.y)) / uCoastExtent);
+    float edgeBlend = offshoreBlend(p, uCoastExtent);
     bathymetry.r = mix(bathymetry.r, 1.0, edgeBlend);
     bathymetry.a = mix(bathymetry.a, 1.0, edgeBlend);
     return bathymetry;
@@ -375,7 +410,7 @@ const fragmentShader = /* glsl */ `
   float terrainHeight(vec2 p) {
     vec2 uv = p / (uCoastExtent * 2.0) + 0.5;
     if (any(lessThan(uv, vec2(0.0))) || any(greaterThan(uv, vec2(1.0)))) return -80.0;
-    return texture2D(uBathymetry, uv).b * 160.0 - 80.0;
+    return mix(texture2D(uTerrainHeight, uv).r, -80.0, offshoreBlend(p, uCoastExtent));
   }
   float sunsetAlignment(vec3 ray) {
     vec2 horizontalRay = ray.xz / max(length(ray.xz), 0.0001);
@@ -426,6 +461,8 @@ const fragmentShader = /* glsl */ `
     vec4 sampleCoast = coastSample(vSurfacePosition);
     float depth = sampleCoast.r * 48.0;
     float shore = sampleCoast.g * 32.0;
+    float floorHeight=terrainHeight(vSurfacePosition);
+    float opticalDepth=max(0.0,vWorldPosition.y-floorHeight);
     float exposure = sampleCoast.a;
     vec3 viewDirection = normalize(cameraPosition - vWorldPosition);
     float distanceToCamera = length(cameraPosition - vWorldPosition);
@@ -451,6 +488,12 @@ const fragmentShader = /* glsl */ `
     surfaceWave(tangent, binormal, turn(uWindDirection, -1.12), 5.0, 0.065, 2.3, 21.6, base, coast, depth, exposure, pixelX, pixelY, waveCrest, waveBreaking, fineVariance);
     surfaceWave(tangent, binormal, turn(uWindDirection, 1.48), 3.0, 0.035, 1.9, 27.1, base, coast, depth, exposure, pixelX, pixelY, waveCrest, waveBreaking, fineVariance);
     surfaceWave(tangent, binormal, turn(uWindDirection, 1.18), 62.0, 0.35, 7.6, 31.8, base, coast, depth, exposure, pixelX, pixelY, waveCrest, waveBreaking, fineVariance);
+    vec3 surge = vec3(0.0);
+    if (uTyphoon > 0.001) {
+      surge = surgeSurface(base, depth, exposure);
+      tangent.y += surge.y;
+      binormal.y += surge.z;
+    }
     vec3 normal = normalize(cross(binormal, tangent));
     vec2 fineSlope = vec2(0.0);
     if (fineVariance > 0.000001) {
@@ -477,6 +520,11 @@ const fragmentShader = /* glsl */ `
     }
     normal = normalize(vec3(normal.x / max(normal.y, 0.2) - fineSlope.x,
                             1.0, normal.z / max(normal.y, 0.2) - fineSlope.y));
+    if(opticalDepth<7.0){
+      vec3 ripples=filteredFbmGradient(base*2.1+vec2(uTime*0.08,-uTime*0.045),pixelX*2.1,pixelY*2.1);
+      float rippleStrength=(1.0-smoothstep(1.0,7.0,opticalDepth))*(1.0-uTyphoon)*0.035;
+      normal=normalize(normal+vec3(ripples.y,0.0,ripples.z)*rippleStrength);
+    }
     // Physical moon height is already represented by uMoonLight; the backdrop
     // direction follows the viewing composition and must not darken the sea.
     float moonAmbient = uMoonLight * (1.0 - uDaylight) *
@@ -488,7 +536,7 @@ const fragmentShader = /* glsl */ `
     vec3 reflectedDirection = reflect(-viewDirection, normal);
     vec3 reflected = skyReflection(reflectedDirection);
 
-    float depthMix = 1.0 - exp(-depth * 0.085);
+    float depthMix = 1.0 - exp(-opticalDepth * 0.085);
     vec3 water = mix(uShallowColor, uDeepColor, depthMix);
     float sunDiffuse = max(dot(normal, uSunDirection), 0.0);
     water *= (0.62 + 0.32 * sunDiffuse) * (0.13 + 0.87 * uDaylight) * (1.0 - uStorm * 0.3);
@@ -496,9 +544,13 @@ const fragmentShader = /* glsl */ `
     vec3 moonWater = mix(uDeepColor, uShallowColor, exp(-depth * 0.06) * 0.35);
     water += (moonWater * (0.2 + moonDiffuse * 0.28) +
               vec3(0.024, 0.045, 0.071) * (0.35 + moonDiffuse * 0.65)) * moonAmbient;
+    // The requested blood-moon illumination reaches the whole sea body,
+    // including water outside the specular path, while retaining wave shading.
+    water += moonWater * uLunarWorldTint * (0.24 + moonDiffuse * 0.32);
     float crestLight = smoothstep(0.12, 1.1, waveCrest) * (1.0 - normal.y);
     water += uShallowColor * crestLight * uDaylight * (1.0 - uStorm * 0.4) * 0.26;
-    water += vec3(0.065, 0.13, 0.18) * crestLight * moonAmbient * 0.55;
+    water += mix(vec3(0.065, 0.13, 0.18),uShallowColor*.9,uLunarWorldTint)
+      * crestLight * max(moonAmbient,uLunarWorldTint*.45) * 0.55;
     // Light refracted onto the sandy shelf, visible only through clear shallow water.
     if (depth < 16.0) {
       float caustic = pow(1.0 - abs(sin(p.x * 0.56 + sin(p.y * 0.39 + uTime * 0.7)) *
@@ -519,7 +571,7 @@ const fragmentShader = /* glsl */ `
     float moonFacing = max(dot(normal, moonHalfDirection), 0.0);
     float moonGlint = pow(moonFacing, mix(120.0, 70.0, uWind));
     float moonWideGlint = pow(moonFacing, 28.0) * 0.04;
-    color += vec3(1.2, 0.71, 0.25) * (moonGlint + moonWideGlint) * moonVisibility * 0.6;
+    color += vec3(1.2, 0.71, 0.25) * uMoonTint * (moonGlint + moonWideGlint) * moonVisibility * 0.6;
 
     // Interrupted fronts travel inwards along the actual shore distance field.
     // Their retreat leaves slower, thinning lace instead of permanent white rings.
@@ -529,7 +581,7 @@ const fragmentShader = /* glsl */ `
       vec2 coastPoint = vSurfacePosition;
       float coastNoise = fbm(coastPoint * 0.048 + vec2(uTime * 0.003, 11.2));
       float swashPhase = uWaveTime * 0.9 + coastNoise * 5.4;
-      float runupReach = 2.4 + waveEnergy * 4.6;
+      float runupReach = 3.2 + waveEnergy * 5.6 + uTyphoon * 9.0;
       float front = runupReach * (0.5 + 0.5 * cos(swashPhase));
       float incoming = smoothstep(-0.2, 0.55, sin(swashPhase));
       // One mip-filtered mask fetch replaces three value-noise octaves.
@@ -539,14 +591,18 @@ const fragmentShader = /* glsl */ `
       float laceNoise = uFoamReady > 0.5 ? texture2D(uFoamMap, foamUV).r
         : fbm(coastPoint * 0.72 - uFlowOffset * 0.17 + vec2(0.0, uWaveTime * 0.065));
       float lace = smoothstep(0.25, 0.71, laceNoise);
-      float swashFront = 1.0 - smoothstep(0.45, 1.8, abs(shore - front));
-      float residue = (1.0 - smoothstep(1.4, runupReach + 2.0, shore)) *
-                      (0.11 + (1.0 - incoming) * 0.21) * lace;
+      float brokenShore=smoothstep(0.32,0.67,fbm(coastPoint*0.13-uFlowOffset*0.025+coastNoise));
+      // A water head climbs the real sand apron. Its edge is defined by
+      // water thickness, rather than a white ring travelling offshore.
+      float thinFilm=1.0-smoothstep(0.025,0.12,opticalDepth);
+      float swashFront=mix(thinFilm,1.0-smoothstep(0.45,1.8,abs(shore-front)),uTyphoon);
+      float residue=(1.0-smoothstep(0.35,1.2,opticalDepth))
+        *(0.08+(1.0-incoming)*0.15)*lace;
       float breaker = smoothstep(0.54, 0.94, sin(shore * 0.62 + uWaveTime * 1.25 + coastNoise * 4.5));
       breaker *= (1.0 - smoothstep(4.0, 10.0 + waveEnergy * 4.0, shore)) *
                  smoothstep(0.8, 3.0, shore) * smoothstep(0.3, 0.66, laceNoise);
-      foam = swashFront * (0.42 + incoming * 0.32) * (mix(0.3, 0.10, uFoamReady) + lace * mix(0.7, 0.90, uFoamReady)) +
-             residue + breaker * (0.32 + waveEnergy * 0.22);
+      foam = (swashFront*(0.85+incoming*0.15)*mix(0.65,1.0,lace)*mix(0.65,1.0,brokenShore)+
+             residue*0.7+breaker*brokenShore*(0.08+waveEnergy*0.12))*(1.0-uTyphoon*0.72);
     }
     // Whitecaps also occur in fine weather, confined to steep, patchy crests.
     // The large mask groups them into small streaks rather than a dot texture.
@@ -555,23 +611,53 @@ const fragmentShader = /* glsl */ `
       vec2 acrossWind = vec2(-uWindDirection.y, uWindDirection.x);
       vec2 capPoint = vec2(dot(drift, uWindDirection) * 0.1, dot(drift, acrossWind) * 0.046);
       float capPatch = fbm(capPoint + vec2(7.3, uWaveTime * 0.008));
-      float crestSteepness = waveBreaking + (1.0 - normal.y) * 0.42;
-      float whitecap = smoothstep(0.075, 0.21, crestSteepness) * smoothstep(0.49, 0.73, capPatch);
+      // A steep slope is not automatically a breaking crest: whitening every
+      // intersecting normal ridge creates the old diamond/white-line network.
+      float whitecap = smoothstep(0.09, 0.24, waveBreaking) * smoothstep(0.51, 0.74, capPatch);
       float capDetail = uFoamReady > 0.5 ? texture2D(uFoamMap,
         vec2(dot(drift, uWindDirection), dot(drift, acrossWind)) * vec2(0.12, 0.24)).r
         : noise(drift * 0.65);
       float capLace = smoothstep(0.18, 0.70, capDetail);
-      foam += whitecap * (0.4 + capLace * 0.6) * (0.27 + uWind * 0.46 + uStorm * 0.4) *
+      foam += whitecap * capLace * (0.22 + uWind * 0.36 + uStorm * 0.24) *
               smoothstep(2.0, 8.0, shore) * (1.0 - smoothstep(180.0, 520.0, distanceToCamera));
     }
-    foam = clamp(foam, 0.0, 0.88) * smoothstep(0.02, 0.34, depth);
+    if (uTyphoon > 0.001) {
+      vec3 breakup=surgeBreakup(base,depth,exposure);
+      vec2 drift=base-uFlowOffset*0.65;
+      float churn=fbm(drift*0.19);
+      vec2 warp=vec2(churn-0.5,noise(drift*0.12+13.7)-0.5);
+      float lace=uFoamReady>0.5 ? texture2D(uFoamMap,drift*0.16+warp*0.45).r : noise(drift*0.8+warp);
+      // Keep density continuous: thresholding the lace into white/clear pixels
+      // makes every breaker look like the same high-contrast painted pattern.
+      float fragments=sqrt(max(lace,0.0))*(0.70+churn*0.30);
+      float falling=breakup.x*fragments;
+      float wake=breakup.y*fragments*smoothstep(0.29,0.65,churn)*0.9;
+      float impact=breakup.z*(1.0-smoothstep(2.0,22.0,shore))*fragments;
+      float brokenFoam=(falling*0.95+wake+impact)
+        *(1.0-smoothstep(350.0,1100.0,distanceToCamera));
+      foam=max(foam,brokenFoam);
+    }
+    foam = clamp(foam,0.0,0.9)*smoothstep(0.0,0.025,opticalDepth);
     // Quiet water still has shoreline lace, with no persistent surf inside.
     foam *= mix(0.22, 1.0, clamp((exposure - 0.28) / 0.72, 0.0, 1.0));
     vec3 nightFoam = vec3(0.022, 0.036, 0.054) +
                      (vec3(0.32, 0.25, 0.14) * (0.35 + moonDiffuse * 0.65) +
                       vec3(0.025, 0.048, 0.075)) * moonAmbient;
-    vec3 foamColor = mix(nightFoam, vec3(0.86, 0.93, 0.93) * (1.0 - uStorm * 0.25), uDaylight);
-    color = mix(color, foamColor, foam);
+    nightFoam=mix(nightFoam,vec3(.10,.014,.010)*(0.55+moonDiffuse*0.45),uLunarWorldTint);
+    // Foam scatters the same overcast skylight as the water. A fixed daytime
+    // white appears emissive in a storm, regardless of the surrounding light.
+    vec3 foamSky=mix(uZenithColor,uHorizonColor,0.65);
+    float skyLuminance=dot(foamSky,vec3(0.2126,0.7152,0.0722));
+    vec3 foamAmbient=mix(vec3(skyLuminance),foamSky,0.28)*1.10;
+    vec3 foamSun=uSunColor*sunDiffuse*uSunVisibility*0.35;
+    vec3 dayFoam=(foamAmbient+foamSun)*(0.70+max(normal.y,0.0)*0.30);
+    vec3 litFoam=mix(nightFoam,dayFoam,uDaylight);
+    // Sparse, wet bubbles transmit the sea's blue-grey; only aerated cores
+    // approach the brighter diffuse colour. No opaque white decal is applied.
+    float aeration=smoothstep(0.08,0.55,foam);
+    vec3 foamColor=mix(water*1.15,litFoam,0.65+aeration*0.35);
+    float foamOpacity=foam*(0.80+aeration*0.15);
+    color = mix(color, foamColor, foamOpacity);
 
     // A few terrain probes give the nearby water a soft island shadow.
     float shadow = 0.0;
@@ -607,16 +693,16 @@ const fragmentShader = /* glsl */ `
     }
     // 近岸清水透出真正的水下几何；深水、远景和掠射角以反射为主。
     float closeWater = 1.0 - smoothstep(32.0, 160.0, distanceToCamera);
-    float transmission = exp(-depth * 0.19) * closeWater * uWaterClarity
-      * (1.0 - fresnel * 0.88) * 0.52;
-    gl_FragColor = vec4(color, 1.0 - clamp(transmission, 0.0, 0.52));
+    float transmission = seabedTransmission(opticalDepth) * closeWater * uWaterClarity
+      * (1.0 - fresnel * 0.94) * 0.86 * (1.0-foamOpacity*0.97);
+    gl_FragColor = vec4(color, 1.0 - clamp(transmission, 0.0, 0.86));
     #include <tonemapping_fragment>
     #include <colorspace_fragment>
   }
 `;
 
 export function createOcean(scene, { heightAt, shelterAt } = {}) {
-  const bathymetry = createBathymetry(heightAt, shelterAt);
+  const {texture:bathymetry,heightMap} = createBathymetry(heightAt, shelterAt);
   const foam = createOceanFoamTexture();
   let disposed = false;
   const seaHorizon = getSeaHorizonState();
@@ -629,6 +715,7 @@ export function createOcean(scene, { heightAt, shelterAt } = {}) {
     uWindDirection: { value: new THREE.Vector2(0.83, 0.55).normalize() },
     uFlowOffset: { value: new THREE.Vector2() },
     uStorm: { value: 0 },
+    uTyphoon: { value: 0 },
     uDaylight: { value: 1 },
     uCloudiness: { value: 0.12 },
     uSkyCloudCover: { value: 0.12 },
@@ -644,6 +731,8 @@ export function createOcean(scene, { heightAt, shelterAt } = {}) {
     uSunDirection: { value: new THREE.Vector3(-0.5, 0.8, -0.3).normalize() },
     uMoonDirection: { value: new THREE.Vector3(0.5, -0.8, 0.3).normalize() },
     uMoonLight: { value: 1 },
+    uMoonTint: { value: new THREE.Color(1,1,1) },
+    uLunarWorldTint: {value:0},
     uShallowColor: { value: new THREE.Color('#29b8ad') },
     uDeepColor: { value: new THREE.Color('#075777') },
     uHorizonColor: { value: new THREE.Color('#adcbd5') },
@@ -658,6 +747,7 @@ export function createOcean(scene, { heightAt, shelterAt } = {}) {
     uSunsetCloudRose: { value: new THREE.Color() },
     uSunsetCloudShadow: { value: new THREE.Color() },
     uBathymetry: { value: bathymetry },
+    uTerrainHeight: {value:heightMap},
     uFoamMap: { value: foam.texture },
     uFoamReady: { value: 0 },
     uCoastExtent: { value: COAST_EXTENT },
@@ -676,6 +766,7 @@ export function createOcean(scene, { heightAt, shelterAt } = {}) {
   mesh.frustumCulled = false;
   mesh.renderOrder = 0;
   scene.add(mesh);
+  const spray = createOceanSpray(scene, { heightAt, shelterAt });
 
   const dayHorizon = new THREE.Color('#bddeeb');
   const duskHorizon = new THREE.Color('#ef9a70');
@@ -700,9 +791,11 @@ export function createOcean(scene, { heightAt, shelterAt } = {}) {
   const stormDeepWater = new THREE.Color('#294c66');
   const fogShallowWater = new THREE.Color('#93b2b6');
   const fogDeepWater = new THREE.Color('#5c7b8e');
+  const bloodShallowWater=new THREE.Color(.45,.035,.022),bloodDeepWater=new THREE.Color(.14,.008,.012);
+  const bloodHorizon=new THREE.Color(.033,.004,.0062),bloodZenith=new THREE.Color(.011,.0012,.0021);
   const scratch = new THREE.Color();
   const sunsetSun = new THREE.Color();
-  const weatherState = { clearBlue: 0, wind: 0.25, windSpeed: 7, swell: 0.38, gust: 0.12, cloudiness: 0.1, storm: 0, fog: 0, rain: 0, snow: 0 };
+  const weatherState = { typhoon: 0, clearBlue: 0, wind: 0.25, windSpeed: 7, swell: 0.38, gust: 0.12, cloudiness: 0.1, storm: 0, fog: 0, rain: 0, snow: 0 };
   let windAngle = Math.atan2(0.55, 0.83);
   let waveTime = 0;
   let lastUpdateTime = null;
@@ -719,7 +812,8 @@ export function createOcean(scene, { heightAt, shelterAt } = {}) {
     const weatherBlend = firstUpdate ? 1 : 1 - Math.exp(-delta * 1.7);
     const wind = finiteInput(env.wind, 0.25);
     weatherState.wind = THREE.MathUtils.lerp(weatherState.wind, wind, weatherBlend);
-    weatherState.windSpeed = THREE.MathUtils.lerp(weatherState.windSpeed, finiteInput(env.windSpeed, 2 + wind * 20, 2, 22), weatherBlend);
+    weatherState.windSpeed = THREE.MathUtils.lerp(weatherState.windSpeed, finiteInput(env.windSpeed, 2 + wind * 20, 2, env.typhoon > 0 ? 60 : 22), weatherBlend);
+    weatherState.typhoon = THREE.MathUtils.lerp(weatherState.typhoon, finiteInput(env.typhoon, 0), weatherBlend);
     weatherState.swell = THREE.MathUtils.lerp(weatherState.swell, finiteInput(env.swell, 0.38), weatherBlend);
     weatherState.gust = THREE.MathUtils.lerp(weatherState.gust, finiteInput(env.gust, 0.12), weatherBlend);
     weatherState.cloudiness = THREE.MathUtils.lerp(weatherState.cloudiness, finiteInput(env.cloudiness, 0.1), weatherBlend);
@@ -746,6 +840,8 @@ export function createOcean(scene, { heightAt, shelterAt } = {}) {
     uniforms.uFlowOffset.value.addScaledVector(uniforms.uWindDirection.value, delta * (0.18 + weatherState.windSpeed * 0.06));
     lastUpdateTime = time;
     const daylight = finiteInput(env.daylight, 1);
+    const lunarWorldTint=finiteInput(env.lunarWorldTintStrength,0)*(1-THREE.MathUtils.smoothstep(daylight,.01,.16));
+    uniforms.uLunarWorldTint.value=lunarWorldTint;
     const cloudiness = weatherState.cloudiness;
     const storm = weatherState.storm;
     // The visible sun, island shadows and ocean glints share one direction.
@@ -764,6 +860,7 @@ export function createOcean(scene, { heightAt, shelterAt } = {}) {
       moonDirection.set(...env.moon).normalize();
     }
     uniforms.uMoonLight.value = THREE.MathUtils.clamp(Number.isFinite(env.moonLight) ? env.moonLight : 1, 0, 1);
+    uniforms.uMoonTint.value.fromArray(env.moonLightTint ?? [1,1,1]);
     const moonAmbient = uniforms.uMoonLight.value * (1 - daylight) *
       (1 - cloudiness * 0.92) * (1 - weatherState.fog * 0.65);
     const dusk = (1 - THREE.MathUtils.smoothstep(Math.abs(sunHeight), 0.03, 0.55))
@@ -786,6 +883,8 @@ export function createOcean(scene, { heightAt, shelterAt } = {}) {
     uniforms.uSwell.value = weatherState.swell;
     uniforms.uGust.value = weatherState.gust;
     uniforms.uStorm.value = storm;
+    uniforms.uTyphoon.value = weatherState.typhoon;
+    spray.update(delta, waveTime, { typhoon: weatherState.typhoon, daylight, cloudiness, storm }, [Math.cos(windAngle), Math.sin(windAngle)]);
     uniforms.uDaylight.value = daylight;
     uniforms.uCloudiness.value = cloudiness;
     // A changing visible cloud population is independent of weather coverage.
@@ -838,17 +937,28 @@ export function createOcean(scene, { heightAt, shelterAt } = {}) {
       .lerp(cold ? clearColdDeepWater : clearDeepWater, clearBlue)
       .lerp(cloudyDeepWater, cloudTint).lerp(stormDeepWater, stormTint)
       .lerp(fogDeepWater, fogTint);
+    uniforms.uShallowColor.value.lerp(bloodShallowWater,lunarWorldTint);
+    uniforms.uDeepColor.value.lerp(bloodDeepWater,lunarWorldTint);
+    uniforms.uHorizonColor.value.lerp(bloodHorizon,lunarWorldTint);
+    uniforms.uZenithColor.value.lerp(bloodZenith,lunarWorldTint);
   }
 
   function dispose() {
     if (disposed) return;
     disposed = true;
     foam.dispose();
+    spray.dispose();
     scene.remove(mesh);
     mesh.geometry.dispose();
     material.dispose();
     bathymetry.dispose();
+    heightMap.dispose();
   }
 
-  return { mesh, update, dispose, bathymetry, ready: foam.ready };
+  function cameraWaterHeightAt(x,z) {
+    return sampleCameraWater(x,z,lastUpdateTime??0,waveTime,windAngle,weatherState);
+  }
+  const sampleCameraWater=createCameraWaterSampler(mesh.geometry,bathymetry);
+  return { mesh, update, dispose, setQuality: spray.setQuality, bathymetry,cameraWaterHeightAt,
+    ready: Promise.all([foam.ready,spray.ready]).then(([foamReady])=>foamReady) };
 }

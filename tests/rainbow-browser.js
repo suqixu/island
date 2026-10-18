@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { createAtmosphere } from '../src/atmosphere.js';
 import { createOcean } from '../src/ocean.js';
-import { createIsland } from '../src/island.js';
+import { createIsland } from '../src/models/island.js';
 
 const scene = new THREE.Scene();
 const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });

@@ -25,9 +25,9 @@ https://www.everyonepiano.cn/Number-102-2.html
 原作品归各自作者；本项目合成文件不含原版录音或参考钢琴编配的伴奏。
 未分发上述参考乐谱图片或PDF；没有复制其现代完整配器与伴奏。
 
-制作源码：scripts/render-scenic-music.py
-声部音高与时值：scripts/scenic-scores.json
-八首新增曲目输入：scripts/create-extra-scores.py
-两首完整简谱及分段曲式：scripts/full-scores.json
-成品：src/assets/audio/*-synth.ogg
-浏览器播放版本：src/assets/audio/*-synth.mp3，由 scripts/export-mp3-audio.py 转码。
+制作源码：scripts/music/render-scenic-music.py
+声部音高与时值：scripts/music/scores/scenic-scores.json
+八首新增曲目输入：scripts/music/create-extra-scores.py
+两首完整简谱及分段曲式：scripts/music/scores/full-scores.json
+成品：src/assets/music/*-synth.ogg
+浏览器播放版本：src/assets/music/*-synth.mp3，由 scripts/music/export-mp3-audio.py 转码。

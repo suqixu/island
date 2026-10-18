@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import { createMarine } from '../src/marine.js';
+import { createMarine } from '../src/models/marine.js';
 import { heightAt } from '../src/terrain.js';
 import { createMarineTimeline, getMarinePose } from '../src/marine-motion.js';
 

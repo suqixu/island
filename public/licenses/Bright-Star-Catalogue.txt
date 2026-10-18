@@ -12,7 +12,7 @@ declination (degrees), V magnitude and B-V colour index (missing B-V: 0.45).
 No reference star chart images are redistributed. The original catalogue
 authors and the CDS astronomical data centre are acknowledged above.
 
-Rebuild: python3 scripts/build-star-catalog.py /path/to/catalog.gz
+Rebuild: python3 scripts/assets/build-star-catalog.py /path/to/catalog.gz
 
 The star map uses a representative latitude of 30 degrees north and a
 seasonal sidereal orientation. This preserves actual relative stellar

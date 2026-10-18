@@ -55,6 +55,23 @@ export function advanceCloudCover(state, elapsed, env = {}) {
   state.floor += (floor - state.floor) * (first ? 1 : 1 - Math.exp(-delta * .7));
   // 每个30–100秒阶段只用前12秒过渡，晴空/大片云平台均至少18秒。
   const natural = state.from + (state.target - state.from) * ease(state.age / 12);
-  state.coverage = unit(state.floor + (1 - state.floor) * natural);
+  const normal=unit(state.floor + (1 - state.floor) * natural);
+  if(Number.isFinite(env?.cloudCoverTarget)) {
+    state.manualCoverage=true;
+    state.coverage += (unit(env.cloudCoverTarget)-state.coverage)*(first?1:1-Math.exp(-delta*.7));
+  } else if(state.manualCoverage) {
+    state.coverage += (normal-state.coverage)*(first?1:1-Math.exp(-delta*.7));
+    if(Math.abs(normal-state.coverage)<.005)state.manualCoverage=false;
+  } else state.coverage=normal;
   return { coverage: state.coverage };
+}
+
+/** Explicit instant preview: clear the separate visual cloud history while
+ * keeping its seed and resuming the normal clear/busy cycle after this phase.
+ */
+export function clearCloudCoverForPreview(state,elapsed){
+  state.phase=state.busyFirst===1?1:0;state.age=0;
+  state.duration=30+randomAt(state.seed,state.phase,1)*70;
+  state.from=state.target=state.floor=state.coverage=0;
+  state.lastTime=Number.isFinite(elapsed)?Math.max(0,elapsed):state.lastTime??0;
 }

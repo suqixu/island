@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { heightAt } from '../src/terrain.js';
 
-const boatsModule = await import('../src/sailboats.js').catch(error => {
+const boatsModule = await import('../src/models/sailboats.js').catch(error => {
   if (error.code === 'ERR_MODULE_NOT_FOUND') return {};
   throw error;
 });

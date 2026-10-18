@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import { createIsland } from '../src/island.js';
-import { createLagoonLife } from '../src/lagoon-life.js';
+import { createIsland } from '../src/models/island.js';
+import { createLagoonLife } from '../src/models/lagoon-life.js';
 
 // Query the actual final terrain triangles, independently of either height API.
 function terrainFloor(surface) {

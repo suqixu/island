@@ -1,8 +1,9 @@
 Ocean foam detail texture
 
-File: src/assets/images/ocean-foam-lace-v1.png
+File: src/assets/textures/water/ocean-foam-lace-v1.webp
 Created: 2026-10-17, using OpenAI's built-in imagegen tool at the user's request.
 Original generated image: 1254 x 1254 RGBA PNG.
+Runtime encoding: lossless WebP; decoded RGBA bytes and dimensions are unchanged.
 
 Purpose: a top-down, neutral white sea-foam lace texture with transparent gaps,
 varied bubble sizes and dissolving edges. No water color or directional lighting
@@ -10,5 +11,5 @@ is baked into the material. Runtime code reads its alpha channel into one
 512 x 512 R8 mask, generates mipmaps, and animates sampling coordinates inside
 the existing ocean shader. Mirrored wrapping softens the generated tile edges.
 
-The separate foam-crest-v1.png study under artifacts/ocean-foam-textures is a
+The separate foam-crest-v1.png study under tmp/artifacts/ocean-foam-textures is a
 preview asset and is not loaded by the production ocean material.

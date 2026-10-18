@@ -1,7 +1,8 @@
 :root{font-family:Inter,-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;color:#f4f5e9;background:#1e595a;font-synthesis:none;--cream:#f0f3dd;--muted:rgba(235,243,227,.58);--lime:#e1edb1;--line:rgba(242,246,225,.13)}
-@font-face{font-family:"Isola Calligraphy";src:url('./assets/poetry-calligraphy.ttf') format('truetype');font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"Isola Calligraphy";src:url('./assets/fonts/poetry-calligraphy.ttf') format('truetype');font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"Isola Toolbar";src:url('./assets/fonts/toolbar-calligraphy.otf') format('opentype');font-weight:400;font-style:normal;font-display:swap}
 .wind-readout{display:flex;justify-content:space-between;margin-top:12px;color:var(--muted);font-size:9px;letter-spacing:.3px}.wind-readout span:last-child{color:#d8e6c9;font-variant-numeric:tabular-nums}
-.poetry-toggle span,.zen-toggle{font-family:"Isola Calligraphy","Kaiti SC",KaiTi,serif;font-size:22px;line-height:1}.poetry-toggle.enabled{color:#ffe4a0;background:rgba(243,211,132,.12);border-color:rgba(243,211,132,.28)}.visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.poetry-toggle span,.zen-toggle{font-family:"Isola Toolbar","Kaiti SC",KaiTi,serif;font-size:22px;line-height:1}.poetry-toggle.enabled{color:#ffe4a0;background:rgba(243,211,132,.12);border-color:rgba(243,211,132,.28)}.visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 *{box-sizing:border-box}body{margin:0;overflow:hidden}button,input,select{font:inherit}button,a,input,select{-webkit-tap-highlight-color:transparent}button{cursor:pointer;color:inherit;border:0;background:none}button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--lime);outline-offset:5px}button{transition:background .2s,color .2s,transform .2s,border-color .2s}button:hover{color:white}button:active{transform:scale(.97)}button:disabled{cursor:wait;opacity:.5}button svg{width:20px;height:20px}a{color:inherit;text-decoration:none}#scene{position:fixed;inset:0}#scene canvas{display:block;width:100%;height:100%;touch-action:none}.scene-shade{position:fixed;inset:0;pointer-events:none;opacity:var(--scene-shade-opacity,1);background:linear-gradient(180deg,rgba(8,32,36,.24),transparent 28%,transparent 60%,rgba(5,29,32,.56)),linear-gradient(90deg,rgba(12,40,37,.17),transparent 40%)}.scene-grain{position:fixed;inset:0;pointer-events:none;opacity:.026;z-index:1;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' opacity='.8' filter='url(%23n)'/%3E%3C/svg%3E")}
 .topbar{position:fixed;top:0;left:0;right:0;z-index:5;height:98px;display:flex;align-items:center;justify-content:space-between;padding:0 44px;margin:0 0}.brand{display:flex;align-items:center;gap:12px}.brand svg{width:42px;height:42px}.brand>span{font-family:"Noto Serif SC","Songti SC",serif;font-size:23px;letter-spacing:3px}.brand small{font-family:Arial,sans-serif;font-size:10px;font-weight:500;letter-spacing:3px;display:block;margin-top:4px}.top-actions{display:flex;align-items:center;gap:10px}.icon-button{width:37px;height:37px;display:flex;align-items:center;justify-content:center;border-radius:50%;border:1px solid transparent}.icon-button:hover{border-color:var(--line);background:rgba(250,252,230,.1)}.icon-button.enabled{background:rgba(225,237,177,.18);color:var(--lime)}.outline-button{display:flex;align-items:center;gap:9px;border:1px solid rgba(240,245,232,.3);border-radius:30px;padding:11px 17px;font-size:12px;letter-spacing:1px;background:rgba(20,54,47,.12);backdrop-filter:blur(12px)}.outline-button svg{width:15px;height:15px;display:block}.outline-button:hover{background:rgba(237,245,216,.15)}
 .experience{position:fixed;inset:98px 0 38px;pointer-events:none;z-index:3}
@@ -24,6 +25,9 @@
 .loading-line span{display:block;background:#d9e7b3;width:35%;height:1px;animation:loading-glint 2.8s ease-in-out infinite}
 .loading-screen.error .loading-line{display:none}
 .loading-screen.error #loading-message{letter-spacing:0;color:#ebd8b8}
+#loading-phase{position:relative;min-height:18px;margin:4px 0 0;font-size:10px;line-height:1.8;color:#91ac9a;letter-spacing:1px;text-align:center}
+#loading-retry{position:relative;margin-top:14px;padding:9px 20px;border:1px solid #9aad84;border-radius:6px;color:#e3edce;background:#294d43;cursor:pointer}
+#loading-retry[hidden]{display:none}
 .loading-screen.error .loading-mark span,.loading-screen.error::before,.loading-screen.error::after{animation:none}
 @keyframes loading-breathe{0%,100%{opacity:.65;transform:translateY(2px)}50%{opacity:1;transform:translateY(-2px)}}
 @keyframes sea-breeze{0%,100%{transform:translateX(-5px) rotate(-3deg)}50%{transform:translateX(5px) rotate(3deg)}}
@@ -48,9 +52,8 @@
 .music-transport button{display:flex;align-items:center;justify-content:center;gap:6px;min-height:36px;padding:7px 4px;color:var(--lime);border:1px solid rgba(225,237,177,.2);border-radius:7px;background:rgba(225,237,177,.055)}
 .music-transport button:hover{background:rgba(225,237,177,.15)}
 .music-transport #music-play{background:rgba(225,237,177,.2);color:var(--lime);border-color:rgba(225,237,177,.48)}
-.music-transport #music-play,.music-transport #music-mode{width:40px}
-.music-transport #music-rate{width:64px}
-.music-transport #music-play svg{width:17px;height:17px}
+.music-transport #music-play,.music-transport #music-next,.music-transport #music-mode{width:40px}
+.music-transport #music-next svg,.music-transport #music-play svg{width:17px;height:17px}
 .control-panel .season-options button{height:44px}
 .control-panel .weather-options button svg{width:19px;height:19px}
 .control-panel .sound-enable{display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;border:1px solid var(--line)}
@@ -65,6 +68,7 @@
 body.zen-mode [data-zen-ui]{display:none}
 body.zen-mode .topbar{justify-content:flex-end;border-color:transparent;pointer-events:none}
 body.zen-mode .zen-toggle{pointer-events:auto;font-family:Georgia,serif;font-size:26px;color:rgba(240,243,221,.8);background:rgba(20,49,40,.15);border-color:rgba(240,245,232,.15)}
+body.zen-mode .zen-toggle svg{display:block;width:24px;height:24px;flex:none}
 
 #sound-toggle:not(.enabled){color:#ff6464;border-color:rgba(255,90,90,.65);background:rgba(220,48,48,.24);animation:sound-invite 2s ease-in-out infinite}
 @keyframes sound-invite{0%,100%{opacity:.6;box-shadow:0 0 0 0 rgba(255,64,64,0)}50%{opacity:1;box-shadow:0 0 16px rgba(255,64,64,.45),0 0 0 6px rgba(255,64,64,.28)}}
@@ -127,9 +131,8 @@ body.zen-mode .zen-toggle{pointer-events:auto;font-family:Georgia,serif;font-siz
 .music-player .music-status{flex:1;min-width:0;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .music-transport{flex:none;justify-content:flex-end;gap:4px;font-size:9px}
 .music-transport button{min-height:26px;height:26px;padding:0 4px;gap:3px;border-radius:5px}
-.music-transport #music-play,.music-transport #music-mode{width:26px}
-.music-transport #music-rate{width:43px}
-.music-transport #music-play svg,.music-cycle svg{width:13px;height:13px}
+.music-transport #music-play,.music-transport #music-next,.music-transport #music-mode{width:26px}
+.music-transport #music-next svg,.music-transport #music-play svg,.music-cycle svg{width:13px;height:13px}
 
 .panel-footer #quality{color:#d2ddbd;font-size:8px;min-width:36px;height:24px;padding:0 5px;border-radius:5px;cursor:pointer}
 .panel-footer #quality:hover{background:rgba(225,237,177,.15)}
@@ -148,3 +151,45 @@ body.zen-mode .zen-toggle{pointer-events:auto;font-family:Georgia,serif;font-siz
 .time-actions #moon-phase.selected{background:rgba(225,237,177,.2);border-color:rgba(225,237,177,.48)}
 .moon-auto-indicator{position:absolute;right:2px;bottom:2px;background:#294a40;border-radius:50%}
 .time-actions #moon-phase .moon-auto-indicator svg{width:8px;height:8px}
+
+/* The header owns drag gestures; the close button keeps its normal action. */
+.panel-header{position:relative;cursor:grab;touch-action:none;user-select:none}
+.panel-header .panel-drag-grip{position:absolute;left:50%;transform:translateX(-50%);display:flex;align-items:center;justify-content:center;width:28px;min-height:25px;pointer-events:none;color:var(--muted);opacity:.65}
+.panel-drag-grip::before{content:"";width:3px;height:3px;margin-right:12px;border-radius:50%;background:currentColor;box-shadow:6px 0 currentColor,12px 0 currentColor,0 6px currentColor,6px 6px currentColor,12px 6px currentColor;transform:translateY(-3px)}
+.control-panel.dragging .panel-header{cursor:grabbing}
+.panel-header .small-icon{cursor:pointer}
+.time-actions{gap:3px;flex:none}
+.time-actions #eclipse-toggle,.time-actions #lunar-eclipse-toggle{position:relative;display:flex;align-items:center;justify-content:center;width:24px;height:24px;padding:0;border:1px solid rgba(235,243,219,.12);border-radius:6px;color:var(--muted);flex:none}
+.time-actions #eclipse-toggle svg,.time-actions #lunar-eclipse-toggle svg{display:block;width:16px;height:16px}
+.time-actions #eclipse-toggle.selected,.time-actions #lunar-eclipse-toggle.selected{color:var(--lime);background:rgba(225,237,177,.2);border-color:rgba(225,237,177,.48)}
+.time-actions #eclipse-toggle[data-mode="instant"],.time-actions #lunar-eclipse-toggle[data-mode="instant"]{color:#ffe0a1;background:rgba(255,212,124,.18);border-color:rgba(255,212,124,.65)}
+.time-actions .sky-mode-badge{display:none;position:absolute;right:1px;top:1px}
+.time-actions [data-mode="instant"] .sky-mode-badge{display:block}
+.time-actions .sky-mode-badge svg{width:8px!important;height:10px!important;fill:currentColor;stroke-width:1}
+.time-actions #scene-rate{height:24px;min-width:46px;gap:3px;padding:0 4px;font-size:9px;border-radius:6px}
+.time-actions #scene-rate svg{width:11px;height:11px}
+.time-actions #moon-phase{width:24px;height:24px;border-radius:6px}
+.time-actions #moon-phase svg{width:16px;height:16px}
+.time-actions #time-toggle{width:24px;height:24px;border-radius:6px}
+.time-actions #time-toggle svg{width:15px;height:15px}
+
+/* Version entry and updates share the existing settings panel. */
+.panel-header .panel-version{flex:none;min-height:25px;padding:2px 6px;border:1px solid rgba(235,243,219,.16);border-radius:5px;color:var(--muted);font:10px/1.4 system-ui,sans-serif;font-variant-numeric:tabular-nums;cursor:pointer;touch-action:manipulation}
+.panel-header .panel-version:hover{color:var(--lime);background:rgba(225,237,177,.12)}
+.panel-header .panel-version:focus-visible,.panel-header .panel-update-return:focus-visible{outline:2px solid var(--lime);outline-offset:3px}
+.control-panel[data-update-history-open]>[hidden],.panel-update-history[hidden]{display:none!important}
+.panel-update-history{padding:3px 0 8px;color:var(--muted);font:11px/1.8 system-ui,sans-serif;overflow-wrap:anywhere}
+.panel-header .panel-update-return{display:inline-flex;align-items:center;justify-content:center;flex:none;width:24px;height:25px;padding:0;border:0;border-radius:5px;color:var(--muted);cursor:pointer;touch-action:manipulation}
+.panel-header .panel-update-return[hidden]{display:none}
+.panel-update-return svg{width:18px;height:18px}
+.control-panel .panel-update-return:hover{background:rgba(225,237,177,.12)}
+.panel-update-release{padding:12px 0;border-bottom:1px solid rgba(235,243,219,.12)}
+.panel-update-release:last-child{border-bottom:0}
+.panel-update-release h3{margin:0 0 7px;color:var(--lime);font-size:12px;font-weight:500}
+.panel-update-release ul{margin:0;padding-left:17px}
+.panel-update-release li+li{margin-top:7px}
+
+/* Keep the settings shell still while update details scroll inside it. */
+.control-panel.showing-updates{display:flex;flex-direction:column;overflow:hidden}
+.control-panel.showing-updates>.panel-header{flex:none}
+.control-panel.showing-updates>.panel-update-history{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#819a76 transparent}

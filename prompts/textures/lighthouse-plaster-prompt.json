@@ -1,0 +1,13 @@
+{
+  "tool": "built-in OpenAI image_gen",
+  "generatedDate": "2026-10-18",
+  "asset": "lighthouse-plaster-v1.webp",
+  "sourceGeneration": "exec-dd0afea6-97a7-4344-87e3-32ea108220ac.png",
+  "prompt": "Use case: photorealistic-natural\nAsset type: seamless tileable square albedo texture for the white exterior of a coastal lighthouse in a real-time 3D island.\nPrimary request: a clean believable aged limewashed plaster wall, off-white and very pale neutral warm grey, fine sandy lime plaster grain and small irregular pores, sparse faint grey vertical rain streaks and very subtle salt weathering, modest tiny hairline imperfections. Mostly cared-for white coastal plaster, not a ruined building.\nComposition: orthographic face-on close material scan filling the entire square; no perspective, no geometry or scene, no wall edges, doors, windows, bricks or objects. Uniform medium-scale texture density. Opposite edges seamless and tileable.\nLighting: flat soft cross-polarized neutral diffuse albedo capture, no shadows or baked highlights. Low contrast, fine readable grain without large mottled patches.\nConstraints: preserve white lighthouse character; no moss blobs, black grime, peeling paint sheets, graphics, words, numbers, signs, logo, watermark, border or frame. Opaque material texture.",
+  "encoding": {
+    "width": 512,
+    "height": 512,
+    "format": "WebP",
+    "quality": 82
+  }
+}

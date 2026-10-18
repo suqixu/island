@@ -150,3 +150,27 @@ test('真实大气在零云量完全消隐，即使火烧云时也不会凭空�
   }
   assert.equal(scene.children.length, 0);
 });
+
+test('真实大气切回默认后，退出仍释放全部已接收云图且每张只释放一次',()=>{
+  const originalDocument=globalThis.document,originalWidth=globalThis.innerWidth,originalHeight=globalThis.innerHeight;
+  const context=new Proxy({createImageData:(w,h)=>({data:new Uint8ClampedArray(w*h*4)}),
+    createRadialGradient:()=>({addColorStop(){}}),createLinearGradient:()=>({addColorStop(){}})},
+    {get:(target,key)=>target[key]??(()=>{})});
+  globalThis.document={createElement:()=>({getContext:()=>context})};
+  globalThis.innerWidth=634;globalThis.innerHeight=768;
+  const maps=Array.from({length:64},()=>new THREE.Texture()),counts=new Map();
+  maps.forEach(map=>map.addEventListener('dispose',()=>counts.set(map,(counts.get(map)??0)+1)));
+  let atmosphere;
+  try{
+    atmosphere=createAtmosphere(new THREE.Scene(),{cloudMaps:maps.slice(0,8)});
+    const sprites=atmosphere.group.children.filter(item=>item.isSprite&&item.userData.drift);
+    atmosphere.setCloudMaps(maps);
+    assert.equal(new Set(sprites.map(sprite=>sprite.material.map)).size,64);
+    atmosphere.setCloudMaps();
+    assert.equal(new Set(sprites.map(sprite=>sprite.material.map)).size,8);
+    atmosphere.dispose();atmosphere.dispose();
+    assert.ok(maps.every(map=>counts.get(map)===1));
+  }finally{
+    atmosphere?.dispose();globalThis.document=originalDocument;globalThis.innerWidth=originalWidth;globalThis.innerHeight=originalHeight;
+  }
+});

@@ -1,0 +1,11 @@
+Leaf material textures
+
+broadleaf-veins-albedo-v1.webp: continuous broadleaf chlorophyll and veins.
+palm-leaflet-albedo-v1.webp: fine longitudinal coconut leaflet fibres.
+
+Generated for this project with the built-in OpenAI image_gen tool.
+Prompts are saved in prompts/textures/leaf-texture-prompts.json.
+1024 x 1024 compressed RGB WebP. Existing geometry supplies the silhouette;
+no alpha planes, external photos, or foliage libraries are included.
+Leaf-local UV coordinates retain the pattern during wind deformation.
+Seasonal colour, winter snow, and the existing shadow geometry are preserved.

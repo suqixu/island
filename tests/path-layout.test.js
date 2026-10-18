@@ -14,7 +14,7 @@ const api = () => {
 };
 const length = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
 const cave = { x: 31.874, z: 38.343 };
-const scenery = await import('../src/island-paths.js').catch(error => {
+const scenery = await import('../src/models/island-paths.js').catch(error => {
   if (error.code === 'ERR_MODULE_NOT_FOUND') return null;
   throw error;
 });
@@ -242,8 +242,8 @@ test('石阶海滩支路从山脚接现有环岛节点，持续下降至南侧�
   assert.ok(layout.routes.find(route => route.id === 'mountain-ascent').points.some(point => length(point, start) < .00001));
   const ring = layout.routes.find(route => route.id === 'coastal-loop');
   assert.ok(descent.points.some(point => ring.points.some(other => length(point, other) < .00001)), '需精确连接环岛现有节点');
-  assert.ok(shoreDistance(end.x, end.z) >= 1 && shoreDistance(end.x, end.z) <= 2.1);
-  assert.ok(end.y >= .3 && end.y <= .7);
+  assert.ok(shoreDistance(end.x, end.z) >= 3 && shoreDistance(end.x, end.z) <= 4.5);
+  assert.ok(end.y >= .43 && end.y <= .8);
   assert.ok(end.x < -8 && end.x > -25 && end.z > 70, '终点避开码头和右侧泻湖');
   let total = 0, maximumGrade = 0, upward = 0, stairCount = 0;
   const steps = new Set(descent.stepSegments.map(item => item.index));

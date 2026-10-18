@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import * as THREE from 'three';
-import { createIsland } from '../src/island.js';
-import * as islandApi from '../src/island.js';
+import { createIsland } from '../src/models/island.js';
+import * as islandApi from '../src/models/island.js';
 
 function geometryDigest(group) {
   const hash = createHash('sha256');
@@ -44,8 +44,10 @@ test('分阶段海岛保留现有全部顶点、索引、实例矩阵、颜色�
   assert.equal(typeof islandApi.createIslandAsync, 'function', '启动需要异步分段创建海岛');
   const original = createIsland(new THREE.Scene());
   const before = geometryDigest(original.group);
-  // 花丛有独立的布局和预算测试；固定结构快照防止同步与异步实现同时丢失旧模型。
-  assert.equal(structureDigest(original.group), '4fb7d7f469017633edb0a37567756bf911c1d42d4081de9c60cf4c60fdb04a88');
+  // 包含细沙岸坡、洞口精确裁切/封闭后缘和洞外纹理遮罩；保留码头纹理UV及叶片遮罩。
+  // 低岸细沙不再重复覆盖浅色环路，保留内陆路径与其自然衔接权重。
+  // 固定结构快照防止同步与异步实现同时丢失旧模型。
+  assert.equal(structureDigest(original.group), '4309b90fd701ec119c2e327eef3360a4c7828f4ae1a9863ca51df8594a6c55ba');
   const scene = new THREE.Scene(), stages = [], slices = [];
   let stage, clock = 0, paints = 0;
   const asynchronous = await islandApi.createIslandAsync(scene, {

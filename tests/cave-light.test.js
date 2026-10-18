@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import { createIslandCave } from '../src/island-cave.js';
+import { createIslandCave } from '../src/models/island-cave.js';
 import { heightAt } from '../src/terrain.js';
 
 test('洞内只有转角处的局部暖光，光照范围不触及洞口，外侧无灯具',()=>{

@@ -1,0 +1,56 @@
+{
+  "defaultQuality": "high",
+  "renderer": {
+    "antialias": false,
+    "powerPreference": "high-performance",
+    "toneMappingExposure": 1.04
+  },
+  "qualityOptions": [
+    {
+      "value": "high",
+      "label": "精细",
+      "pixelRatio": 1.7,
+      "bloom": true,
+      "shadows": true
+    },
+    {
+      "value": "medium",
+      "label": "均衡",
+      "pixelRatio": 1.2,
+      "bloom": true,
+      "shadows": true
+    },
+    {
+      "value": "low",
+      "label": "流畅",
+      "pixelRatio": 0.8,
+      "bloom": false,
+      "shadows": false
+    }
+  ],
+  "frameRates": {
+    "active": 60,
+    "idle": 30
+  },
+  "meteorLimits": {
+    "high": {
+      "capacity": 9
+    },
+    "medium": {
+      "capacity": 9
+    },
+    "low": {
+      "capacity": 9
+    }
+  },
+  "nightSky": {
+    "starCounts": {
+      "low": 1700,
+      "medium": 2900
+    },
+    "pixelRatio": {
+      "low": 1,
+      "default": 1.7
+    }
+  }
+}

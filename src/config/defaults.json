@@ -1,0 +1,148 @@
+{
+  "simulation": {
+    "hour": 14.5,
+    "dayIndex": 0,
+    "holdSunClock": false,
+    "holdMoonClock": false,
+    "elapsed": 0,
+    "running": true,
+    "speed": 0.5,
+    "dayDuration": 360,
+    "seasonIndex": 1,
+    "seasonProgress": 0,
+    "seasonDuration": 240,
+    "autoSeason": true,
+    "weather": "sunny",
+    "cloudMode": "default",
+    "autoWeather": true,
+    "weatherProgress": 0,
+    "moonPhase": 0.5,
+    "autoMoon": true,
+    "sceneRates": [
+      0.5,
+      1,
+      2,
+      3,
+      4,
+      8,
+      16
+    ]
+  },
+  "interface": {
+    "poetryEnabled": false,
+    "soundEnabled": false,
+    "autoRotate": false
+  },
+  "poetry": {
+    "rendererEnabled": true,
+    "focusDistance": 300
+  },
+  "sky": {
+    "modes": [
+      "default",
+      "instant",
+      "off"
+    ],
+    "modeNames": [
+      "默认",
+      "即时出现",
+      "不出现"
+    ],
+    "meteor": "default",
+    "comet": "default",
+    "aurora": "default",
+    "solarEclipse": "default",
+    "lunarEclipse": "default",
+    "constellation": "off",
+    "constellationModes": [
+      "off",
+      "labels",
+      "lines"
+    ],
+    "constellationNames": [
+      "默认不显示",
+      "连线和名称",
+      "只显示连线"
+    ],
+    "artificialLights": "auto",
+    "lightModes": [
+      "auto",
+      "lighthouse-off",
+      "all-off"
+    ],
+    "lightModeNames": [
+      "自动",
+      "关闭灯塔",
+      "关闭全部"
+    ],
+    "schedules": {
+      "meteor": {
+        "initialWait": {
+          "min": 2,
+          "range": 8
+        },
+        "repeatWait": {
+          "min": 45,
+          "range": 100
+        },
+        "instantRepeat": 32
+      },
+      "comet": {
+        "initialWait": {
+          "min": 15,
+          "range": 75
+        },
+        "repeatWait": {
+          "min": 40,
+          "range": 200
+        }
+      },
+      "aurora": {
+        "initialWait": {
+          "min": 30,
+          "range": 90
+        },
+        "repeatWait": {
+          "min": 80,
+          "range": 160
+        },
+        "duration": {
+          "min": 90,
+          "range": 120
+        }
+      },
+      "solarEclipse": {
+        "duration": 48,
+        "initialWait": {
+          "min": 30,
+          "range": 75
+        },
+        "repeatWait": {
+          "min": 240,
+          "range": 480
+        }
+      },
+      "lunarEclipse": {
+        "duration": 96,
+        "initialWait": {
+          "min": 45,
+          "range": 90
+        },
+        "repeatWait": {
+          "min": 240,
+          "range": 480
+        }
+      }
+    }
+  },
+  "loading": {
+    "optional": {
+      "timeoutMs": 4000,
+      "retries": 1
+    },
+    "scenePreparation": {
+      "timeoutMs": 12000,
+      "retries": 0
+    }
+  }
+}

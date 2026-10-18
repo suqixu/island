@@ -1,0 +1,13 @@
+{
+  "tool": "built-in OpenAI image_gen",
+  "generatedDate": "2026-10-18",
+  "asset": "sailboat-materials-v1.webp",
+  "sourceGeneration": "exec-23ce6968-f63a-423c-aa80-ad37d25d377d.png",
+  "prompt": "Use case: photorealistic-natural\nAsset type: one seamless two-material texture atlas for small real-time 3D wooden sailboats. Landscape 2:1 image made of exactly two equally sized square panels, flush side by side, no gaps or margins.\nLEFT HALF: clean off-white natural linen sailcloth, close-up finely woven flax fibres, tiny weave irregularities, faint soft wear along threads, restrained warm ivory, low contrast. No seams, no objects or ropes, no big wrinkles, no stains. Soft uniform diffuse cross-polarized albedo capture.\nRIGHT HALF: neutral medium brown weathered marine hardwood planks, narrow subtle plank joints oriented vertically, fine longitudinal wood grain, desaturated warm grey-brown salt wear, small gentle variations between boards. No nails, no scratches dominating, no rotten wood, no thick dark borders. Uniform diffuse cross-polarized albedo capture.\nBoth panels are face-on orthographic material scans, each panel independently seamless and tileable along its four edges. No perspective, no boat photograph, no scene, no lighting baked into the materials, no cast shadows, no shiny highlights, no text, no labels, no logos or watermarks. Crisp fine material detail, calm natural realistic color; a strict straight vertical split precisely in the center.",
+  "encoding": {
+    "width": 1024,
+    "height": 512,
+    "format": "WebP",
+    "quality": 82
+  }
+}

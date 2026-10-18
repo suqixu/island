@@ -1,10 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import { createIsland } from '../src/island.js';
+import { createIsland } from '../src/models/island.js';
 import { getIslandPathLayout } from '../src/path-layout.js';
 import { CAVE_LAYOUT } from '../src/cave-layout.js';
-import { createRestPavilion } from '../src/rest-pavilion.js';
+import { createRestPavilion } from '../src/models/rest-pavilion.js';
 import { createPavilionSurfaceSampler } from '../src/rest-pavilion-surface.js';
 
 const layoutModule = await import('../src/rest-pavilion-layout.js').catch(error => {

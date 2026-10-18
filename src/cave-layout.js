@@ -58,11 +58,13 @@ function clip(polygon, distance) {
     const currentDistance = distance(current);
     if ((previousDistance >= 0) !== (currentDistance >= 0)) {
       const t = previousDistance / (previousDistance - currentDistance);
-      result.push({
+      const point = {
         side: previous.side + (current.side - previous.side) * t,
         height: previous.height + (current.height - previous.height) * t,
         forward: previous.forward + (current.forward - previous.forward) * t,
-      });
+      };
+      if (previous.weights) point.weights = previous.weights.map((weight,index) => weight + (current.weights[index] - weight) * t);
+      result.push(point);
     }
     if (currentDistance >= 0) result.push(current);
     previous = current; previousDistance = currentDistance;
@@ -84,6 +86,25 @@ export function isCaveOpeningTriangle(a, b, c) {
       - (end[1] - start[1]) * (point.side - start[0]));
   }
   return polygon.length >= 3;
+}
+
+// Subtract the convex opening prism, keeping every outside fragment. Barycentric
+// weights let terrain interpolate all its original surface/vegetation attributes.
+export function getCaveOpeningRemainder(a,b,c) {
+  let polygon = [a,b,c].map((point,index) => ({...caveToLocal(point),weights:[0,1,2].map(vertex=>vertex===index?1:0)}));
+  const planes = [point=>point.forward+1.75,point=>1.75-point.forward];
+  for(let index=0;index<aperture.length;index++) {
+    const start=aperture[index],end=aperture[(index+1)%aperture.length];
+    planes.push(point=>(end[0]-start[0])*(point.height-start[1])-(end[1]-start[1])*(point.side-start[0]));
+  }
+  const outside=[];
+  for(const distance of planes) {
+    if(!polygon.length)break;
+    const fragment=clip(polygon,point=>-distance(point));
+    if(fragment.length>=3)outside.push(fragment.map(point=>point.weights));
+    polygon=clip(polygon,distance);
+  }
+  return outside;
 }
 
 // An open U section: left wall, curved roof, right wall. The floor is built

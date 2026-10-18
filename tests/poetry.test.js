@@ -10,7 +10,7 @@ import * as simulation from '../src/simulation.js';
 import { SPRING_RIVER_POEM } from '../src/poem-text.js';
 import { getMoonBackdropDirection } from '../src/moon-framing.js';
 
-const bytes = readFileSync(new URL('../src/assets/poetry-calligraphy.ttf', import.meta.url));
+const bytes = readFileSync(new URL('../src/assets/fonts/poetry-calligraphy.ttf', import.meta.url));
 const font = new FontLoader().parse(new TTFLoader().parse(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)));
 const night = getEnvironment(createSimulation({ hour: 0 }));
 const noon = getEnvironment(createSimulation({ hour: 12 }));
@@ -258,18 +258,6 @@ test('缓存的书法几何只释放一次，移除字幕后不残留场景网�
     assert.ok([...disposed.values()].every(count => count === 1), '字形共享时不重复或遗漏释放');
   });
 });
-
-test('专属音乐临时隐藏诗句并暂停诗句进度，结束后继续原联且不改用户开关',()=>{
-  withPoetry(({poetry,group,advance,getCaption})=>{
-    advance(7);const caption=getCaption();assert.ok(caption.includes('春江潮水连海平'));
-    advance(20,{...night,poetrySuppressed:true});
-    assert.equal(group.visible,false);assert.equal(getCaption(),'');assert.equal(poetry.enabled,true);
-    advance(.3);assert.equal(group.visible,true);assert.equal(getCaption(),caption);
-    poetry.setEnabled(false);advance(2,{...night,poetrySuppressed:true});advance(2);
-    assert.equal(poetry.enabled,false);assert.equal(group.visible,false);
-  });
-});
-
 
 test('月盘离开画面或变为其他月相时立即隐藏诗，恢复满月后继续而非重播',()=>{
   withPoetry(({poetry,group,advance,getCaption})=>{

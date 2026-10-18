@@ -63,6 +63,39 @@ test('太阳模块提供独立构图状态与天气可见度接口', () => {
   assert.equal(typeof api().getSunVisibility, 'function');
 });
 
+test('广角与竖屏的日食盘采用屏幕圆形度量，离轴位置与镜头滚转不会拉成椭圆',()=>{
+  assert.equal(typeof api().getSunDiscProjection,'function','日盘尚未校正广角离轴变形');
+  for(const [width,height,fov] of [[1280,720,46],[1280,720,80],[390,844,122]]){
+    const camera=cameraFor(width,height);camera.fov=fov;camera.rotateZ(.25);camera.updateProjectionMatrix();
+    const state=api().getSunBackdropState(camera,width,height,physical());
+    const projection=api().getSunDiscProjection(camera,state.direction,state.angularRadius*1.8);
+    const expectedDiameter=THREE.MathUtils.clamp(Math.min(width*.06,height*.04),22,36)*1.8;
+    near(projection.radius*height,expectedDiameter,.5);
+    const center=screenPoint(camera,state.direction,width,height).ndc;
+    near(projection.center.x,center.x);near(projection.center.y,center.y);
+    for(let i=0;i<16;i++){
+      const angle=i*Math.PI/8,radiusPixels=projection.radius*height*.5;
+      // Equal-radius pixels around the disc must all lie on the same edge.
+      const ndc=new THREE.Vector3(center.x+2*radiusPixels*Math.cos(angle)/width,center.y+2*radiusPixels*Math.sin(angle)/height,.5);
+      const ray=ndc.unproject(camera).sub(camera.position).normalize();
+      const clip=new THREE.Vector4(ray.x,ray.y,ray.z,0).applyMatrix4(projection.matrix);
+      const distance=Math.hypot((clip.x/clip.w-projection.center.x)*projection.aspect,clip.y/clip.w-projection.center.y)/projection.radius;
+      near(distance,1,1e-8);
+    }
+  }
+});
+
+test('太阳完全离屏或盘缘逼近投影平面时回退角距离，不能放大成覆盖天空的圆盘',()=>{
+  const camera=new THREE.PerspectiveCamera(122,390/844,.5,7000);
+  const tilt=THREE.MathUtils.degToRad(55);camera.lookAt(0,-Math.sin(tilt),-Math.cos(tilt));
+  for(const elevation of [27,30,32,33]){
+    const angle=THREE.MathUtils.degToRad(elevation),direction=new THREE.Vector3(0,Math.sin(angle),-Math.cos(angle));
+    const projection=api().getSunDiscProjection(camera,direction,.06);
+    assert.equal(projection.radius,0,`离轴 ${55+elevation}° 的离屏太阳应回退，不能使用异常投影半径`);
+    assert.ok(projection.matrix.elements.every(Number.isFinite));
+  }
+});
+
 test('默认镜头在指定桌面、手机和小屏尺寸将日盘置于右上天空', () => {
   for (const [width, height] of viewports) {
     const camera = cameraFor(width, height);

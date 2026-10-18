@@ -54,3 +54,76 @@ test('雷暴雾色随阴暗天空变暗，不把岛屿远景染成晴天亮白�
     assert.ok(Math.abs(luminance(scene.fog.color) - clear) < .001, '放晴后恢复原晴天雾色');
   });
 });
+
+test('台风雨雾呈暗蓝灰色，远景保留岛屿对比并在退出台风后恢复', () => {
+  withAtmosphere(({scene,update})=>{
+    update('sunny');const clearColor=scene.fog.color.clone(),clearDensity=scene.fog.density;
+    for(let i=0;i<400;i++)update('typhoon');
+    assert.ok(luminance(scene.fog.color)<.12,'低压乌云下不能继续使用明亮的晴天雾色');
+    assert.ok(scene.fog.color.b>scene.fog.color.r,'雨雾应保留天空的冷色');
+    assert.ok(coverage(scene.fog,480)<.35,'全岛视角不能由雾色主导');
+    assert.ok(coverage(scene.fog,700)<.55,'拉远后也应保留至少一半地形对比');
+    assert.ok(coverage(scene.fog,1800)>.95,'远海仍然被雨雾遮蔽');
+    for(let i=0;i<240;i++)update('sunny');
+    for(const channel of ['r','g','b'])assert.ok(Math.abs(scene.fog.color[channel]-clearColor[channel])<.001);
+    assert.ok(Math.abs(scene.fog.density-clearDensity)<1e-5);
+  });
+});
+
+test('台风把乌云压低、加密横向雨幕，同时保留近岸能见度，放晴后雨幕恢复', () => {
+  let storm;
+  const sample = (atmosphere, scene) => {
+    const rain = atmosphere.group.children.find(object => object.isPoints && object.material.uniforms?.uSnow?.value === 0);
+    const cloud = atmosphere.group.children.find(object => object.isSprite && object.userData.origin);
+    return { rain, cloud, wind: rain.material.uniforms.uWind.value.length(),
+      density: rain.geometry.drawRange.count, height: cloud.position.y, color: luminance(cloud.material.color) };
+  };
+  withAtmosphere(({ atmosphere, scene, update }) => {
+    update('storm'); storm = sample(atmosphere, scene);
+  });
+  withAtmosphere(({ atmosphere, scene, update }) => {
+    update('typhoon'); const typhoon = sample(atmosphere, scene);
+    assert.ok(typhoon.wind > storm.wind * 2.5, '强风必须推动雨滴形成斜向暴雨');
+    assert.ok(Math.abs(typhoon.rain.material.uniforms.uRainAngle.value) > .04, '雨滴纹理应在屏幕上随风倾斜');
+    assert.ok(typhoon.density > storm.density * 1.4, '台风雨幕要更密集');
+    assert.ok(typhoon.height < storm.height * .8, '乌云应压低到海岛上方');
+    assert.ok(typhoon.color < storm.color * .75, '台风乌云应比雷暴更沉重');
+    assert.ok(coverage(scene.fog, 480) <= .65);
+    for (let i = 0; i < 160; i++) update('sunny');
+    assert.equal(typhoon.rain.visible, false);
+    assert.equal(typhoon.rain.geometry.drawRange.count, 2600);
+    assert.ok(Math.abs(typhoon.rain.material.uniforms.uRainAngle.value) < .001);
+  });
+});
+
+test('切换台风只改变雨滴后续速度，不按累计时长把整片雨幕瞬移', () => {
+  withAtmosphere(({ atmosphere, update }) => {
+    for (let i = 0; i < 1000; i++) update('storm');
+    const rain = atmosphere.group.children.find(object => object.isPoints && object.material.uniforms?.uSnow?.value === 0);
+    const before = rain.material.uniforms.uDrift.value.clone();
+    update('typhoon');
+    const after = rain.material.uniforms.uDrift.value;
+    const wrapped = value => Math.atan2(Math.sin(value * Math.PI / 120), Math.cos(value * Math.PI / 120)) * 120 / Math.PI;
+    assert.ok(Math.hypot(wrapped(after.x - before.x), wrapped(after.y - before.y)) < 7,
+      '一次50ms更新的横移必须服从风速上限');
+  });
+});
+
+test('台风云幕随时间堆厚压低，连续遮蔽晴空间隙，放晴后消退', () => {
+  withAtmosphere(({atmosphere,update})=>{
+    update('sunny');
+    const sky=atmosphere.group.children.find(object=>object.isMesh&&object.material.uniforms?.uTyphoonCloudBuild);
+    assert.ok(sky,'台风需要连续的厚云底幕，不能只有分散云团');
+    const cloud=atmosphere.group.children.find(object=>object.isSprite&&object.userData.origin);
+    for(let i=0;i<20;i++)update('typhoon');
+    const early=sky.material.uniforms.uTyphoonCloudBuild.value,earlyHeight=cloud.position.y,earlyWidth=cloud.scale.x;
+    for(let i=0;i<380;i++)update('typhoon');
+    assert.ok(sky.material.uniforms.uTyphoonCloudBuild.value>early+.6,'云幕应逐渐积压，不能切天气时一次性盖满');
+    assert.ok(cloud.position.y<earlyHeight*.85,'厚云底继续压低');
+    assert.ok(cloud.scale.x>earlyWidth*1.3,'相邻云团逐渐叠合');
+    assert.ok(sky.material.uniforms.uTyphoonCloudDrift.value.length()>1,'底幕随强风推进');
+    for(let i=0;i<320;i++)update('sunny');
+    assert.ok(sky.material.uniforms.uTyphoonCloudStrength.value<.001);
+    assert.ok(sky.material.uniforms.uTyphoonCloudBuild.value<.03);
+  });
+});

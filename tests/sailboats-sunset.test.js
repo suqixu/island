@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import { createSailboats } from '../src/sailboats.js';
+import { createSailboats } from '../src/models/sailboats.js';
 import { heightAt } from '../src/terrain.js';
 
 const day = { daylight: 1, fog: 0, rain: 0, storm: 0, sunDirection: new THREE.Vector3(0, 1, 0) };

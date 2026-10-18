@@ -1,0 +1,8 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>浮屿 · 性能检查</title>
+<style>body{margin:0;background:#17352e;color:#e8eedc;font:13px/1.5 system-ui}header{padding:10px;display:flex;gap:12px;align-items:center}button{padding:7px;background:#375b50;color:inherit;border:1px solid #789181;border-radius:5px;cursor:pointer}iframe{width:100%;height:520px;border:0;display:block}pre{white-space:pre-wrap;padding:12px;font-size:12px}p{padding:0 12px}</style>
+<header><button id="run">运行完整检查</button><button id="cleanup">检查资源释放</button><span id="status">准备中</span></header>
+<p>真实主页面，测试画布 100% × 520；帧回调耗时包含更新和渲染提交，不等同 GPU 耗时或进程 CPU 百分比。堆内存若不可用显示 null。</p>
+<iframe id="app" title="实际海岛场景"></iframe><pre id="report"></pre>
+<style>.summary{overflow:auto;padding:12px}table{border-collapse:collapse;white-space:nowrap}th,td{padding:6px 10px;border:1px solid #789181;text-align:left}</style>
+<div class="summary"><table><caption>各阶段检查摘要</caption><thead><tr><th>阶段</th><th>帧率</th><th>回调中位 ms</th><th>回调 P95 ms</th><th>堆 MiB</th><th>几何</th><th>纹理</th><th>程序</th><th>长任务</th><th>云图</th><th>云形</th><th>退出释放</th></tr></thead><tbody id="summary"></tbody></table></div>
+<script type="module" src="./performance-audit-browser.js"></script></html>

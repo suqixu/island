@@ -10,9 +10,9 @@
 - [x] 真实生产子目录启动截图、首帧成功后的隐藏状态与装饰动画停止检查。
 - [x] 最新亭前侧坡与单块落脚接阶实景确认，生产部署包及最终验证记录已同步。
 
-前次完成记录（2026-10-05）：351项检查全部通过，生产构建成功（70个模块）。轻量加载入口为 `index-B7IoYi5A.js`，场景分块为 `main-Byi1xZlF.js`。实际打开 `/sometest/demo/island/` 检查深绿海风加载画面、随机带省略号的文案、首帧后的自动淡出及动画停止；检查正午两亭、明月夜与最终东亭单块接阶，控制台无材质或资源错误。东亭高侧裙贴坡展开，门前两级约5厘米浅阶合成一块整宽落脚面，保留原主楼梯、亭位、石材与正常接头步差。画面保存在 `artifacts/loading-screen-final.png`、`east-pavilion-stairs-final.png` 和 `south-pavilion-stairs-final.png`。
+前次完成记录（2026-10-05）：351项检查全部通过，生产构建成功（70个模块）。轻量加载入口为 `index-B7IoYi5A.js`，场景分块为 `main-Byi1xZlF.js`。实际打开 `/sometest/demo/island/` 检查深绿海风加载画面、随机带省略号的文案、首帧后的自动淡出及动画停止；检查正午两亭、明月夜与最终东亭单块接阶，控制台无材质或资源错误。东亭高侧裙贴坡展开，门前两级约5厘米浅阶合成一块整宽落脚面，保留原主楼梯、亭位、石材与正常接头步差。画面保存在 `tmp/artifacts/loading-screen-final.png`、`east-pavilion-stairs-final.png` 和 `south-pavilion-stairs-final.png`。
 
-本轮 `island-deploy/` 与 `island-deploy.zip` 均同步最终构建，11个文件，包含月面、本地字体、合成日落音源及许可证；ZIP文件集合、逐文件内容与压缩完整性检查通过。压缩包1,230,599字节，SHA-256为 `80f775c29705b24a519bf5280f85aa6244d2becf7ff92920c0765e87d1b99f66`，完整清单在 `artifacts/deployment-manifest.json`。旧生成物保留于 `/private/tmp/island-final-backup-z24sa4v2`。本地预览服务保留；未更新线上GitHub Pages。
+本轮 `island-deploy/` 与 `island-deploy.zip` 均同步最终构建，11个文件，包含月面、本地字体、合成日落音源及许可证；ZIP文件集合、逐文件内容与压缩完整性检查通过。压缩包1,230,599字节，SHA-256为 `80f775c29705b24a519bf5280f85aa6244d2becf7ff92920c0765e87d1b99f66`，完整清单在 `tmp/artifacts/deployment-manifest.json`。旧生成物保留于 `/private/tmp/island-final-backup-z24sa4v2`。本地预览服务保留；未更新线上GitHub Pages。
 
 山顶灯塔追加：选择西侧最高峰肩部，不改变山峰地形、不占用三峰石阶。约14米的白色旧墙塔身带石基、木门、窄窗、玻璃灯室与圆栏，短石阶连接原山径；傍晚暖光渐亮，柔和灯束约半分钟旋转一周。低画质保留灯塔与灯光，不新增声音或控制面板。
 
@@ -108,9 +108,9 @@
 道路、山洞与泻湖实施：
 
 - [x] 泻湖：在 `src/terrain.js` 与局部地景 helper 融入浅水池、连岸沙洲和通海缺口；验证海床、沙洲、码头和远海高度及连续性。
-- [x] 道路：以 `src/path-layout.js` 缓存环岛、码头、低坡上山与洞口支线路线，以 `src/island-paths.js` 绘制贴地路面及路边实例装饰；验证闭合、地形贴合、缓坡及避让查询。
+- [x] 道路：以 `src/path-layout.js` 缓存环岛、码头、低坡上山与洞口支线路线，以 `src/models/island-paths.js` 绘制贴地路面及路边实例装饰；验证闭合、地形贴合、缓坡及避让查询。
 - [x] 山洞：新增洞穴模块，真实切开地形面并补充岩拱、洞壁和洞底；验证入口朝向、切口、几何与可见深度。
-- [x] 集成：在 `src/island.js` 为道路与洞口清理植被，使用原地形与海面；补充观察预设，核对桌面与手机实际场景、天气回归、控制台、完整测试与生产构建，再重建部署包。不提交、不推送。
+- [x] 集成：在 `src/models/island.js` 为道路与洞口清理植被，使用原地形与海面；补充观察预设，核对桌面与手机实际场景、天气回归、控制台、完整测试与生产构建，再重建部署包。不提交、不推送。
 
 道路、山洞与泻湖最终验证：165 项测试全部通过，生产构建成功，入口 index-Dt9apvY9.js。四条路线总长约564米，路边471簇草、204簇花和513枚碎石，装饰数量随画质与季节调整；真实地形切开34个三角面，洞体深8.5米，入口及内壁射线封闭检查通过。浅水池与连岸沙洲、约10米通海口连通，外海高度与原海床纹理RGB保持不变，池内浪与泡沫同步衰减。鱼群完整活动范围避开新增沙洲，1250株树根贴合实际地形面。
 
@@ -131,7 +131,7 @@
 
 - [x] 海天交界：共享夜色与海雾函数，检查昼夜/月相/天气门控及真实生产夜景。进一步加宽柔雾角度与不同方位的密度差异，低空约两度仍有可见过渡，高空和月盘范围关闭。
 
-本轮最终验证：212项自动检查全部通过（含3个子测试），生产构建成功；入口为 `index-C3NzxgkW.js`。浏览器实际加载 `/sometest/demo/island/` 生产子目录，1280×720检查晴夜满月、上弦月及流畅画质、远海柔雾、正午三峰道路与海滩石阶、暖红落日、冬季积雪和原始夜洞；GPU材质编译与资源加载无警告或错误。照片记录为 `artifacts/moon-horizon-final.png`、`walkable-island-trails-final.png`、`beach-stairs-close-final.png`、`cave-primitive-night-final.png`。
+本轮最终验证：212项自动检查全部通过（含3个子测试），生产构建成功；入口为 `index-C3NzxgkW.js`。浏览器实际加载 `/sometest/demo/island/` 生产子目录，1280×720检查晴夜满月、上弦月及流畅画质、远海柔雾、正午三峰道路与海滩石阶、暖红落日、冬季积雪和原始夜洞；GPU材质编译与资源加载无警告或错误。照片记录为 `tmp/artifacts/moon-horizon-final.png`、`walkable-island-trails-final.png`、`beach-stairs-close-final.png`、`cave-primitive-night-final.png`。
 
 `island-deploy/` 与 `island-deploy.zip` 均已同步最终生产构建：8个文件，包含真实月面、本地字体与两份许可证；文件集合、逐文件内容及ZIP完整性检查通过。ZIP为804119字节，SHA-256：`747f3882924db3bf1932e1cadb0cf1b656eedde663dfb1061d14498ec9109f49`。旧生成物已备份到 `/tmp/island-deploy-backup-wd1h3obz`。本机开发与生产预览服务保留，未更新线上GitHub Pages。
 
@@ -149,8 +149,8 @@
 
 本轮最终验证：246项自动检查全部通过（含3个子测试），生产构建成功，54个模块；最终入口 `index-DBTxhBwj.js`。浏览器实际加载 `/sometest/demo/island/` 子路径，1280×720检查泻湖常驻鱼群、海龟与湿岸/湖底居民近景，暂停正午的整株风动对比、远海鲸背、冬季飘雪、月牙/上弦/凸月普通尺寸及满月原尺寸；390×844流畅画质检查普通月相、鱼群和海龟。声音开关正常开启后关闭，控制台没有警告或错误。手机画幅已恢复，生产预览保留在普通凸月夜景。
 
-画面记录：`artifacts/lagoon-life-final.png`、`lagoon-residents-close-final.png`、`lagoon-life-mobile-final.png`、`wind-final-before.png`、`wind-final-after.png`、`moon-quarter-scale-final.png`、`moon-gibbous-scale-final.png`、`moon-full-scale-final.png`、`moon-quarter-mobile-final.png`。
+画面记录：`tmp/artifacts/lagoon-life-final.png`、`lagoon-residents-close-final.png`、`lagoon-life-mobile-final.png`、`wind-final-before.png`、`wind-final-after.png`、`moon-quarter-scale-final.png`、`moon-gibbous-scale-final.png`、`moon-full-scale-final.png`、`moon-quarter-mobile-final.png`。
 
 部署文件夹与ZIP均同步最终构建：8个文件，811844字节，逐文件内容和压缩完整性校验通过，SHA-256 `bcf994091cc91feb8dd5fa91d233dd8736db00671f7ececc41da7fb66fa47de3`。旧生成物备份到 `/var/folders/bc/xvlb5zrn2xv11_vpdys6207c0000gp/T/island-ecology-deploy-backup-o718evc0`。未提交、推送或更新线上 GitHub Pages。
 
-最新主梯接头修复（2026-10-05）：按东亭转身平台的实际边缘重分末段石阶，移除被平台盖住的踏面，统一接缝与侧墙底边，接平下方转弯内侧。实际顶面射线同时检查不同高度的重叠、完整踏深和最大步差。352项测试通过；构建入口 index-DwdMKhq3.js、场景 main-CGZNmSAu.js；本地预览和部署包已同步。截图 artifacts/east-joint-fixed.png。
+最新主梯接头修复（2026-10-05）：按东亭转身平台的实际边缘重分末段石阶，移除被平台盖住的踏面，统一接缝与侧墙底边，接平下方转弯内侧。实际顶面射线同时检查不同高度的重叠、完整踏深和最大步差。352项测试通过；构建入口 index-DwdMKhq3.js、场景 main-CGZNmSAu.js；本地预览和部署包已同步。截图 tmp/artifacts/east-joint-fixed.png。

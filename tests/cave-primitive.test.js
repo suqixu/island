@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { heightAt } from '../src/terrain.js';
 import { caveToLocal } from '../src/cave-layout.js';
-import * as caveModule from '../src/island-cave.js';
+import * as caveModule from '../src/models/island-cave.js';
 
 test('裸地横向有泥土起伏而非平铺，边缘与末壁使用同一实际高度', () => {
   assert.equal(typeof caveModule.getCaveFloorHeight, 'function');

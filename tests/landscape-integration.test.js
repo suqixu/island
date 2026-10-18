@@ -1,10 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import { createIsland } from '../src/island.js';
+import { createIsland } from '../src/models/island.js';
 
 test('岛内道路和洞口为森林留出连续通道，洞口地形真实切开', async () => {
-  const [{ getIslandPathLayout }, { CAVE_LAYOUT, isCaveReserved }] = await Promise.all([
+  const [{ getIslandPathLayout }, { CAVE_LAYOUT, isCaveReserved, caveToWorld }] = await Promise.all([
     import('../src/path-layout.js'), import('../src/cave-layout.js'),
   ]);
   const scene = new THREE.Scene();
@@ -12,7 +12,14 @@ test('岛内道路和洞口为森林留出连续通道，洞口地形真实切�
   const layout = getIslandPathLayout({ caveEndpoint: CAVE_LAYOUT.approach });
   try {
     const surface = island.group.children.find(item => item.name === '连续海床与火山岛');
-    assert.ok(surface.geometry.index.count < 256 * 256 * 6, '洞口必须移除地形三角面');
+    // Boundary cells are now split to retain the mountain skin; their triangle
+    // count can grow even though the opening is correctly cut out.
+    surface.updateWorldMatrix(true, false);
+    const openingOrigin = new THREE.Vector3(...Object.values(caveToWorld(0, 2, 10)));
+    const openingTarget = new THREE.Vector3(...Object.values(caveToWorld(0, 2, -2)));
+    const openingHits = new THREE.Raycaster(openingOrigin, openingTarget.sub(openingOrigin).normalize(), 0, 12)
+      .intersectObject(surface, false);
+    assert.equal(openingHits.length, 0, '洞口中央应实际挖空，不能被地形封住');
     let checked = 0, rootMostAboveGround = null, rootGap = -Infinity;
     island.group.traverse(object => {
       for (const tree of object.userData.trees ?? []) {

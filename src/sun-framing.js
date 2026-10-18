@@ -1,4 +1,29 @@
-import { MathUtils, Vector3 } from 'three';
+import { MathUtils, Matrix4, Vector2, Vector3, Vector4 } from 'three';
+
+/** Screen metric shared by the solar disc, occulting moon and corona. */
+export function getSunDiscProjection(camera,direction,angularRadius){
+  camera.updateWorldMatrix(true,false);
+  const matrix=new Matrix4().multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse);
+  const clip=new Vector4(direction.x,direction.y,direction.z,0).applyMatrix4(matrix);
+  const fallback=()=>({matrix,center:new Vector2(),radius:0,aspect:camera.aspect});
+  const p=camera.projectionMatrix.elements,sine=Math.sin(angularRadius);
+  // Reject discs beyond a side of the view or touching the camera plane:
+  // dividing nearly-zero edge depths would invent an enormous screen radius.
+  if(clip.w<=sine+1e-5
+    ||clip.w+clip.x< -sine*Math.hypot(p[0],p[8]-1)
+    ||clip.w-clip.x< -sine*Math.hypot(p[0],p[8]+1)
+    ||clip.w+clip.y< -sine*Math.hypot(p[5],p[9]-1)
+    ||clip.w-clip.y< -sine*Math.hypot(p[5],p[9]+1))return fallback();
+  const center=new Vector2(clip.x/clip.w,clip.y/clip.w);
+  const up=new Vector3().setFromMatrixColumn(camera.matrixWorld,1);
+  up.addScaledVector(direction,-up.dot(direction)).normalize();
+  const edge=sign=>{
+    const ray=direction.clone().multiplyScalar(Math.cos(angularRadius)).addScaledVector(up,sign*Math.sin(angularRadius));
+    const point=new Vector4(ray.x,ray.y,ray.z,0).applyMatrix4(matrix);
+    return point.y/point.w;
+  };
+  return{matrix,center,radius:Math.abs(edge(1)-edge(-1))*.5,aspect:camera.aspect};
+}
 
 /**
  * 太阳的屏幕构图只改变方向，不改变真实升落或天气强度。

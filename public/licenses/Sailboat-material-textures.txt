@@ -1,0 +1,9 @@
+Sailboat cloth and wood texture atlas
+
+Generated for this project with the built-in OpenAI image_gen tool on 2026-10-18.
+No external photographs or material libraries were used.
+Asset: src/assets/textures/boats/sailboat-materials-v1.webp
+Exact prompt: prompts/textures/sailboat-materials-prompt.json
+Left half: linen sailcloth. Right half: weathered marine hardwood.
+1024 x 512 WebP, quality 82. The original generated PNG remains outside the application source.
+The application crops shared material maps and derives small scalar relief maps once after loading.

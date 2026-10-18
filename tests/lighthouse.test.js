@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 
 // Catches a missing feature without making the suite stop during module loading.
-const lighthouse = await import('../src/lighthouse.js').catch(error => {
+const lighthouse = await import('../src/models/lighthouse.js').catch(error => {
   if (error.code === 'ERR_MODULE_NOT_FOUND') return {};
   throw error;
 });

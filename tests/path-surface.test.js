@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import { createIslandPaths } from '../src/island-paths.js';
+import { createIslandPaths } from '../src/models/island-paths.js';
 import { caveToWorld } from '../src/cave-layout.js';
 
 function hillside(flat = false) {

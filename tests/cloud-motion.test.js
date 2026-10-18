@@ -14,6 +14,33 @@ const api = () => {
 const wind = { windSpeed: 6.5, gust: .2, windDirection: [1, 0] };
 const separation = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
 
+test('台风云速突破普通上限，快速推进且不同高度保留速度差', () => {
+  const { createCloudMotionState, advanceCloudMotion, getCloudLayerSpeed } = api();
+  const normal=createCloudMotionState(), storm=createCloudMotionState();
+  const env={windSpeed:50,gust:.8,windDirection:[1,0],typhoon:1};
+  advanceCloudMotion(normal,0,wind);advanceCloudMotion(storm,0,env);
+  for(let frame=1;frame<=600;frame++) {
+    advanceCloudMotion(normal,frame/60,wind);advanceCloudMotion(storm,frame/60,env);
+  }
+  assert.ok(storm.offset[0]>normal.offset[0]*5,'十秒内应有明显扑面而来的云程');
+  const low=getCloudLayerSpeed(storm.speed,{height:175,variation:.1},1);
+  const high=getCloudLayerSpeed(storm.speed,{height:405,thin:true,variation:.9},1);
+  assert.ok(low>25 && high>low*1.2 && high<=72);
+});
+
+test('切入台风不缩放旧云程，风速与漂移连续提升，退出后缓慢恢复', () => {
+  const {createCloudMotionState,advanceCloudMotion}=api(),state=createCloudMotionState();
+  advanceCloudMotion(state,0,wind);advanceCloudMotion(state,.05,wind);
+  const previous=[...state.offset];
+  const storm={windSpeed:55,gust:1,typhoon:1,windDirection:[1,0]};
+  advanceCloudMotion(state,.1,storm);
+  assert.ok(separation(previous,state.offset)<.5,'不能乘累计时长跳位');
+  for(let frame=3;frame<=240;frame++)advanceCloudMotion(state,frame*.05,storm);
+  assert.ok(state.speed>35);
+  for(let frame=241;frame<=640;frame++)advanceCloudMotion(state,frame*.05,wind);
+  assert.ok(state.speed<9);
+});
+
 test('16倍速在30帧画面中仍积分完整云层时间，切回后不跳位', () => {
   const { createCloudMotionState, advanceCloudMotion } = api();
   const state = createCloudMotionState();

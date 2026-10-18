@@ -1,9 +1,9 @@
 import test, { before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import { createIsland } from '../src/island.js';
+import { createIsland } from '../src/models/island.js';
 import * as motion from '../src/vegetation-motion.js';
-import { createIslandPaths } from '../src/island-paths.js';
+import { createIslandPaths } from '../src/models/island-paths.js';
 import { getIslandPathLayout } from '../src/path-layout.js';
 
 let island;

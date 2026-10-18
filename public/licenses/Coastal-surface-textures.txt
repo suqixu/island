@@ -1,0 +1,15 @@
+Coastal ground material textures
+
+beach-fine-sand-albedo-v2.webp: fine soft coastal quartz sand without shells or gravel.
+The earlier beach-sand-albedo-v1.webp is retained as an unused source variant.
+lagoon-sandbed-albedo-v1.webp: shallow-current ripples in neutral sandy sediment.
+weathered-step-stone-albedo-v1.webp: weathered grey-green sandstone.
+
+Generated for this project using the built-in OpenAI image_gen tool.
+No external photograph or material library was used.
+Prompts: prompts/textures/coastal-surface-prompts.json
+Fine sand revision: prompts/textures/fine-sand-prompt.json
+Compressed 1024 x 1024 RGB maps. Terrain and stair shaders use metre-based
+mapping, lighting, wetness, and fine bump relief. The lagoon retains its
+dynamic transparent ocean surface; its sand-bed texture contains no water,
+reflections or baked caustics.

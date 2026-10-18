@@ -31,6 +31,12 @@ export function getMarineActivity(env = {}) {
 /** 每次活动只有一份种子和成员布局，姿态、锚点及声音共同使用。 */
 export function createMarineTimeline(seed = 0) {
   const sceneSeed = finite(seed), whales = [], dolphins = [];
+  const cacheLimit = 16;
+  let whaleCycles = 0, dolphinCycles = 0, firstWhaleEnd, historyRebuilds = 0;
+  const remember = (episodes, next) => {
+    episodes.push(next);
+    if (episodes.length > cacheLimit) episodes.shift();
+  };
   const rand = (kind, cycle, salt) => random(sceneSeed * .371 + cycle * 191.17 + salt * 1.618 + (kind === 'whale' ? 701 : 1709));
   function episode(kind, cycle, start) {
     const schedule = MARINE_SCHEDULE[kind];
@@ -74,34 +80,53 @@ export function createMarineTimeline(seed = 0) {
   }
   function ensureWhales(time) {
     while (!whales.length || whales.at(-1).start <= time) {
-      const cycle = whales.length;
+      const cycle = whaleCycles++;
       const start = cycle === 0 ? 7 + rand('whale', 0, 1) * 1.5
         : whales.at(-1).start + 34 + rand('whale', cycle, 1) * 7;
-      whales.push(episode('whale', cycle, start));
+      const next = episode('whale', cycle, start);
+      if (cycle === 0) firstWhaleEnd = next.end;
+      remember(whales, next);
     }
   }
   function ensureDolphins(time) {
+    ensureWhales(0);
     while (!dolphins.length || dolphins.at(-1).start <= time) {
-      const cycle = dolphins.length;
-      let start = cycle === 0 ? whales[0].end + 2 + rand('dolphin', 0, 1) * 3
+      const cycle = dolphinCycles++;
+      let start = cycle === 0 ? firstWhaleEnd + 2 + rand('dolphin', 0, 1) * 3
         : dolphins.at(-1).start + 12 + rand('dolphin', cycle, 1) * 7;
       let next = episode('dolphin', cycle, start);
+      // Advance the two species together, even after a large seek. Generating
+      // all future whales first would evict the old passes this pod must avoid.
+      // This lookahead also includes the next pass after a collision shifts it.
+      ensureWhales(next.end + 60);
       // Separate the complete group from whale passes, including the final
       // member's landing. Independent intervals can still give consecutive pods.
       for (const whale of whales) {
+        if (whale.start - 1.8 >= next.end) break;
         if (next.start < whale.end + 1.8 && next.end > whale.start - 1.8) {
           start = whale.end + 2 + rand('dolphin', cycle, 7) * 2;
           next = episode('dolphin', cycle, start);
         }
       }
-      dolphins.push(next);
+      remember(dolphins, next);
     }
   }
   return {
+    // Snapshot-only diagnostics: no mutable cache or event array escapes.
+    get stats() {
+      return Object.freeze({ cachedWhales: whales.length, cachedDolphins: dolphins.length,
+        whaleCycles, dolphinCycles, historyRebuilds });
+    },
     getEpisode(kind, time) {
       if (!['whale', 'dolphin'].includes(kind) || !Number.isFinite(time) || time < 0) return null;
-      ensureWhales(time + 60); ensureDolphins(time);
       const episodes = kind === 'whale' ? whales : dolphins;
+      if (episodes[0]?.cycle > 0 && time < episodes[0].start) {
+        // Rare old-time queries rebuild deterministically in bounded temporary
+        // storage, leaving the live forward cache and its cycle counters intact.
+        historyRebuilds++;
+        return createMarineTimeline(sceneSeed).getEpisode(kind, time);
+      }
+      ensureDolphins(time); ensureWhales(time + 60);
       for (let index = episodes.length - 1; index >= 0; index--) if (episodes[index].start <= time) return episodes[index];
       return null;
     },

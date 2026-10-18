@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import { createIsland } from '../src/island.js';
+import { createIsland } from '../src/models/island.js';
 
 test('16倍速下岛面湿润与积雪按加速帧推进，地形和阴影仍复用原模型', () => {
   const island=createIsland(new THREE.Scene());

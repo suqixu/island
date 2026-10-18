@@ -46,11 +46,14 @@ test('真实大气月盘使用月相尺寸，保留原背景位置、资源、�
             moonIllumination: illumination }, camera);
           const diameter = preset.phase === .5 ? full : natural;
           const expectedScale = diameter * 3800 * slope / height * (preset.phase === .5 ? 1 : direction.dot(forward));
-          near(moon.scale.x, expectedScale); near(moon.scale.y, expectedScale);
+          // The quad includes transparent space for the eclipse limb. Measure
+          // the visible unit disc, which must retain its original projected size.
+          const discScale=material.uniforms.uDiscUvScale.value;
+          near(moon.scale.x/discScale, expectedScale); near(moon.scale.y/discScale, expectedScale);
           near(moon.position.distanceTo(position), 0);
           assert.deepEqual(moon.quaternion.toArray(), camera.quaternion.toArray());
-          const top = position.clone().addScaledVector(up, moon.scale.y * .5).project(camera);
-          const bottom = position.clone().addScaledVector(up, -moon.scale.y * .5).project(camera);
+          const top = position.clone().addScaledVector(up, moon.scale.y/discScale * .5).project(camera);
+          const bottom = position.clone().addScaledVector(up, -moon.scale.y/discScale * .5).project(camera);
           near((top.y - bottom.y) * height * .5, preset.phase === .5 ? full / direction.dot(forward) : natural);
           assert.equal(moon.material, material); assert.equal(moon.geometry, geometry);
           assert.equal(material.uniforms.uTexture.value, moonMap); assert.equal(material.fragmentShader, shader);

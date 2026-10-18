@@ -1,3 +1,4 @@
+import { DEFAULTS } from './runtime-config.js';
 import * as THREE from 'three';
 import { getAnimationDelta } from './animation-time.js';
 import { TTFLoader } from 'three/addons/loaders/TTFLoader.js';
@@ -6,14 +7,13 @@ import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
 import { SPRING_RIVER_POEM } from './poem-text.js';
 import { getPoemCue, getGlyphMotion, POEM_CUE_DURATION } from './poem-motion.js';
 import { getPoemVisibility } from './poem-visibility.js';
+import {loadOptionalResource} from './resource-loading.js';
 
-export async function loadPoetryFont() {
-  const url = new URL('./assets/poetry-calligraphy.ttf', import.meta.url).href;
-  const [data] = await Promise.all([
-    new TTFLoader().loadAsync(url),
-    document.fonts?.load('88px "Isola Calligraphy"', '春江花月夜').catch(() => {}),
-  ]);
-  return new FontLoader().parse(data);
+export async function loadPoetryFont({signal}={}) {
+  const url = new URL('./assets/fonts/poetry-calligraphy.ttf', import.meta.url).href;
+  // CSS font readiness must not gate the independent Three.js font parser.
+  globalThis.document?.fonts?.load('88px "Isola Calligraphy"','春江花月夜').catch(()=>{});
+  return loadOptionalResource(async()=>new FontLoader().parse(await new TTFLoader().loadAsync(url)),{signal});
 }
 
 function createGlyphGeometry(character, font) {
@@ -50,7 +50,7 @@ function createGlyphGeometry(character, font) {
 }
 
 /** Extruded brush strokes float in a clear patch of sky beside the moon. */
-export function createPoetry(scene, camera, { font, onCueChange = () => {}, onComplete = () => {}, getFocusDistance = () => 300 } = {}) {
+export function createPoetry(scene, camera, { font, onCueChange = () => {}, onComplete = () => {}, getFocusDistance = () => DEFAULTS.poetry.focusDistance } = {}) {
   if (!font?.isFont) throw new TypeError('诗意字幕需要已加载的书法字体');
   const poem = SPRING_RIVER_POEM;
   const introduction = [poem.title, `${poem.dynasty} ${poem.author}`];
@@ -91,7 +91,7 @@ export function createPoetry(scene, camera, { font, onCueChange = () => {}, onCo
   const tilt = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), THREE.MathUtils.degToRad(10));
   const spin = new THREE.Quaternion(), spinAxis = new THREE.Vector3(0, 0, 1);
   const glyphMotion = {};
-  let enabled = true, elapsed = 0, lastTime = null, activeKey = null, currentVariant = 0, completed = false;
+  let enabled = DEFAULTS.poetry.rendererEnabled, elapsed = 0, lastTime = null, activeKey = null, currentVariant = 0, completed = false;
   let letterHeight = 1, moonVisibility = 0, disposed = false, currentCaption = '', activeLines = [], maxCueColumns = 1;
 
   function setCaption(text) {
@@ -180,7 +180,7 @@ export function createPoetry(scene, camera, { font, onCueChange = () => {}, onCo
     if (disposed) return;
     const dt = lastTime === null ? 0 : getAnimationDelta(time - lastTime, .2, env);
     lastTime = time;
-    group.visible = enabled && !cameraMoving && !env.poetrySuppressed;
+    group.visible = enabled && !cameraMoving;
     // Keep tracking moonlight while the user hides the poem or changes views.
     const targetVisibility = getPoemVisibility(env);
     if (env.moonInFrame !== true || env.moonIllumination < .99) {
@@ -210,9 +210,8 @@ export function createPoetry(scene, camera, { font, onCueChange = () => {}, onCo
       activeKey = null;
       return;
     }
-    if (!enabled || cameraMoving || env.poetrySuppressed) {
-      if (cameraMoving || env.poetrySuppressed) activeKey = null;
-      if (env.poetrySuppressed) setCaption('');
+    if (!enabled || cameraMoving) {
+      if (cameraMoving) activeKey = null;
       return;
     }
     if (targetVisibility > 0) elapsed += dt;

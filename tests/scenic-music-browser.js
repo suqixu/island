@@ -1,35 +1,27 @@
 import {createScenicMusic} from '../src/scenic-music.js';
-import chunjiang from '../src/assets/audio/chunjiang-synth.mp3?url';
-import caiyun from '../src/assets/audio/caiyun-synth.mp3?url';
-import pingsha from '../src/assets/audio/pingsha-synth.mp3?url';
-import mengjiang from '../src/assets/audio/mengjiang-synth.mp3?url';
-import shange from '../src/assets/audio/shange-synth.mp3?url';
-import zuguo from '../src/assets/audio/zuguo-synth.mp3?url';
-import liangzhu from '../src/assets/audio/liangzhu-synth.mp3?url';
-import nuerqing from '../src/assets/audio/nuerqing-synth.mp3?url';
-import wangningmei from '../src/assets/audio/wangningmei-synth.mp3?url';
-import molihua from '../src/assets/audio/molihua-synth.mp3?url';
-import yueer from '../src/assets/audio/yueer-synth.mp3?url';
-import sunset from '../src/assets/audio/yuzhou-changwan-weather.mp3?url';
+import chunjiang from '../src/assets/music/chunjiang-synth.mp3?url';
+import caiyun from '../src/assets/music/caiyun-synth.mp3?url';
+import pingsha from '../src/assets/music/pingsha-synth.mp3?url';
+import mengjiang from '../src/assets/music/mengjiang-synth.mp3?url';
+import shange from '../src/assets/music/shange-synth.mp3?url';
+import zuguo from '../src/assets/music/zuguo-synth.mp3?url';
+import liangzhu from '../src/assets/music/liangzhu-synth.mp3?url';
+import nuerqing from '../src/assets/music/nuerqing-synth.mp3?url';
+import wangningmei from '../src/assets/music/wangningmei-synth.mp3?url';
+import molihua from '../src/assets/music/molihua-synth.mp3?url';
+import yueer from '../src/assets/music/yueer-synth.mp3?url';
+import sunset from '../src/assets/music/yuzhou-changwan-weather.mp3?url';
 const tracks={sunset:{url:sunset,title:'渔舟唱晚'},chunjiang:{url:chunjiang,title:'春江花月夜'},caiyun:{url:caiyun,title:'彩云追月'},pingsha:{url:pingsha,title:'平沙落雁'},mengjiang:{url:mengjiang,title:'孟姜女哭长城'},shange:{url:shange,title:'山歌好比春江水'},zuguo:{url:zuguo,title:'我的祖国'},liangzhu:{url:liangzhu,title:'梁祝'},nuerqing:{url:nuerqing,title:'女儿情'},wangningmei:{url:wangningmei,title:'枉凝眉'}};
 tracks.molihua={url:molihua,title:'茉莉花'};
 tracks.yueer={url:yueer,title:'月儿明风儿静'};
 // 自动收录资产目录中的全部格式，新增音频文件后无需再手动添加试听控件。
-const audioFiles=import.meta.glob('../src/assets/audio/*.{mp3,ogg,wav}',{eager:true,query:'?url',import:'default'});
-const recordingTitles={
- 'island-shange':'山歌好比春江水',
- 'yueer-ming-fenger-jing':'月儿明风儿静',
- 'lubinghua':'鲁冰花','hualian':'花恋','tuogao-song':'驼糕之歌',
- 'songbie':'送别','jiegenghua':'桔梗花','bo-rulai':'波如来',
- 'mengzhong-eji':'梦中的额吉','dabei-zhou':'大悲咒',
- 'gongde-baoshan-zhou':'功德宝山咒','xinjing':'心经',
-};
-const groups=[['合成纯音乐 · MP3',[]],['专属录音 · MP3',[]],['合成源文件 · Ogg',[]],['其他音频',[]]];
+const audioFiles=import.meta.glob('../src/assets/music/*.{mp3,ogg,wav}',{eager:true,query:'?url',import:'default'});
+const groups=[['合成纯音乐 · MP3',[]],['合成源文件 · Ogg',[]],['其他音频',[]]];
 for(const [path,url]of Object.entries(audioFiles)){
  const file=path.split('/').at(-1),stem=file.replace(/\.[^.]+$/,''),format=file.split('.').at(-1);
  const id=stem==='yuzhou-changwan-weather'?'sunset':stem.replace(/-synth$/,'');
- const title=tracks[id]?.title??recordingTitles[stem]??stem;
- const group=format==='ogg'?2:format==='mp3'?(tracks[id]?0:1):3;
+ const title=tracks[id]?.title??stem;
+ const group=format==='ogg'?1:format==='mp3'?0:2;
  groups[group][1].push({url,file,id,title,format});
 }
 function pauseAuditions(){document.querySelectorAll('[data-audition]').forEach(e=>e.pause());}

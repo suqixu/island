@@ -8,6 +8,8 @@ const requestedMessages = [
   '正在耐心等待天气变化……', '正在向海水加盐……', '正在开凿山洞……', '正在建设凉亭……',
   '正在搭建灯塔……', '正在装修山洞……', '正在召集鸟群……', '正在调整海风……',
   '正在制作雪花……', '正在制作雨水……', '正在产生雾气……',
+  '正在绘制云朵……', '正在点燃星辰……', '正在连接星座……',
+  '正在酝酿台风……', '正在准备日食……',
 ];
 
 test('随机文案每轮完整出现，跨轮也不会连续重复', () => {
@@ -20,7 +22,7 @@ test('随机文案每轮完整出现，跨轮也不会连续重复', () => {
   const rounds = [];
   for (let round = 0; round < 8; round += 1) {
     const messages = [];
-    for (let index = 0; index < 19; index += 1) {
+    for (let index = 0; index < requestedMessages.length; index += 1) {
       const message = next();
       assert.notEqual(message, previous);
       messages.push(message);
@@ -35,9 +37,9 @@ test('随机文案每轮完整出现，跨轮也不会连续重复', () => {
 test('下一轮洗牌首句碰到上一轮尾句时，调整顺序避免重复', () => {
   let draw = 0;
   // 第一轮保留顺序，第二轮把尾句交换到首位，确定触发跨轮碰撞。
-  const next = createLoadingMessageCycle({ random: () => draw++ === 18 ? 0 : .999 });
+  const next = createLoadingMessageCycle({ random: () => draw++ === requestedMessages.length - 1 ? 0 : .999 });
   let previous;
-  for (let index = 0; index < 76; index += 1) {
+  for (let index = 0; index < requestedMessages.length * 4; index += 1) {
     const message = next();
     assert.notEqual(message, previous);
     previous = message;
@@ -70,6 +72,25 @@ function screenFixture() {
   return { loadingScreen, root, message, phase, classes, attributes, scheduled,
     tick: () => [...scheduled.values()].forEach(callback => callback()) };
 }
+
+test('加载失败后提供可用的重试按钮，离开页面后解除监听', () => {
+  const listeners = new Map();
+  const retryButton = {hidden:true,
+    addEventListener:(name, callback)=>listeners.set(name, callback),
+    removeEventListener:(name)=>listeners.delete(name)};
+  let retried = 0;
+  const screen = createLoadingScreen({root:{setAttribute(){},classList:{add(){}}},
+    message:{}, retryButton, onRetry:()=>retried++, schedule:()=>1, cancel(){}});
+  screen.start();
+  listeners.get('click')?.();
+  assert.equal(retried,0);
+  screen.fail();
+  assert.equal(retryButton.hidden,false);
+  listeners.get('click')?.();
+  assert.equal(retried,1);
+  screen.dispose();
+  assert.equal(listeners.size,0);
+});
 
 test('开始后马上显示文案，重复开始不会创建多余定时器', () => {
   const { loadingScreen, message, scheduled, attributes, tick } = screenFixture();
@@ -125,7 +146,7 @@ test('页面离开时清除轮播，重复清理及迟到的回调不再更新�
   assert.equal(message.textContent, last);
 });
 
-test('实际启动阶段独立更新，保留原19句轮播且完成或出错后拒绝迟到状态', () => {
+test('实际启动阶段独立更新，保留随机轮播且完成或出错后拒绝迟到状态', () => {
   const { loadingScreen, message, phase, tick } = screenFixture();
   loadingScreen.start();
   const original = message.textContent;

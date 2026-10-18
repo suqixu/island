@@ -27,7 +27,8 @@ export function createMoonViewVisibility(heightAt) {
     if(!camera||!moon?.visible)return false;
     moon.getWorldPosition(center);
     right.setFromMatrixColumn(camera.matrixWorld,0);up.setFromMatrixColumn(camera.matrixWorld,1);
-    const radius=Math.abs(moon.scale.x)*.5;
+    const discScale=moon.material?.uniforms?.uDiscUvScale?.value??1;
+    const radius=Math.abs(moon.scale.x)*.5/discScale;
     for(const [x,y]of offsets) {
       point.copy(center).addScaledVector(right,x*radius).addScaledVector(up,y*radius);projected.copy(point).project(camera);
       if(![projected.x,projected.y,projected.z].every(Number.isFinite)||Math.abs(projected.x)>1||Math.abs(projected.y)>1||projected.z< -1||projected.z>1)continue;

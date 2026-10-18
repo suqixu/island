@@ -3,7 +3,7 @@ import importlib.util
 from pathlib import Path
 import unittest
 
-spec = importlib.util.spec_from_file_location('scenic_renderer', Path(__file__).resolve().parents[1] / 'scripts/render-scenic-music.py')
+spec = importlib.util.spec_from_file_location('scenic_renderer', Path(__file__).resolve().parents[1] / 'scripts/music/render-scenic-music.py')
 renderer = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(renderer)
 

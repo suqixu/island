@@ -1,0 +1,41 @@
+The active Milky Way is procedural and uses no image texture.
+The following previously evaluated image assets are retained as references only.
+
+Milky Way alternatives (archived, inactive)
+
+src/assets/textures/sky/milky-way-emission-imagegen-v2.png is an original panorama
+generated and refined with the built-in Imagegen tool. The matching JPEG is its runtime
+encoding (1774 x 887). The galactic plane is at the equator, the galactic core
+at the horizontal center; the renderer aligns it with the existing sky pole
+and galactic center. Bright catalogue stars are rendered independently.
+The exact prompt is recorded in prompts/textures/generated-surface-prompts.json.
+
+NASA alternative (retained, not used by the default loader)
+
+Source: NASA SVS, Deep Star Maps 2020, visualization 4851.
+https://svs.gsfc.nasa.gov/4851/
+
+Credit: NASA/Goddard Space Flight Center Scientific Visualization Studio.
+Gaia DR2: ESA/Gaia/DPAC. Visualization by Ernie Wright (USRA).
+
+Bundled file: src/assets/textures/sky/milky-way-nasa-2020.jpg (1024 x 512).
+NASA's web JPEG preview of the celestial-coordinate Milky Way background:
+https://svs.gsfc.nasa.gov/vis/a000000/a004800/a004851/milkyway_2020_4k_print.jpg
+The larger original is 4096 x 2048 OpenEXR:
+https://svs.gsfc.nasa.gov/vis/a000000/a004800/a004851/milkyway_2020_4k.exr
+
+The map omits the bright Hipparcos/Tycho foreground. The scene renders its own
+catalogue stars and constellation lines above this background. North is at the
+top, RA zero at the center, and right ascension increases toward the left.
+The JPEG was retrieved through the public images.weserv.nl image cache because
+direct connections to the NASA file server failed in the development network.
+The retained file is local and requires no runtime requests there.
+
+NASA SVS content is public domain unless otherwise noted:
+https://svs.gsfc.nasa.gov/help/#frequently-asked-questions
+
+Rock texture
+
+src/assets/textures/terrain/coastal-rock-albedo-v1.png is an original rock albedo generated
+with the built-in Imagegen tool; the matching JPEG is its runtime encoding.
+The exact prompts are recorded in prompts/textures/generated-surface-prompts.json.

@@ -1,0 +1,8 @@
+{
+  "tool": "built-in OpenAI image_gen",
+  "generatedDate": "2026-10-18",
+  "asset": "pavilion-ceramic-albedo-v1.webp",
+  "sourceGeneration": "exec-59a03d27-0247-454d-a0e4-804efd346fb2.png",
+  "prompt": "Create one seamless tileable square photorealistic material albedo texture for weathered traditional Chinese dark grey fired-clay roof tiles on a small coastal pavilion in a real-time 3D island. Face-on orthographic material scan, no scene. Fill the square with the ceramic SURFACE only, no tile silhouettes, no deep rows or borders: the real mesh already contains curved tiles and ridges. Desaturated charcoal slate grey with very subtle cool green undertone, fine fired-clay pores, restrained uneven mineral patina, sparse pale salt specks, small soft weathering variation. Low contrast with fine readable texture. Uniform flat neutral diffuse cross-polarized illumination, no shadows, no baked directional lighting, no shiny highlights. Opposite edges perfectly seamless. No text, no labels, no objects, no scenery, no roof photograph, no watermark, no border. Opaque texture.",
+  "encoding": {"width":512,"height":512,"format":"WebP","quality":82}
+}

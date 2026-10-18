@@ -1,0 +1,9 @@
+Isola Toolbar
+
+Derived from the bundled Ma Shan Zheng font in src/assets/fonts/poetry-calligraphy.ttf.
+Contains only the original 诗 and 禅 glyph outlines plus .notdef, preserving the
+original units per em, advance widths, ascender and descender. Rebuilt as a small
+OpenType font with the family name Isola Toolbar for the startup toolbar.
+
+Licensed under the SIL Open Font License 1.1; full original license and copyright
+notices are included in MaShanZheng-OFL.txt in this same directory.

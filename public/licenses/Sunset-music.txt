@@ -8,6 +8,6 @@
 
 主旋律依公开乐谱手工输入；速度、细小装饰音、伴奏、声部、电子琴音色和
 混响为海岛场景重新编配。不是浦琪璋原版录音的复刻。
-生成源码：scripts/render-sunset-music.py
-合成资源：src/assets/audio/yuzhou-changwan-weather.ogg
-浏览器播放版本：src/assets/audio/yuzhou-changwan-weather.mp3，由 scripts/export-mp3-audio.py 转码。
+生成源码：scripts/music/render-sunset-music.py
+合成资源：src/assets/music/yuzhou-changwan-weather.ogg
+浏览器播放版本：src/assets/music/yuzhou-changwan-weather.mp3，由 scripts/music/export-mp3-audio.py 转码。

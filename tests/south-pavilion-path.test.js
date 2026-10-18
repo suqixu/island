@@ -1,11 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import { createIslandPaths } from '../src/island-paths.js';
+import { createIslandPaths } from '../src/models/island-paths.js';
 import { getIslandPathLayout } from '../src/path-layout.js';
 import { CAVE_LAYOUT } from '../src/cave-layout.js';
 import { REST_PAVILION_SITES } from '../src/rest-pavilion-layout.js';
-import { createRestPavilion } from '../src/rest-pavilion.js';
+import { createRestPavilion } from '../src/models/rest-pavilion.js';
 import { createPavilionSurfaceSampler } from '../src/rest-pavilion-surface.js';
 
 function actualFlight() {

@@ -1,6 +1,8 @@
+import { DEFAULTS } from './runtime-config.js';
+const schedule=DEFAULTS.sky.schedules.solarEclipse;
 const clamp=(value,low=0,high=1)=>Math.max(low,Math.min(high,value));
 const smooth=value=>{const t=clamp(value);return t*t*(3-2*t);};
-const DURATION=48,MOON_RADIUS=1.05;
+const DURATION=schedule.duration,MOON_RADIUS=1.05;
 
 /** A scenic transit: overlapping discs produce partial coverage, a brief
  * totality plateau, then a continuous return to normal daylight. */
@@ -23,10 +25,10 @@ export function getSolarEclipseState(progress){
 }
 
 export function createSolarEclipse({random=Math.random}={}){
-  let mode='default',observed=0,nextAt=30+random()*75,age=-1,completedDay=-Infinity;
-  function reset(){completedDay=-Infinity;age=-1;nextAt=observed+(mode==='instant'?0:30+random()*75);}
+  let mode=DEFAULTS.sky.solarEclipse,observed=0,nextAt=DEFAULTS.sky.solarEclipse==='instant'?0:schedule.initialWait.min+random()*schedule.initialWait.range,age=-1,completedDay=-Infinity;
+  function reset(){completedDay=-Infinity;age=-1;nextAt=observed+(mode==='instant'?0:schedule.initialWait.min+random()*schedule.initialWait.range);}
   function setMode(value){
-    const next=['default','instant','off'].includes(value)?value:'default';
+    const next=DEFAULTS.sky.modes.includes(value)?value:DEFAULTS.sky.solarEclipse;
     if(next===mode)return;mode=next;reset();
   }
   function update(delta,env={}){
@@ -40,12 +42,12 @@ export function createSolarEclipse({random=Math.random}={}){
     if(mode==='off')return getSolarEclipseState();
     if(clear)observed+=dt;
     if(!daytime){
-      if(age>=0){age=-1;nextAt=observed+(mode==='instant'?0:240+random()*480);}
+      if(age>=0){age=-1;nextAt=observed+(mode==='instant'?0:schedule.repeatWait.min+random()*schedule.repeatWait.range);}
       return getSolarEclipseState();
     }
     if(age>=0){
       age+=dt;
-      if(age>=DURATION){completedDay=dayIndex;age=-1;nextAt=observed+(mode==='instant'?0:240+random()*480);return getSolarEclipseState();}
+      if(age>=DURATION){completedDay=dayIndex;age=-1;nextAt=observed+(mode==='instant'?0:schedule.repeatWait.min+random()*schedule.repeatWait.range);return getSolarEclipseState();}
     }else if(completedDay!==dayIndex&&(mode==='instant'?startDaytime:clear)&&observed>=nextAt)age=0;
     return getSolarEclipseState(age>=0?age/DURATION:undefined);
   }

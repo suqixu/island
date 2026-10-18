@@ -24,6 +24,7 @@ function render(){
 document.querySelectorAll('[data-phase]').forEach(button=>button.onclick=()=>{running=false;phase=Number(button.dataset.phase);slider.value=phase;render();});
 slider.oninput=()=>{running=false;phase=Number(slider.value);render();};
 document.getElementById('play').onclick=()=>{phase=0;running=true;};
+document.getElementById('fov').onchange=event=>{camera.fov=Number(event.target.value);camera.updateProjectionMatrix();render();};
 function resize(){renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();render();}
 addEventListener('resize',resize);resize();
 renderer.setAnimationLoop(now=>{const dt=Math.min(.1,(now-last)/1000);last=now;time+=dt;if(running){phase=Math.min(1,phase+dt/48);slider.value=phase;if(phase===1)running=false;}render();});

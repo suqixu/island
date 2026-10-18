@@ -27,7 +27,7 @@
 
 ### 任务一：泻湖居民
 
-**Files:** 新增 `src/lagoon-life.js`、`src/lagoon-life-motion.js`、`tests/lagoon-life-motion.test.js`、`tests/lagoon-life.test.js`。
+**Files:** 新增 `src/models/lagoon-life.js`、`src/lagoon-life-motion.js`、`tests/lagoon-life-motion.test.js`、`tests/lagoon-life.test.js`。
 
 **Interfaces:** 消费 `heightAt(x,z)` 和 `LAGOON_LAYOUT`；导出 `createLagoonLife(scene,{heightAt,seed})`，返回 `{group,update(time,env,camera),setQuality(value),dispose(),onEvent}`。
 
@@ -37,7 +37,7 @@
 
 ### 任务二：远海随机活动
 
-**Files:** 修改 `src/marine-motion.js`、`src/marine.js`、`tests/marine-motion.test.js`、`tests/marine.test.js`。
+**Files:** 修改 `src/marine-motion.js`、`src/models/marine.js`、`tests/marine-motion.test.js`、`tests/marine.test.js`。
 
 **Interfaces:** 保留 `createMarine(scene,{heightAt,fishSeed})` 与 `update/setQuality/dispose/onEvent`，让纯运动、实例和声效共享同一活动序列。
 
@@ -47,7 +47,7 @@
 
 ### 任务三：整株风动
 
-**Files:** 修改 `src/vegetation-motion.js`、`src/island.js`、`src/island-paths.js`；新增针对性风动测试。
+**Files:** 修改 `src/vegetation-motion.js`、`src/models/island.js`、`src/models/island-paths.js`；新增针对性风动测试。
 
 **Interfaces:** 保留 `island.update(time,env)`，共享风速、阵风、方向 uniform；可见和阴影使用同一位移。
 

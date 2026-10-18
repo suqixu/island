@@ -1,7 +1,9 @@
+import { DEFAULTS, RENDERING_CONFIG } from './runtime-config.js';
 import * as THREE from 'three';
 
+const schedule=DEFAULTS.sky.schedules.meteor;
 const clamp=THREE.MathUtils.clamp,smooth=THREE.MathUtils.smoothstep,RADIUS=2110,POOL_SIZE=32;
-const limits={high:{capacity:9},medium:{capacity:9},low:{capacity:9}};
+const limits=RENDERING_CONFIG.meteorLimits;
 function randomSource(seed){return()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};}
 const trailVertex=/* glsl */`
   attribute float aOpacity;
@@ -9,21 +11,19 @@ const trailVertex=/* glsl */`
   varying vec2 vUv;
   varying float vOpacity;
   varying vec3 vColor;
-  varying float vAltitude;
-  void main(){vUv=uv;vOpacity=aOpacity;vColor=aColor;vAltitude=normalize(position).y;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}
+  void main(){vUv=uv;vOpacity=aOpacity;vColor=aColor;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}
 `;
 const trailFragment=/* glsl */`
   uniform float uOpacity;
   varying vec2 vUv;
   varying float vOpacity;
   varying vec3 vColor;
-  varying float vAltitude;
   void main(){
     float x=clamp(vUv.x,0.0,1.0),y=(vUv.y-.5)*2.0;
     float core=exp(-y*y*30.0),halo=exp(-y*y*3.5);
     float tail=pow(1.0-x,1.2);
     float edge=1.0-smoothstep(.7,1.0,abs(y));
-    gl_FragColor=vec4(vColor,(core*1.25+halo*.12)*tail*edge*vOpacity*uOpacity*smoothstep(.15,.28,vAltitude));
+    gl_FragColor=vec4(vColor,(core*1.25+halo*.12)*tail*edge*vOpacity*uOpacity);
   }
 `;
 const headVertex=/* glsl */`
@@ -70,57 +70,48 @@ export function createMeteorShower({groupRandom=Math.random,timeRandom=Math.rand
   trails.name='meteor';heads.name='meteor-head';trails.renderOrder=-860;heads.renderOrder=-850;
   trails.frustumCulled=heads.frustumCulled=false;group.add(trails,heads);
   const pool=Array.from({length:POOL_SIZE},()=>({active:false,born:0,flight:1,linger:1,width:6,size:16,brightness:1,trailFraction:.3,start:new THREE.Vector3(),away:new THREE.Vector3(),color:new THREE.Color()}));
-  const skyAnchor=new THREE.Vector3(),east=new THREE.Vector3(),up=new THREE.Vector3(),forward=new THREE.Vector3(),localEast=new THREE.Vector3(),localUp=new THREE.Vector3();
+  const skyAnchor=new THREE.Vector3(),east=new THREE.Vector3(),up=new THREE.Vector3(),end=new THREE.Vector3();
   const head=new THREE.Vector3(),tail=new THREE.Vector3(),side=new THREE.Vector3(),liveColor=new THREE.Color();
-  let elapsed=0,observed=0,nextAt=2+timeRandom()*8,started=-Infinity,nextBurstAt=Infinity,nextMeteorAt=Infinity,burstRemaining=0,burstSize=0,burstIndex=0,burstBearing=0,quality='high',disposed=false,mode='default';
+  let halfHeight=1,aspect=1,elapsed=0,observed=0,nextAt=DEFAULTS.sky.meteor==='instant'?0:schedule.initialWait.min+timeRandom()*schedule.initialWait.range,started=-Infinity,nextBurstAt=Infinity,nextMeteorAt=Infinity,burstRemaining=0,burstSize=0,burstIndex=0,burstBearing=0,quality=RENDERING_CONFIG.defaultQuality,disposed=false,mode=DEFAULTS.sky.meteor;
 
   function clear(){
     pool.forEach(slot=>{slot.active=false;});started=-Infinity;burstRemaining=0;
     trails.geometry.setDrawRange(0,0);heads.geometry.setDrawRange(0,0);trails.visible=heads.visible=false;
   }
   function setMode(value){
-    const next=['default','instant','off'].includes(value)?value:'default';
+    const next=DEFAULTS.sky.modes.includes(value)?value:DEFAULTS.sky.meteor;
     if(next===mode)return;mode=next;clear();group.visible=false;
-    nextAt=observed+(mode==='instant'?0:2+timeRandom()*8);
+    nextAt=observed+(mode==='instant'?0:schedule.initialWait.min+timeRandom()*schedule.initialWait.range);
   }
   function setEnabled(value){setMode(value?'default':'off');}
 
   function begin(view){
-    view.getWorldDirection(forward);
-    const azimuth=Math.atan2(forward.z,forward.x)-.12;
-    const altitude=clamp(Math.asin(clamp(forward.y,-1,1))+.30,.76,1.14);
-    skyAnchor.set(Math.cos(azimuth)*Math.cos(altitude),Math.sin(altitude),Math.sin(azimuth)*Math.cos(altitude));
-    east.set(-Math.sin(azimuth),0,Math.cos(azimuth));up.crossVectors(east,skyAnchor).normalize();
-    // Keep the tangent 'up' pointing toward the zenith for a consistent slant.
-    if(up.y<0)up.negate();
-    started=elapsed;nextAt=observed+(mode==='instant'?32:45+timeRandom()*100);nextBurstAt=elapsed+(mode==='instant'?0:.65);burstRemaining=0;
+    // Capture the view once per episode; existing paths stay fixed when turning.
+    view.getWorldDirection(skyAnchor);
+    east.setFromMatrixColumn(view.matrixWorld,0);up.setFromMatrixColumn(view.matrixWorld,1);
+    halfHeight=Math.tan(THREE.MathUtils.degToRad(view.getEffectiveFOV())*.5);aspect=view.aspect;
+    started=elapsed;nextAt=observed+(mode==='instant'?schedule.instantRepeat:schedule.repeatWait.min+timeRandom()*schedule.repeatWait.range);nextBurstAt=elapsed+(mode==='instant'?0:.65);burstRemaining=0;
   }
   function spawn(){
     let slot;
     for(let i=0;i<limits[quality].capacity;i++)if(!pool[i].active){slot=pool[i];break;}
     if(!slot)return;
-    const x=(random()-.5)*.92,y=-.04-random()*.25;
-    slot.start.copy(skyAnchor).addScaledVector(east,x).addScaledVector(up,y).normalize();
-    // Resolve the shared bearing against each star's local horizon. Projecting
-    // one global tangent can tilt edge-of-group paths upward on the sphere.
-    localEast.set(-slot.start.z,0,slot.start.x).normalize();localUp.crossVectors(localEast,slot.start).normalize();
-    slot.away.copy(localEast).multiplyScalar(Math.cos(burstBearing)).addScaledVector(localUp,Math.sin(burstBearing)).normalize();
+    const x=(random()-.5)*.7,y=(random()-.5)*.3;
+    const dx=Math.cos(burstBearing)/aspect,dy=Math.sin(burstBearing),edge=1.2;
+    // Extend a line through the central view past both screen edges. Resolve
+    // those rays into a world-space great circle, independent of horizon height.
+    const before=Math.min((edge-y)/-dy,Math.abs(dx)>1e-6?(edge+Math.sign(dx)*x)/Math.abs(dx):Infinity);
+    const after=Math.min((-edge-y)/dy,Math.abs(dx)>1e-6?(edge-Math.sign(dx)*x)/Math.abs(dx):Infinity);
+    slot.start.copy(skyAnchor).addScaledVector(east,(x-dx*before)*halfHeight*aspect).addScaledVector(up,(y-dy*before)*halfHeight).normalize();
+    end.copy(skyAnchor).addScaledVector(east,(x+dx*after)*halfHeight*aspect).addScaledVector(up,(y+dy*after)*halfHeight).normalize();
+    slot.travel=slot.start.angleTo(end);
+    slot.away.copy(end).addScaledVector(slot.start,-slot.start.dot(end)).normalize();
     // A visual mass proxy ties scale, brightness and speed to one individual.
     // Larger meteors move a little more slowly, within a short, crisp pass.
     const mass=random();
     slot.active=true;slot.born=elapsed;slot.flight=.85+mass*.45;
     slot.linger=.18+mass*.22;
-    slot.travel=.48+random()*.10;slot.trailFraction=.55+random()*.18;
-    // Keep the entire arc above about 16 degrees. Limit angular distance,
-    // rather than truncating flight time, so each pass fades out smoothly.
-    if(slot.start.y*Math.cos(slot.travel)+slot.away.y*Math.sin(slot.travel)<.28){
-      let low=0,high=slot.travel;
-      for(let i=0;i<14;i++){
-        const middle=(low+high)*.5;
-        if(slot.start.y*Math.cos(middle)+slot.away.y*Math.sin(middle)>=.28)low=middle;else high=middle;
-      }
-      slot.travel=low;
-    }
+    slot.trailFraction=.55+random()*.18;
     slot.width=3.8+mass*2.6;slot.size=6+mass*6;
     slot.brightness=1.15+mass*.65;
     slot.color.setRGB(1,.96+random()*.03,.84+random()*.10);
@@ -171,10 +162,10 @@ export function createMeteorShower({groupRandom=Math.random,timeRandom=Math.rand
       point(slot,t,head);point(slot,Math.max(0,t-slot.trailFraction),tail);
       const alpha=slot.brightness*fade*(after>0?.48:1);
       writeQuad(trailCount++,slot,alpha);
-      if(age<slot.flight&&head.y>RADIUS*.15){
+      if(age<slot.flight){
         const a=heads.geometry.attributes;
         a.position.setXYZ(headCount,head.x,head.y,head.z);a.aSize.setX(headCount,slot.size);
-        a.aOpacity.setX(headCount,slot.brightness*smooth(t,0,.06)*(1-smooth(t,.85,1))*smooth(head.y/RADIUS,.16,.30));
+        a.aOpacity.setX(headCount,slot.brightness*smooth(t,0,.06));
         a.aColor.setXYZ(headCount,liveColor.r,liveColor.g,liveColor.b);headCount++;
       }
     }
@@ -182,7 +173,7 @@ export function createMeteorShower({groupRandom=Math.random,timeRandom=Math.rand
     trails.visible=trailCount>0;heads.visible=headCount>0;
     for(const object of [trails,heads])for(const name of ['position','aOpacity','aColor','aSize'])if(object.geometry.attributes[name])object.geometry.attributes[name].needsUpdate=true;
   }
-  function setQuality(value){quality=Object.hasOwn(limits,value)?value:'high';pool.forEach((slot,i)=>{if(i>=limits[quality].capacity)slot.active=false;});}
+  function setQuality(value){quality=Object.hasOwn(limits,value)?value:RENDERING_CONFIG.defaultQuality;pool.forEach((slot,i)=>{if(i>=limits[quality].capacity)slot.active=false;});}
   function dispose(){if(disposed)return;disposed=true;trails.geometry.dispose();trails.material.dispose();heads.geometry.dispose();heads.material.dispose();group.removeFromParent();group.clear();}
   return{group,update,setQuality,setEnabled,setMode,dispose};
 }

@@ -16,3 +16,11 @@ test('月盘虽然投影在屏幕内但被山体遮挡时，不显示诗句',()=
   assert.equal(visible(camera,moon),false);
   assert.equal(api.createMoonViewVisibility(()=>0)(camera,moon),true);
 });
+test('日冕扩展透明画布后仍按真实月面判断山体遮挡',()=>{
+  const {camera,moon}=setup();
+  const visible=api.createMoonViewVisibility((x,z)=>z>=0&&z<=5?26:0);
+  assert.equal(visible(camera,moon),false);
+  moon.material.uniforms={uDiscUvScale:{value:4.3}};
+  moon.scale.multiplyScalar(4.3);
+  assert.equal(visible(camera,moon),false,'日冕画布不能被当成越过山脊的月面');
+});

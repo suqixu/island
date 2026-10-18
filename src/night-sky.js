@@ -1,10 +1,13 @@
+import { DEFAULTS, RENDERING_CONFIG } from './runtime-config.js';
 import * as THREE from 'three';
 import catalogue from './assets/data/bright-stars.json' with {type:'json'};
 import {getAnimationRate} from './animation-time.js';
 import {createMeteorShower} from './meteor-shower.js';
 import {createConstellationGuides} from './constellation-guides.js';
 import {COMET_STYLES} from './comet-styles.js';
+import {createAurora} from './aurora.js';
 
+const schedule=DEFAULTS.sky.schedules.comet;
 const TAU=Math.PI*2, radians=THREE.MathUtils.degToRad, clamp=THREE.MathUtils.clamp;
 const smooth=THREE.MathUtils.smoothstep;
 function randomSource(seed){return()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};}
@@ -154,9 +157,10 @@ function tail(name,comet,time){
  * This is scenery, not a location/date based ephemeris. Events use unaccelerated
  * elapsed time, retain world directions, and allocate no geometry per frame.
  */
-export function createNightSky({cometRandom=Math.random,meteorRandom=Math.random,eventRandom=Math.random}={}){
+export function createNightSky({cometRandom=Math.random,meteorRandom=Math.random,eventRandom=Math.random,auroraRandom=Math.random}={}){
   const random=randomSource(731905),group=new THREE.Group(),celestial=new THREE.Group();
   group.name='night-sky';celestial.name='celestial-sphere';group.add(celestial);
+  const aurora=createAurora({random:auroraRandom});group.add(aurora.group);
   const guides=createConstellationGuides(catalogue);celestial.add(guides.group);
   const uniforms={uOpacity:{value:0},uTime:{value:0},uPixelRatio:{value:1},uMoonWash:{value:0},uMoonDirection:{value:new THREE.Vector3(0,1,0)}};
   const positions=[],brightness=[],colors=[],twinkles=[],phases=[];
@@ -193,17 +197,17 @@ export function createNightSky({cometRandom=Math.random,meteorRandom=Math.random
   const rotation=new THREE.Matrix4(),heading=new THREE.Vector3(),cometStart=new THREE.Vector3(),cometEnd=new THREE.Vector3();
   const headPosition=new THREE.Vector3(),tailPosition=new THREE.Vector3(),side=new THREE.Vector3(),away=new THREE.Vector3(),sun=new THREE.Vector3(),pathUp=new THREE.Vector3();
   const cometTangent=new THREE.Vector3(),cometBounds=new THREE.Box3(),cometFrustum=new THREE.Frustum(),viewRotation=new THREE.Matrix4(),clipFromSky=new THREE.Matrix4();
-  let disposed=false,quality='high',clock=0,lastTime,cometAt=15+eventRandom()*75;
-  let cometAge=Infinity,cometSpeed=0,cometActive=false,cometMode='default',enteredView=false,outsideFor=0,cometStyle=COMET_STYLES[0];
+  let disposed=false,quality=RENDERING_CONFIG.defaultQuality,clock=0,lastTime,cometAt=DEFAULTS.sky.comet==='instant'?0:schedule.initialWait.min+eventRandom()*schedule.initialWait.range;
+  let cometAge=Infinity,cometSpeed=0,cometActive=false,cometMode=DEFAULTS.sky.comet,enteredView=false,outsideFor=0,cometStyle=COMET_STYLES[0];
 
   function finishComet(initial=false){
     cometActive=false;comet.visible=head.visible=false;
     comet.material.uniforms.uOpacity.value=head.material.uniforms.uOpacity.value=0;
-    cometAt=clock+(cometMode==='instant'?0:initial?15+eventRandom()*75:40+eventRandom()*200);
+    cometAt=clock+(cometMode==='instant'?0:initial?schedule.initialWait.min+eventRandom()*schedule.initialWait.range:schedule.repeatWait.min+eventRandom()*schedule.repeatWait.range);
   }
 
   function setCometMode(value){
-    const next=['default','instant','off'].includes(value)?value:'default';
+    const next=DEFAULTS.sky.modes.includes(value)?value:DEFAULTS.sky.comet;
     if(next===cometMode)return;cometMode=next;finishComet(true);
   }
   function setCometsVisible(value){setCometMode(value?'default':'off');}
@@ -229,6 +233,7 @@ export function createNightSky({cometRandom=Math.random,meteorRandom=Math.random
   }
   function update(time,env={},view){
     if(disposed||!view)return;
+    aurora.update(time,env,view);
     const now=Number.isFinite(time)?time:(lastTime??0);
     const dt=lastTime===undefined?0:clamp((now-lastTime)/getAnimationRate(env),0,.25);lastTime=now;
     const night=1-smooth(clamp(env.daylight??1,0,1),.015,.30);
@@ -245,7 +250,7 @@ export function createNightSky({cometRandom=Math.random,meteorRandom=Math.random
     uniforms.uOpacity.value=visibility;uniforms.uMoonWash.value=moon;
     if(env.moonDirection?.isVector3)uniforms.uMoonDirection.value.copy(env.moonDirection);
     else if(Array.isArray(env.moon))uniforms.uMoonDirection.value.fromArray(env.moon).normalize();
-    uniforms.uPixelRatio.value=Math.min(globalThis.devicePixelRatio||1,quality==='low'?1:1.7);
+    uniforms.uPixelRatio.value=Math.min(globalThis.devicePixelRatio||1,quality==='low'?RENDERING_CONFIG.nightSky.pixelRatio.low:RENDERING_CONFIG.nightSky.pixelRatio.default);
     guides.update(visibility,celestial.quaternion,uniforms.uPixelRatio.value);
     band.material.uniforms.uOpacity.value=visibility*.20*(1-moon*.65);
     mistUniforms.uOpacity.value=visibility*.64*(1-moon*.65);
@@ -316,12 +321,13 @@ export function createNightSky({cometRandom=Math.random,meteorRandom=Math.random
     }
   }
   function setQuality(value){
-    quality=['high','medium','low'].includes(value)?value:'high';
-    stars.geometry.setDrawRange(0,quality==='low'?1700:quality==='medium'?2900:catalogue.length);
+    quality=RENDERING_CONFIG.qualityOptions.some(option=>option.value===value)?value:RENDERING_CONFIG.defaultQuality;
+    stars.geometry.setDrawRange(0,RENDERING_CONFIG.nightSky.starCounts[quality]??catalogue.length);
     band.material.uniforms.uDetail.value=quality==='low'?0:1;
-    shower.setQuality(quality);
+    shower.setQuality(quality);aurora.setQuality(quality);
   }
-  function dispose(){if(disposed)return;disposed=true;guides.dispose();shower.dispose();group.traverse(object=>{object.geometry?.dispose();object.material?.dispose();});group.removeFromParent();group.clear();}
-  setQuality('high');
-  return{group,catalogue,update,setQuality,setConstellationsVisible:guides.setVisible,setConstellationMode:guides.setMode,setMeteorsVisible:shower.setEnabled,setCometsVisible,setMeteorMode:shower.setMode,setCometMode,dispose};
+  function dispose(){if(disposed)return;disposed=true;guides.dispose();shower.dispose();aurora.dispose();group.traverse(object=>{object.geometry?.dispose();object.material?.dispose();});group.removeFromParent();group.clear();}
+  guides.setMode(DEFAULTS.sky.constellation);
+  setQuality(RENDERING_CONFIG.defaultQuality);
+  return{group,catalogue,update,setQuality,setConstellationsVisible:guides.setVisible,setConstellationMode:guides.setMode,setMeteorsVisible:shower.setEnabled,setCometsVisible,setMeteorMode:shower.setMode,setCometMode,setAuroraMode:aurora.setMode,dispose};
 }
