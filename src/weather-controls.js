@@ -6,8 +6,8 @@ export function getCloudMode(value) {
 
 export function selectWeather(state,button) {
   if(!Object.hasOwn(WEATHER_CONFIG.presets,button))return state;
-  if(button==='rain') {
-    const cycle=WEATHER_CONFIG.rainCycle,index=cycle.indexOf(state.weather);
+  if(button==='rain'||button==='snow') {
+    const cycle=button==='snow'?WEATHER_CONFIG.snowCycle:WEATHER_CONFIG.rainCycle,index=cycle.indexOf(state.weather);
     state.weather=cycle[(index+1)%cycle.length];
     state.cloudMode=DEFAULTS.simulation.cloudMode;
   } else if(button==='cloudy') {
@@ -23,6 +23,12 @@ export function selectWeather(state,button) {
 }
 
 export function getWeatherButtonState(state,button) {
+  if(button==='snow') {
+    const selected=state.weather==='snow'||state.weather==='blizzard',mode=selected?state.weather:'sunny';
+    const cycle=WEATHER_CONFIG.snowCycle,next=cycle[(cycle.indexOf(mode)+1)%cycle.length];
+    return {selected,icon:mode==='blizzard'?'blizzard':'snow',
+      label:`下雪：${selected?WEATHER_CONFIG.snowModeNames[mode]:'未选择'}，点击切换${WEATHER_CONFIG.snowModeNames[next]}`};
+  }
   if(button==='rain') {
     const selected=state.weather==='rain'||state.weather==='typhoon';
     const mode=selected?state.weather:'sunny';

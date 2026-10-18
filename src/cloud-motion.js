@@ -17,7 +17,7 @@ export function advanceCloudMotion(state, elapsed, env = {}, output) {
   const delta = first ? 0 : getAnimationDelta(now - state.lastTime, .25, env);
   state.lastTime = now;
   env ??= {};
-  const typhoon = unit(env.typhoon, env.weather === 'typhoon' ? 1 : 0);
+  const typhoon = Math.max(unit(env.typhoon, env.weather === 'typhoon' ? 1 : 0),unit(env.blizzard)*.8);
   const windSpeed = Number.isFinite(env.windSpeed) ? clamp(env.windSpeed, 0, 22 + typhoon * 38)
     : 1.5 + unit(env.wind, .22) * 19.5;
   const targetSpeed = clamp(2 + windSpeed * .42 + unit(env.gust) * .65, 2, 9)

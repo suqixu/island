@@ -315,7 +315,7 @@ export function createAudio({ sunsetMusicUrl, onSunsetMusicStatus, backgroundTra
     const backwash = Math.pow(.5 + .5 * Math.sin(time * .48 - .95 + Math.sin(time * .13)), 2);
     const swell = Number.isFinite(env.swell) ? env.swell * (.65 + pulse * .35) : pulse;
     const foam = backwash * (.3 + swell * .7);
-    const typhoon = Number.isFinite(env.typhoon) ? Math.max(0, Math.min(1, env.typhoon)) : 0;
+    const typhoon = Number.isFinite(env.roughSea??env.typhoon) ? Math.max(0, Math.min(1, env.roughSea??env.typhoon)) : 0;
     waveGain.gain.setTargetAtTime(.14 + swell * .24 + env.wind * .06 + env.storm * .08 + typhoon * (.19 + pulse * .10), now, .35);
     waveFilter.frequency.setTargetAtTime(650 - typhoon * 310, now, .6);
     foamGain.gain.setTargetAtTime(.018 + foam * .13 + env.wind * .05 + env.storm * .04, now, .45);

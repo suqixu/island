@@ -1,3 +1,5 @@
+import {attachWinterFoliage} from '../winter-foliage.js';
+import {getSnowCover,attachSnowSurface} from '../snow-surface.js';
 import * as THREE from 'three';
 import { getAnimationDelta } from '../animation-time.js';
 import { attachLeafTexture } from '../leaf-texture.js';
@@ -55,7 +57,7 @@ function leaf(builder, root, base, tip, widthAxis, width, bend, snow, shade) {
 }
 
 /** Two merged batches. Roots and hanging stems are fitted to actual rim faces. */
-export function createCaveVegetation(group, portal, leafTexture) {
+export function createCaveVegetation(group, portal, leafTexture, {snowSurface}={}) {
   portal.updateWorldMatrix(true, false);
   const ray = new THREE.Raycaster(), probe = new THREE.Vector3();
   const surface = (side, height) => {
@@ -162,7 +164,7 @@ export function createCaveVegetation(group, portal, leafTexture) {
     }
   });
   const uniforms = { uTime: { value: 0 }, uWindDirection: { value: new THREE.Vector2() },
-    uPlantAmplitudes: { value: new THREE.Vector3() }, uLeafFlutter: { value: 0 }, uCavePlantSnow: { value: 0 } };
+    uPlantAmplitudes: { value: new THREE.Vector3() }, uLeafFlutter: { value: 0 }, uCavePlantSnow: { value: 0 }, uFoliageWinter:{value:0} };
   const compileWind = shader => {
     configureVegetationWindShader(shader, uniforms, 'road', 'attribute vec3 aCavePlantRoot;');
     // Merged geometry stores the actual root per vertex, preserving independent
@@ -179,9 +181,11 @@ export function createCaveVegetation(group, portal, leafTexture) {
       '#include <begin_vertex>\nvCavePlantCover = aCover;');
     shader.fragmentShader = 'uniform float uCavePlantSnow; varying float vCavePlantCover;\n' + shader.fragmentShader;
     shader.fragmentShader = shader.fragmentShader.replace('#include <color_fragment>', `#include <color_fragment>
-      diffuseColor.rgb = mix(diffuseColor.rgb, vec3(.82, .88, .83), uCavePlantSnow * vCavePlantCover * .83);`);
+      // 叶片褪绿与覆雪由统一的冬态及雪面处理。`);
   };
   material.customProgramCacheKey = () => 'cave-clinging-leaves-v1';
+  attachWinterFoliage(material,uniforms.uFoliageWinter);
+  attachSnowSurface(material,uniforms.uCavePlantSnow,{surface:snowSurface});
   if(leafTexture)attachLeafTexture(material,leafTexture,{mixed:true,snow:'uCavePlantSnow'});
   const depth = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking, side: THREE.DoubleSide });
   depth.onBeforeCompile = compileWind; depth.customProgramCacheKey = () => 'cave-clinging-depth-v1';
@@ -205,8 +209,10 @@ export function createCaveVegetation(group, portal, leafTexture) {
       const requested = env.seasonIndex ?? (name < 0 ? 1 : name);
       const season = Number.isFinite(requested) ? Math.max(0, Math.min(3, Math.floor(requested))) : 1;
       plantGreen.setHex(seasonColors[season]); material.color.copy(plantGreen);
-      const target = Math.max(Number.isFinite(env.snow) ? Math.max(0, Math.min(1, env.snow)) : 0, season === 3 ? .65 : 0);
+      const target = getSnowCover(env);
       const dt = getAnimationDelta(wind.time - previousTime, 1, env); previousTime = wind.time;
+      const winter=Math.max(env.snow??0,Math.min(1,target*1.5),season===3?1:0);
+      uniforms.uFoliageWinter.value+=(winter-uniforms.uFoliageWinter.value)*(1-Math.exp(-dt*2));
       uniforms.uCavePlantSnow.value += (target - uniforms.uCavePlantSnow.value) * (1 - Math.exp(-dt * 2));
     },
     dispose() {

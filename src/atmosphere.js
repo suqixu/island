@@ -15,7 +15,7 @@ import { LUNAR_ECLIPSE_GLSL, getLunarEclipseSeaHorizon } from './lunar-eclipse.j
 import { ECLIPSE_CORONA_GLSL } from './eclipse-corona.js';
 
 const clamp = THREE.MathUtils.clamp;
-const weatherCloudiness = { sunny: 0.16, cloudy: 0.75, rain: 0.87, fog: 0.5, storm: 1, snow: 0.82, typhoon: 1 };
+const weatherCloudiness = { sunny: 0.16, cloudy: 0.75, rain: 0.87, fog: 0.5, storm: 1, snow: 0.82, blizzard: 1, typhoon: 1 };
 
 function randomSource(seed) {
   return () => {
@@ -115,6 +115,13 @@ function precipitationTexture(snow) {
       gradient.addColorStop(1, 'rgba(255,255,255,0)');
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, 64, 64);
+      // 明亮晶体中心与六臂分叉，近景翻滚时仍保留雪花轮廓。
+      ctx.translate(32,32);ctx.strokeStyle='rgba(255,255,255,.9)';ctx.lineWidth=1.8;ctx.lineCap='round';
+      for(let arm=0;arm<6;arm++) {
+        ctx.rotate(Math.PI/3);ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(0,-22);
+        for(const y of [-10,-16]) {ctx.moveTo(0,y);ctx.lineTo(-4,y-4);ctx.moveTo(0,y);ctx.lineTo(4,y-4);}
+        ctx.stroke();
+      }
     } else {
       const gradient = ctx.createLinearGradient(0, 2, 0, 62);
       gradient.addColorStop(0, 'rgba(220,239,255,0)');
@@ -312,13 +319,13 @@ const skyFragment = /* glsl */ `
   }
 `;
 
-function createPrecipitation(count, snow, random) {
+function createPrecipitation(count, snow, random, span=240, size=4.2) {
   const positions = new Float32Array(count * 3);
   const phases = new Float32Array(count);
   for (let i = 0; i < count; i++) {
-    positions[i * 3] = (random() - 0.5) * 240;
+    positions[i * 3] = (random() - 0.5) * span;
     positions[i * 3 + 1] = (random() - 0.5) * 180;
-    positions[i * 3 + 2] = (random() - 0.5) * 240;
+    positions[i * 3 + 2] = (random() - 0.5) * span;
     phases[i] = random() * Math.PI * 2;
   }
   const geometry = new THREE.BufferGeometry();
@@ -327,13 +334,15 @@ function createPrecipitation(count, snow, random) {
   const material = new THREE.ShaderMaterial({
     uniforms: {
       uTime: { value: 0 },
+      uSpan: {value:span}, uRotation:{value:0}, uFall: {value:0}, uBlizzard: {value:0},
       uCenter: { value: new THREE.Vector3() },
       uWind: { value: new THREE.Vector2() },
       uDrift: { value: new THREE.Vector2() },
       uRainAngle: { value: 0 },
       uStrength: { value: 0 },
       uSnow: { value: snow ? 1 : 0 },
-      uSize: { value: snow ? 4.2 : 11 },
+      uSnowAtlas:{value:0},
+      uSize: { value: snow ? size : 11 },
       uColor: { value: new THREE.Color(snow ? '#edf6ff' : '#c1d8e6') },
       uTexture: { value: precipitationTexture(snow) },
     },
@@ -344,36 +353,43 @@ function createPrecipitation(count, snow, random) {
       uniform vec2 uDrift;
       uniform float uSnow;
       uniform float uSize;
-      varying float vOpacity;
+      uniform float uSpan; uniform float uFall; uniform float uBlizzard; uniform float uRotation;
+      varying float vOpacity; varying float vFlakeRotation; varying vec2 vSnowCell;
       void main() {
+        vFlakeRotation=aPhase+uRotation;
+        float snowCell=floor(aPhase*0.63661977);
+        vSnowCell=vec2(mod(snowCell,2.0),floor(snowCell/2.0));
         vec3 p = position;
         float speed = mix(78.0, 10.0 + aPhase, uSnow);
-        p.y = mod(p.y - uTime * speed + 90.0, 180.0) - 90.0;
-        p.x = mod(p.x + uDrift.x + 120.0, 240.0) - 120.0;
-        p.z = mod(p.z + uDrift.y + 120.0, 240.0) - 120.0;
-        p.x += sin(uTime * 1.15 + aPhase + p.y * 0.025) * uSnow * 2.3;
-        p.z += cos(uTime * 0.75 + aPhase) * uSnow * 1.6;
+        p.y = mod(p.y - mix(uTime*speed,uFall*(1.0+aPhase*.07),uSnow) + 90.0, 180.0) - 90.0;
+        p.x = mod(p.x + uDrift.x + uSpan*.5, uSpan) - uSpan*.5;
+        p.z = mod(p.z + uDrift.y + uSpan*.5, uSpan) - uSpan*.5;
+        p.x += sin(uTime * 1.15 + aPhase + p.y * 0.025) * uSnow * (2.3+uBlizzard*5.0);
+        p.z += cos(uTime * 0.75 + aPhase) * uSnow * (1.6+uBlizzard*3.0);
         vec4 viewPosition = viewMatrix * vec4(p + uCenter, 1.0);
         gl_Position = projectionMatrix * viewPosition;
-        gl_PointSize = clamp(uSize * 100.0 / max(-viewPosition.z, 1.0), 1.0, 30.0);
+        gl_PointSize = clamp(uSize * mix(1.0,0.7+0.3*abs(sin(aPhase+uTime)),uSnow) * 100.0 / max(-viewPosition.z, 1.0), 1.0, 34.0);
         vOpacity = smoothstep(1.5, 9.0, -viewPosition.z)
-          * (1.0 - smoothstep(85.0, 145.0, length(p.xz)));
+          * (1.0 - smoothstep(uSpan*.35, uSpan*.6, length(p.xz)));
       }
     `,
     fragmentShader: /* glsl */ `
       uniform sampler2D uTexture;
       uniform float uStrength;
       uniform vec3 uColor;
-      uniform float uRainAngle;
-      varying float vOpacity;
+      uniform float uRainAngle; uniform float uSnow; uniform float uSnowAtlas;
+      varying float vOpacity; varying float vFlakeRotation; varying vec2 vSnowCell;
       void main() {
-        float c = cos(uRainAngle), s = sin(uRainAngle);
+        float angle=mix(uRainAngle,vFlakeRotation,uSnow);
+        float c = cos(angle), s = sin(angle);
         vec2 rainUv = mat2(c, s, -s, c) * (gl_PointCoord - 0.5) + 0.5;
         float inside = step(0.0, rainUv.x) * step(rainUv.x, 1.0)
           * step(0.0, rainUv.y) * step(rainUv.y, 1.0);
-        float alpha = texture2D(uTexture, rainUv).a * inside * uStrength * vOpacity;
+        vec2 textureUv=mix(rainUv,(rainUv+vSnowCell)*.5,uSnowAtlas);
+        vec4 particleTexel=texture2D(uTexture,textureUv);
+        float alpha = particleTexel.a * inside * uStrength * vOpacity;
         if (alpha < 0.012) discard;
-        gl_FragColor = vec4(uColor, alpha);
+        gl_FragColor = vec4(uColor*mix(vec3(1.0),particleTexel.rgb,uSnowAtlas), alpha);
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
       }
@@ -640,10 +656,14 @@ export function createAtmosphere(scene, { moonMap, terrainHeightAt, cloudMaps: s
 
   const rain = createPrecipitation(4200, false, random);
   rain.geometry.setDrawRange(0, 2600);
-  const snow = createPrecipitation(1800, true, random);
-  const precipitationLayers = [rain, snow];
+  const snow = createPrecipitation(2600, true, random,240,5.2);
+  const snowNear=createPrecipitation(900,true,random,90,7.6);
+  const snowFar=createPrecipitation(2200,true,random,460,3.3);
+  snow.name='中景密雪';snowNear.name='近景大片雪';snowFar.name='远景雪幕';
+  const precipitationLayers = [rain,snow,snowNear,snowFar];
+  let precipitationQuality=1;
   const precipitationColors = [new THREE.Color('#c1d8e6'), new THREE.Color('#edf6ff')];
-  group.add(rain, snow);
+  group.add(...precipitationLayers);
 
   const hemisphereLight = new THREE.HemisphereLight('#c8e4f1', '#6a7660', 1.15);
   hemisphereLight.name = 'atmosphere-fill';
@@ -710,6 +730,7 @@ export function createAtmosphere(scene, { moonMap, terrainHeightAt, cloudMaps: s
   const cloudColor = new THREE.Color();
   const fogColor = new THREE.Color();
   const typhoonFogColor = new THREE.Color();
+  const snowFogColor=new THREE.Color('#a5bacb'),snowFogTint=new THREE.Color();
   const center = new THREE.Vector3();
   const fillDirection = new THREE.Vector3();
   const cloudDirection = new THREE.Vector3();
@@ -727,7 +748,7 @@ export function createAtmosphere(scene, { moonMap, terrainHeightAt, cloudMaps: s
   let typhoonCloudBuild = 0;
   const moonViewVisibility = createMoonViewVisibility(terrainHeightAt);
   let moonInFrame = false;
-  const weatherState = { cloudiness: 0, rain: 0, snow: 0, fog: 0, storm: 0, wind: 0, typhoon: 0 };
+  const weatherState = { cloudiness: 0, rain: 0, snow: 0, fog: 0, storm: 0, wind: 0, typhoon: 0, blizzard:0 };
   let disposed = false;
 
   const api = {
@@ -741,7 +762,21 @@ export function createAtmosphere(scene, { moonMap, terrainHeightAt, cloudMaps: s
         if(cloud.material.map!==map){cloud.material.map=map;cloud.material.needsUpdate=true;}
       });
     },
-    setQuality: nightSky.setQuality,
+    setSnowTexture(map) {
+      if(!map)return;
+      if(disposed){map.dispose();return;}
+      const previous=new Set();
+      for(const points of [snow,snowNear,snowFar]) {
+        const uniforms=points.material.uniforms;
+        if(uniforms.uTexture.value!==map)previous.add(uniforms.uTexture.value);
+        uniforms.uTexture.value=map;uniforms.uSnowAtlas.value=1;
+      }
+      previous.forEach(texture=>texture?.dispose());
+    },
+    setQuality(value) {
+      nightSky.setQuality(value);
+      precipitationQuality=value==='low'?.42:value==='medium'?.7:1;
+    },
     setConstellationsVisible: nightSky.setConstellationsVisible,
     setConstellationMode: nightSky.setConstellationMode,
     setMeteorsVisible: nightSky.setMeteorsVisible,
@@ -850,9 +885,12 @@ export function createAtmosphere(scene, { moonMap, terrainHeightAt, cloudMaps: s
     }
     const cloudiness = weatherValue('cloudiness', clamp(env.cloudiness ?? weatherCloudiness[weather] ?? 0.2, 0, 1));
     const rainStrength = weatherValue('rain', clamp(env.rain ?? (weather === 'rain' || weather === 'storm' || weather === 'typhoon' ? 1 : 0), 0, 1));
-    const snowStrength = weatherValue('snow', clamp(env.snow ?? (weather === 'snow' ? 1 : 0), 0, 1));
+    const snowStrength = weatherValue('snow', clamp(env.snow ?? (weather === 'snow'||weather==='blizzard' ? 1 : 0), 0, 1));
     const fogStrength = weatherValue('fog', clamp(env.fog ?? (weather === 'fog' ? 1 : 0), 0, 1));
     const stormStrength = weatherValue('storm', clamp(env.storm ?? (weather === 'storm' || weather === 'typhoon' ? 1 : 0), 0, 1));
+    const blizzardStrength=weatherValue('blizzard',clamp(env.blizzard??(weather==='blizzard'?1:0),0,1));
+    const blizzardGust=clamp(((env.gust??.7)-.55)/.45,0,1);
+    const snowSquall=blizzardStrength*Math.pow(blizzardGust,1.6);
     const typhoonStrength = weatherValue('typhoon', clamp(env.typhoon ?? (weather === 'typhoon' ? 1 : 0), 0, 1));
     const wind = weatherValue('wind', clamp(typeof env.wind === 'number' ? env.wind : 0.25, 0, 2));
     const twilight = (1 - THREE.MathUtils.smoothstep(Math.abs(physicalSunHeight), 0.03, 0.55))
@@ -934,10 +972,12 @@ export function createAtmosphere(scene, { moonMap, terrainHeightAt, cloudMaps: s
     typhoonFogColor.copy(colors.fogTyphoon).multiplyScalar(.06+daylight*.94);
     fog.color.lerp(typhoonFogColor,typhoonStrength);
     // FogExp2 在远景会平方放大密度；保留最远全岛视角的地形对比，远海仍被雾笼罩。
+    fog.color.lerp(snowFogTint.copy(snowFogColor).multiplyScalar(.12+daylight*.88),blizzardStrength*.65);
     const fogLimit=THREE.MathUtils.lerp(.0021,.0012,typhoonStrength);
     fog.density = Math.min(fogLimit, 0.00042 + fogStrength * 0.0019 + rainStrength * 0.0005
       + snowStrength * 0.00065 + stormStrength * 0.00025);
-    uniforms.uBelow.value.copy(fogColor).lerp(fog.color,typhoonStrength);
+    fog.density+=snowSquall*.0035;
+    uniforms.uBelow.value.copy(fogColor).lerp(fog.color,Math.max(typhoonStrength,blizzardStrength));
     // Artistic blood-moon atmosphere changes the scene's own scattering colours.
     // Geometry, stars and the Moon remain visible; no full-screen red layer.
     uniforms.uZenith.value.lerp(colors.eclipseZenith, lunarSkyTint);
@@ -1045,9 +1085,9 @@ export function createAtmosphere(scene, { moonMap, terrainHeightAt, cloudMaps: s
     cloudFlowDirection.fromArray(motion.direction);
     // Mass builds more slowly than the first gust, then disperses after the
     // storm. Repeated timestamps do not thicken or move the cloud ceiling.
-    typhoonCloudBuild += (typhoonStrength-typhoonCloudBuild)
-      * (1-Math.exp(-dt*(typhoonStrength>typhoonCloudBuild ? .095 : .25)));
-    uniforms.uTyphoonCloudStrength.value=typhoonStrength;
+    typhoonCloudBuild += (Math.max(typhoonStrength,blizzardStrength*.85)-typhoonCloudBuild)
+      * (1-Math.exp(-dt*(Math.max(typhoonStrength,blizzardStrength*.85)>typhoonCloudBuild ? .095 : .25)));
+    uniforms.uTyphoonCloudStrength.value=Math.max(typhoonStrength,blizzardStrength*.75);
     uniforms.uTyphoonCloudBuild.value=typhoonCloudBuild;
     uniforms.uTyphoonCloudDrift.value.fromArray(motion.offset).multiplyScalar(.003);
     uniforms.uTyphoonCloudWind.value.copy(cloudFlowDirection);
@@ -1060,7 +1100,7 @@ export function createAtmosphere(scene, { moonMap, terrainHeightAt, cloudMaps: s
     // capped fast layer never rescale its accumulated displacement.
     for (const cloud of clouds) {
       const data = cloud.userData;
-      const layerSpeed = getCloudLayerSpeed(motion.speed, data.motionLayer, typhoonStrength);
+      const layerSpeed = getCloudLayerSpeed(motion.speed, data.motionLayer, Math.max(typhoonStrength,blizzardStrength*.8));
       data.drift.addScaledVector(cloudFlowDirection, motion.delta * layerSpeed);
       cloud.position.x = THREE.MathUtils.euclideanModulo(data.origin.x + data.drift.x + 2200, 4400) - 2200;
       cloud.position.z = THREE.MathUtils.euclideanModulo(data.origin.z + data.drift.y + 2200, 4400) - 2200;
@@ -1125,13 +1165,25 @@ export function createAtmosphere(scene, { moonMap, terrainHeightAt, cloudMaps: s
         precipitation.uSize.value = 11 + typhoonStrength * 3;
         rain.geometry.setDrawRange(0, 2600 + Math.round(typhoonStrength * 1600));
       }
+      if(points!==rain) {
+        const direction=env.windDirection??[.83,.55];
+        const drift=5+blizzardStrength*(12+(env.gust??.5)*42);
+        precipitation.uWind.value.set(direction[0]*drift,direction[1]*drift);
+        precipitation.uBlizzard.value=blizzardStrength;
+        precipitation.uFall.value+=dt*(5+blizzardStrength*10);
+        precipitation.uRotation.value=(precipitation.uRotation.value+dt*(.22+blizzardStrength*.9))%(Math.PI*2);
+        const base=points===snowNear?7.6:points===snowFar?3.3:5.2;
+        precipitation.uSize.value=base*(1+blizzardStrength*.5);
+        const count=points.geometry.attributes.position.count;
+        points.geometry.setDrawRange(0,Math.round(count*(.55+blizzardStrength*.45)*precipitationQuality));
+      }
       // Integrate changing wind. Multiplying elapsed time by a new gust would
       // relocate the entire rain field whenever weather or wind direction changes.
       precipitation.uDrift.value.addScaledVector(precipitation.uWind.value, dt);
-      precipitation.uDrift.value.x %= 240;
-      precipitation.uDrift.value.y %= 240;
-      precipitation.uStrength.value = strength * (points === rain ? 0.68 + typhoonStrength * .25 : 0.92);
-      precipitation.uColor.value.copy(precipitationColors[index]);
+      precipitation.uDrift.value.x %= precipitation.uSpan.value;
+      precipitation.uDrift.value.y %= precipitation.uSpan.value;
+      precipitation.uStrength.value = strength * (points === rain ? 0.68 + typhoonStrength * .25 : points===snowFar?.30+snowSquall*.3:.78);
+      precipitation.uColor.value.copy(precipitationColors[index===0?0:1]);
       precipitation.uColor.value.multiplyScalar(0.42 + daylight * 0.58 + flash * 0.8);
     }
 

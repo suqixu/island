@@ -1,7 +1,10 @@
+import {createSnowRoofShell} from './snow-layers.js';
+import {WEATHER_CONFIG} from '../runtime-config.js';
+import {attachSnowSurface,getSnowCover} from '../snow-surface.js';
 import * as THREE from 'three';
 import { getAnimationDelta } from '../animation-time.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { appendTerracedStoneSkirt } from './island-paths.js';
+import { appendTerracedStoneSkirt, smoothStoneSurfaceNormals } from './island-paths.js';
 import { createStructureSurfaceState, attachStructureSurface } from '../structure-surfaces.js';
 
 const FLOOR_HALF = 1.60;
@@ -16,10 +19,6 @@ export function getRestPavilionLampStrength(daylight) {
   return t * t * (3 - 2 * t);
 }
 
-function snowTarget(environment) {
-  const winter = environment.season === 'winter' || environment.seasonIndex === 3;
-  return Math.max(safeCover(environment.snowCover), safeCover(environment.snow), winter ? .85 : 0);
-}
 
 function surfaceBuilder() {
   const positions = [], indices = [];
@@ -236,7 +235,7 @@ function stairGeometry(corners, groundAt, top, floorTop, naturalSkirt) {
       edgeFloor: p => Math.abs(along(p) - first) < .00001 ? previous : Math.abs(along(p) - last) < .00001 ? next : undefined,
       edgeOutset: (a, b) => Math.abs(along(a) - along(b)) > .00001,
     });
-    return surface.finish();
+    return smoothStoneSurfaceNormals(surface.finish());
   }
   for (let side = 0; side < 4; side++) {
     const a = corners[side], b = corners[(side + 1) % 4];
@@ -250,7 +249,7 @@ function stairGeometry(corners, groundAt, top, floorTop, naturalSkirt) {
         [pb.x, top - floorTop, pb.z], [pa.x, top - floorTop, pa.z]);
     }
   }
-  return surface.finish();
+  return smoothStoneSurfaceNormals(surface.finish());
 }
 
 function colorPathStone(geometry, source, position, sin, cos, approach) {
@@ -344,7 +343,7 @@ function approachSteps(groundAt, floorTop, approach, floorHalf, entryLanding = f
  * Bell motion follows update's real time, independently of the simulated sky clock.
  */
 export function createRestPavilion(scene, { heightAt, position, entranceDirection = { x: 0, z: 1 }, approach, floorSize = 3.2,
-  stoneSurface = scene?.getObjectByName('山径天然石阶'), entryLanding = false } = {}) {
+  stoneSurface = scene?.getObjectByName('山径天然石阶'), entryLanding = false, snowSurface } = {}) {
   if (typeof heightAt !== 'function' || !Number.isFinite(position?.x) || !Number.isFinite(position?.z)) {
     throw new TypeError('木亭需要真实地形采样函数与有限的 x/z 坐标');
   }
@@ -384,6 +383,10 @@ export function createRestPavilion(scene, { heightAt, position, entranceDirectio
     transparent: true, opacity: .62, depthWrite: false });
   const snowMaterial = new THREE.MeshStandardMaterial({ color: 0xeaf0ed, roughness: .99,
     transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide });
+  const surfaceSnow={value:0};
+  if(stone && !sharedStone)attachSnowSurface(stone,surfaceSnow,{surface:snowSurface,smoothNormals:true});
+  for(const material of [roofMaterial,tileRim,timber,darkTimber])attachSnowSurface(material,surfaceSnow,{surface:snowSurface});
+  attachSnowSurface(snowMaterial,surfaceSnow,{layer:true,surface:snowSurface,volume:true,growth:true});
   const geometries = new Set(), materials = new Set([stone !== sharedStone ? stone : null, timber, darkTimber, roofMaterial, tileRim, iron, glowMaterial, paper, snowMaterial].filter(Boolean));
   const add = (name, geometry, material) => {
     const mesh = new THREE.Mesh(geometry, material); mesh.name = name; mesh.castShadow = true; mesh.receiveShadow = true;
@@ -496,7 +499,7 @@ export function createRestPavilion(scene, { heightAt, position, entranceDirectio
   const crownProfile = [[.015, 0], [.13, .055], [.085, .15], [.055, .22], [.055, .30],
     [.105, .36], [.085, .47], [.018, .54]].map(([x, y]) => new THREE.Vector2(x, y));
   add('山亭攒尖宝顶', new THREE.LatheGeometry(crownProfile, 10).translate(0, 3.46, 0), roofMaterial);
-  const snow = add('山亭屋顶积雪', roof.geometry.clone().translate(0, .047, 0), snowMaterial);
+  const snow = add('山亭屋顶积雪', createSnowRoofShell(roof.geometry,{thickness:WEATHER_CONFIG.snowpack.pavilionDepth}), snowMaterial);
   snow.visible = false; snow.castShadow = false; snow.renderOrder = 2;
   add('山亭悬灯细铁链', new THREE.CylinderGeometry(.009, .009, .64, 5).translate(0, 2.81, 0), iron);
   const lampFrame = [];
@@ -544,7 +547,8 @@ export function createRestPavilion(scene, { heightAt, position, entranceDirectio
     const now = Number.isFinite(time) ? Math.max(lastTime, time) : lastTime;
     const delta = getAnimationDelta(now - lastTime, 1, environment); lastTime = now;
     chime.update(delta, now, environment, api.onChime);
-    snowCover += (snowTarget(environment) - snowCover) * (1 - Math.exp(-delta * 1.8));
+    snowCover += (getSnowCover(environment) - snowCover) * (1 - Math.exp(-delta * 1.8));
+    surfaceSnow.value=snowCover;
     snowMaterial.opacity = snowCover * .96; snow.visible = snowCover > .005;
   }
   function dispose() {

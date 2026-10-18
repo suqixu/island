@@ -11,7 +11,7 @@ import { getSeaHorizonState, SEA_HORIZON_GLSL } from './sea-horizon.js';
 import { SEABED_TRANSMISSION_GLSL, OFFSHORE_BLEND_GLSL } from './ocean-optics.js';
 
 const COAST_EXTENT = 240;
-const COAST_RESOLUTION = 256;
+const COAST_RESOLUTION = 768;
 const MAX_DEPTH = 48;
 
 // Baking bathymetry once keeps the shoreline fixed while the water moves.
@@ -127,6 +127,7 @@ const vertexShader = /* glsl */ `
   uniform vec2 uWindDirection;
   uniform sampler2D uBathymetry;
   uniform sampler2D uTerrainHeight;
+  uniform vec2 uCoastUvTransform;
   uniform float uCoastExtent;
   varying vec3 vWorldPosition;
   varying vec3 vNormal;
@@ -149,6 +150,7 @@ const vertexShader = /* glsl */ `
   vec2 waterDepthExposure(vec2 point) {
     vec2 uv = point / (uCoastExtent * 2.0) + 0.5;
     if (any(lessThan(uv, vec2(0.0))) || any(greaterThan(uv, vec2(1.0)))) return vec2(48.0, 1.0);
+    uv=uv*uCoastUvTransform.x+uCoastUvTransform.y;
     vec4 bathymetry = texture2D(uBathymetry, uv);
     float edgeBlend = offshoreBlend(point, uCoastExtent);
     float floorHeight=texture2D(uTerrainHeight,uv).r;
@@ -214,6 +216,7 @@ const vertexShader = /* glsl */ `
     wave(p, tangent, binormal, turn(uWindDirection, 1.48), 3.0, 0.035, 1.9, 27.1, base, coast, depth, exposure, crest, breaking);
     wave(p, tangent, binormal, turn(uWindDirection, 1.18), 62.0, 0.35, 7.6, 31.8, base, coast, depth, exposure, crest, breaking);
     vec2 floorUv=clamp(base/(uCoastExtent*2.0)+0.5,0.0,1.0);
+    floorUv=floorUv*uCoastUvTransform.x+uCoastUvTransform.y;
     float landHeight=texture2D(uTerrainHeight,floorUv).r;
     p.y+=beachSwashHeight(base,uTime,depth,exposure,uTyphoon)*(1.0-smoothstep(0.5,1.2,landHeight));
     if (uTyphoon > 0.001) {
@@ -274,6 +277,7 @@ const fragmentShader = /* glsl */ `
   uniform vec3 uSunsetCloudShadow;
   uniform sampler2D uBathymetry;
   uniform sampler2D uTerrainHeight;
+  uniform vec2 uCoastUvTransform;
   uniform sampler2D uFoamMap;
   uniform float uFoamReady;
   uniform float uCoastExtent;
@@ -401,6 +405,7 @@ const fragmentShader = /* glsl */ `
   vec4 coastSample(vec2 p) {
     vec2 uv = p / (uCoastExtent * 2.0) + 0.5;
     if (any(lessThan(uv, vec2(0.0))) || any(greaterThan(uv, vec2(1.0)))) return vec4(1.0, 1.0, 0.0, 1.0);
+    uv=uv*uCoastUvTransform.x+uCoastUvTransform.y;
     vec4 bathymetry = texture2D(uBathymetry, uv);
     float edgeBlend = offshoreBlend(p, uCoastExtent);
     bathymetry.r = mix(bathymetry.r, 1.0, edgeBlend);
@@ -410,6 +415,7 @@ const fragmentShader = /* glsl */ `
   float terrainHeight(vec2 p) {
     vec2 uv = p / (uCoastExtent * 2.0) + 0.5;
     if (any(lessThan(uv, vec2(0.0))) || any(greaterThan(uv, vec2(1.0)))) return -80.0;
+    uv=uv*uCoastUvTransform.x+uCoastUvTransform.y;
     return mix(texture2D(uTerrainHeight, uv).r, -80.0, offshoreBlend(p, uCoastExtent));
   }
   float sunsetAlignment(vec3 ray) {
@@ -461,7 +467,7 @@ const fragmentShader = /* glsl */ `
     vec4 sampleCoast = coastSample(vSurfacePosition);
     float depth = sampleCoast.r * 48.0;
     float shore = sampleCoast.g * 32.0;
-    float floorHeight=terrainHeight(vSurfacePosition);
+    float floorHeight=terrainHeight(vWorldPosition.xz);
     float opticalDepth=max(0.0,vWorldPosition.y-floorHeight);
     float exposure = sampleCoast.a;
     vec3 viewDirection = normalize(cameraPosition - vWorldPosition);
@@ -695,7 +701,12 @@ const fragmentShader = /* glsl */ `
     float closeWater = 1.0 - smoothstep(32.0, 160.0, distanceToCamera);
     float transmission = seabedTransmission(opticalDepth) * closeWater * uWaterClarity
       * (1.0 - fresnel * 0.94) * 0.86 * (1.0-foamOpacity*0.97);
-    gl_FragColor = vec4(color, 1.0 - clamp(transmission, 0.0, 0.86));
+    // 薄水膜在沙洲交界逐渐透明，避免浪面三角形留下灰色硬切块。
+    float contactBand=max(.14,min(.45,fwidth(opticalDepth)*1.5));
+    float contactFade=smoothstep(0.0,contactBand,opticalDepth);
+    float waterAlpha=(1.0-clamp(transmission,0.0,.86))*contactFade;
+    if(waterAlpha<.003)discard;
+    gl_FragColor = vec4(color,waterAlpha);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>
   }
@@ -748,6 +759,7 @@ export function createOcean(scene, { heightAt, shelterAt } = {}) {
     uSunsetCloudShadow: { value: new THREE.Color() },
     uBathymetry: { value: bathymetry },
     uTerrainHeight: {value:heightMap},
+    uCoastUvTransform:{value:new THREE.Vector2((COAST_RESOLUTION-1)/COAST_RESOLUTION,.5/COAST_RESOLUTION)},
     uFoamMap: { value: foam.texture },
     uFoamReady: { value: 0 },
     uCoastExtent: { value: COAST_EXTENT },
@@ -812,8 +824,8 @@ export function createOcean(scene, { heightAt, shelterAt } = {}) {
     const weatherBlend = firstUpdate ? 1 : 1 - Math.exp(-delta * 1.7);
     const wind = finiteInput(env.wind, 0.25);
     weatherState.wind = THREE.MathUtils.lerp(weatherState.wind, wind, weatherBlend);
-    weatherState.windSpeed = THREE.MathUtils.lerp(weatherState.windSpeed, finiteInput(env.windSpeed, 2 + wind * 20, 2, env.typhoon > 0 ? 60 : 22), weatherBlend);
-    weatherState.typhoon = THREE.MathUtils.lerp(weatherState.typhoon, finiteInput(env.typhoon, 0), weatherBlend);
+    weatherState.windSpeed = THREE.MathUtils.lerp(weatherState.windSpeed, finiteInput(env.windSpeed, 2 + wind * 20, 2, (env.roughSea??env.typhoon) > 0 ? 60 : 22), weatherBlend);
+    weatherState.typhoon = THREE.MathUtils.lerp(weatherState.typhoon, finiteInput(env.roughSea??env.typhoon, 0), weatherBlend);
     weatherState.swell = THREE.MathUtils.lerp(weatherState.swell, finiteInput(env.swell, 0.38), weatherBlend);
     weatherState.gust = THREE.MathUtils.lerp(weatherState.gust, finiteInput(env.gust, 0.12), weatherBlend);
     weatherState.cloudiness = THREE.MathUtils.lerp(weatherState.cloudiness, finiteInput(env.cloudiness, 0.1), weatherBlend);

@@ -1,3 +1,5 @@
+import {createSnowSurfaceState} from './snow-surface.js';
+import {loadSnowSurface,loadSnowFlakes} from './snow-texture.js';
 import loadingConfig from './config/loading.json' with {type:'json'};
 import { DEFAULTS, WEATHER_CONFIG, CAMERA_CONFIG, RENDERING_CONFIG, initializeSettingInputs } from './runtime-config.js';
 import musicConfig from './config/music.json' with {type:'json'};
@@ -67,6 +69,7 @@ const paths = {
   fog: '<path d="M7 11a4 4 0 1 1 1.4-7.7 5 5 0 0 1 9.4 2.7 3 3 0 0 1 1.2 5M3 15h18M5 19h14"/>',
   storm: '<path d="M6 14a4 4 0 1 1 .9-7.9 6 6 0 0 1 11.7 1.5A3.3 3.3 0 0 1 18 14M13 12l-4 6h4l-2 5 6-8h-4l2-3"/>',
   typhoon: '<path d="M20 5c-5-4-13-1-13 5a5 5 0 0 0 9 3M4 19c5 4 13 1 13-5a5 5 0 0 0-9-3"/><circle cx="12" cy="12" r="2"/>',
+  blizzard: '<path d="M3 6h12c5 0 5-4 2-4M2 11h17c5 0 4 5 1 4M3 16h6M13 15v7M10 17l6 3M10 20l6-3"/>',
   snow: '<path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M9 5l3 3 3-3M9 19l3-3 3 3M4.5 10l4-1-1-4M19.5 14l-4 1 1 4M7.5 19l1-4-4-1M16.5 5l-1 4 4 1"/>',
   constellation: '<path d="m5 6 6 3 7-5m-7 5-3 9 11 1-1-9"/><circle cx="5" cy="6" r="1.3"/><circle cx="11" cy="9" r="1.3"/><circle cx="18" cy="4" r="1.3"/><circle cx="8" cy="18" r="1.3"/><circle cx="19" cy="19" r="1.3"/>',
   meteor: '<path d="m4 3 11 11M3 9l7 7M10 3l8 8"/><path d="m17 13 1.2 2.8L21 17l-2.8 1.2L17 21l-1.2-2.8L13 17l2.8-1.2L17 13Z"/>',
@@ -177,7 +180,9 @@ async function boot() {
   ])
     .then(values => ({ values }), error => ({ error }))
     .finally(() => startup.stages.push({ stage: 'assets', durationMs: performance.now() - assetStart }));
+  const snowSurface=createSnowSurfaceState();cleanup.add(()=>snowSurface.dispose());
   const island = await stage('island', loadingConfig.startupStages['island'], () => createIslandAsync(scene, {
+    snowSurface,
     onProgress: name => loadingScreen.setStage(islandStageLabels[name]),
     onSlice: slice => startup.slices.push(slice),
   }));
@@ -189,7 +194,7 @@ async function boot() {
   const sailboats = await stage('sailboats', loadingConfig.startupStages['sailboats'], () => createSailboats(scene, { heightAt: island.heightAt }));
   const lagoonLife = await stage('lagoon-life', loadingConfig.startupStages['lagoon-life'], () =>
     createLagoonLife(scene, { heightAt: island.heightAtRendered }));
-  const lighthouse = await stage('lighthouse', loadingConfig.startupStages['lighthouse'], () => createLighthouse(scene, { ...LIGHTHOUSE_SITE, heightAt: island.heightAtRendered,
+  const lighthouse = await stage('lighthouse', loadingConfig.startupStages['lighthouse'], () => createLighthouse(scene, { ...LIGHTHOUSE_SITE, snowSurface, heightAt: island.heightAtRendered,
     approach: { ...LIGHTHOUSE_SITE.approach,
       y: island.heightAtRendered(LIGHTHOUSE_SITE.approach.x, LIGHTHOUSE_SITE.approach.z) + PATH_LIFT } }));
   const pathLamps = await stage('path-lamps', loadingConfig.startupStages['path-lamps'], () => createPathLamps(scene, { heightAt: island.heightAtRendered,
@@ -199,7 +204,7 @@ async function boot() {
   const pavilionRoofSurface = createStructureSurfaceState();
   cleanup.add(() => pavilionRoofSurface.dispose());
   for (const site of REST_PAVILION_SITES) {
-    const pavilion = await stage(`pavilion-${site.id}`, loadingConfig.startupStages.pavilion, () => createRestPavilion(scene, { ...site, heightAt: pavilionSurface,
+    const pavilion = await stage(`pavilion-${site.id}`, loadingConfig.startupStages.pavilion, () => createRestPavilion(scene, { ...site, snowSurface, heightAt: pavilionSurface,
       stoneSurface: island.group.getObjectByName('山径天然石阶'),
       approach: { ...site.approach, y: pavilionSurface(site.approach.x, site.approach.z) } }));
     pavilion.group.name = `${site.id === 'south' ? '南峰' : '东峰'}观景木亭`;
@@ -731,6 +736,8 @@ async function boot() {
     state.holdMoonClock=env.lunarEclipse.active;
     env.solarDaylight=env.daylight;
     env.daylight*=env.eclipse.lightFactor;
+    snowSurface.uniforms.uSnowDaylight.value=env.daylight;
+    snowSurface.uniforms.uSnowSeed.value=(state.windSeed??0)%4096;
     const sunBackdrop = getSunBackdropState(camera, innerWidth, innerHeight, sunDirection);
     env.sunBackdropDirection = sunBackdrop.direction;
     env.sunAngularRadius = sunBackdrop.angularRadius*(1+env.eclipse.coverage*.8);
@@ -783,6 +790,8 @@ async function boot() {
         lighthouse.setStepMap(maps.stone); island.setCoastalMaps(maps);
       })
         .catch(error => console.warn('地表细节贴图未能加载',error));
+      nextStartupPaint().then(()=>loadSnowSurface({signal:startupController.signal})).then(map=>snowSurface.setMap(map));
+      nextStartupPaint().then(()=>loadSnowFlakes({signal:startupController.signal})).then(map=>atmosphere.setSnowTexture(map));
       nextStartupPaint().then(() => loadLeafTextures({signal:startupController.signal})).then(maps => island.setLeafMaps(maps))
         .catch(error => console.warn('叶片细节贴图未能加载',error));
       nextStartupPaint().then(() => loadCaveSurface({signal:startupController.signal})).then(maps => island.setCaveMaps(maps))

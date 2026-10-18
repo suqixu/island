@@ -34,7 +34,7 @@ function geometry(positions, indices) {
 /** Four reusable broadleaf forms. Real gaps and folded leaves avoid opaque crown balls. */
 export function createForestCanopy(seed = 1922) {
   const random = seededRandom(seed);
-  const leafPositions = [], leafIndices = [], colors = [], flex = [], cover = [], uvs = [];
+  const leafPositions = [], leafIndices = [], colors = [], flex = [], cover = [], uvs = [], winterLeaves = [];
   const woodPositions = [], woodIndices = [];
   const tierCounts = [8, 7, 5], startAngle = random() * TAU;
   const shape = .88 + random() * .2, lean = new THREE.Vector3((random() - .5) * .26, 0, (random() - .5) * .26);
@@ -73,6 +73,9 @@ export function createForestCanopy(seed = 1922) {
         const length = .285 + random() * .125, width = .146 + random() * .078;
         const curl = .037 + random() * .031, roll = (random() - .5) * .036;
         const start = leafPositions.length / 3, leafShade = shootShade * (.94 + random() * .13) * (.86 + t * .20);
+        // One deterministic rank per whole leaf, without consuming the seeded
+        // geometry random stream. Winter removes complete leaves, never triangles.
+        const winterRank = ((start / 8 + 1) * .618033988749895 + seed * .1031) % 1;
         // Four narrow-to-wide-to-narrow sections make a small, cupped oval leaf.
         // The tips retain a tiny width instead of a conspicuous triangular spike.
         for (let section = 0; section < 4; section++) {
@@ -87,6 +90,7 @@ export function createForestCanopy(seed = 1922) {
             colors.push(shade * .965, shade, shade * .91);
             flex.push(section === 0 ? 0 : [.0, .11, .23, .36 + random() * .04][section]);
             cover.push(Math.max(.15, normal.y) * (tier === 2 ? 1 : .65));
+            winterLeaves.push((winterRank + 1) % 1);
             uvs.push(sign < 0 ? .5 - breadth * .5 : .5 + breadth * .5, progress);
           }
           if (!section) continue;
@@ -100,6 +104,7 @@ export function createForestCanopy(seed = 1922) {
   leaves.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
   leaves.setAttribute('aFlex', new THREE.Float32BufferAttribute(flex, 1));
   leaves.setAttribute('aCover', new THREE.Float32BufferAttribute(cover, 1));
+  leaves.setAttribute('aWinterLeaf', new THREE.Float32BufferAttribute(winterLeaves, 1));
   leaves.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
   branches.setAttribute('aFlex', new THREE.Float32BufferAttribute(new Float32Array(woodPositions.length / 3), 1));
   return { leaves, branches };

@@ -4,6 +4,24 @@ import * as THREE from 'three';
 import { createOcean } from '../src/ocean.js';
 import { heightAt } from '../src/terrain.js';
 import * as lagoon from '../src/lagoon.js';
+import {getIslandPathLayout} from '../src/path-layout.js';
+
+test('海面采样高度与低矮沙洲对齐，不能把干燥雪岸当成水下', () => {
+  const terrain=getIslandPathLayout({heightAt}).heightAtRendered;
+  const ocean=createOcean(new THREE.Group(),{heightAt:terrain});
+  try {
+    const {data,width:size}=ocean.mesh.material.uniforms.uTerrainHeight.value.image;
+    const transform=ocean.mesh.material.uniforms.uCoastUvTransform?.value??new THREE.Vector2(1,0);
+    for(const [x,z] of [[60.5,92],[59.75,92],[50,93],[70,82]]) {
+      const u=((x/480+.5)*transform.x+transform.y)*size-.5;
+      const v=((z/480+.5)*transform.x+transform.y)*size-.5;
+      const ix=Math.floor(u),iz=Math.floor(v),fx=u-ix,fz=v-iz;
+      const h=(dx,dz)=>THREE.DataUtils.fromHalfFloat(data[(iz+dz)*size+ix+dx]);
+      const sampled=(h(0,0)*(1-fx)+h(1,0)*fx)*(1-fz)+(h(0,1)*(1-fx)+h(1,1)*fx)*fz;
+      assert.ok(Math.abs(sampled-terrain(x,z))<.2,`${x},${z} 采样误差为 ${sampled-terrain(x,z)}m`);
+    }
+  } finally {ocean.dispose();}
+});
 
 test('现有海床纹理真实编码泻湖曝光，RGB深度岸距不受遮浪改变', () => {
   assert.equal(typeof lagoon.getLagoonShelter, 'function');

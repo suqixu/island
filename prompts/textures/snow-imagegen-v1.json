@@ -1,0 +1,15 @@
+{
+  "date": "2026-10-18",
+  "generator": "内置 ImageGen",
+  "assets": [
+    {
+      "path": "src/assets/textures/terrain/powder-snow-albedo-v1.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: seamless square PBR base-color texture for accumulated snow on a real-time island landscape, pavilion roofs, lighthouse roof, docks and stone paths. Primary request: a production-ready photorealistic seamless top-down snow surface texture, 1024 by 1024, edge-to-edge, no perspective. Materials: thick fresh powder snow with softly rounded microdrifts, subtle irregular wind-combed ripples at several scales, fine ice-crystal granules, small natural dimples; tactile softness and shallow relief rather than sharp facets. Lighting: neutral diffuse overcast, extremely soft ambient light, no hard baked directional shadows, no bright specular highlights; keep tonal contrast low so real-time lighting can define the form. Color palette: neutral near-white snow, very pale cool gray depressions, avoid strong blue cast. Composition: uniform material across the entire tile, seamless all four edges, no central subject, no large iconic shapes. Avoid: triangular patterns, polygon shapes, angular planes, mountains, landscape scene, sky, horizon, rocks, footprints, objects, falling snowflakes, text, labels, borders, watermark. The result must be a usable tileable material texture, not a picture of a snowy landscape."
+    },
+    {
+      "path": "src/assets/textures/sky/snowflake-atlas-v1.webp",
+      "prompt": "Use case: stylized-concept. Asset type: 2 by 2 snow particle sprite atlas for a real-time 3D blizzard, square 1024x1024 with genuine transparent background. Four separate natural white snow particles, one exactly centered in each of the four equal quadrants, generous empty transparent padding within every quadrant and no overlap. Upper left: a small fluffy irregular powder-snow clump, softly frosted fine crystals. Upper right: a delicate asymmetrical six-arm snow crystal with featherlike branches and a compact bright center, not a geometric icon. Lower left: a rounded irregular large wet snowflake made of clustered ice crystals, broken organic edges. Lower right: a subtle thin branched snow crystal with soft edges. All four particles are luminous neutral white to very pale cool white, softly translucent at the fine edges, visible against darkness, detailed without high-contrast outlines. Designed to rotate and tumble in a cinematic snowstorm and remain legible when reduced to 8-24 pixels. Orthographic straight-on isolated cutouts, no drop shadows, no background, no blue square, no glow halo extending beyond each cell. No text, no dividing lines, no borders, no grid drawn, no snow landscape, no decorative starburst, no black outlines. The only opaque pixels must be the four separate snow particles; everything else fully transparent."
+    }
+  ],
+  "processing": "等比缩放至 1024×1024 并编码为 WebP；雪花图集保留原始透明通道。"
+}

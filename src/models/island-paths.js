@@ -1,3 +1,5 @@
+import {attachWinterFoliage} from '../winter-foliage.js';
+import {attachSnowSurface,getSnowCover,isSnowLandscape} from '../snow-surface.js';
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { heightAt as terrainHeight, seededRandom, hash, noise, shoreDistance } from '../terrain.js';
@@ -11,6 +13,37 @@ import { getVegetationFlex, createVegetationWindState, advanceVegetationWind,
 
 const area = (a, b, c) => (b.x - a.x) * (c.z - a.z) - (b.z - a.z) * (c.x - a.x);
 const MAX_RISER = .195;
+
+/** 只平滑石裙的细分曲面。踏面、立面和超过 45° 的石角各自保留法线，
+ * 不焊接顶点，不改变踏面位置、三角形索引或射线碰撞的形状。
+ */
+export function smoothStoneSurfaceNormals(geometry) {
+  const position = geometry.attributes.position, source = geometry.attributes.normal;
+  if (!position || !source) return geometry;
+  const groups = new Map(), keys = [];
+  const normals = Array.from({ length: source.count }, (_, i) => [source.getX(i), source.getY(i), source.getZ(i)]);
+  for (let i = 0; i < position.count; i++) {
+    const key = [position.getX(i), position.getY(i), position.getZ(i)].map(value => Math.round(value * 1e5)).join(',');
+    const group = groups.get(key) ?? []; group.push(i); groups.set(key, group); keys.push(key);
+  }
+  const output = new Float32Array(source.count * 3), cosine = Math.SQRT1_2;
+  const horizontal = normal => Math.abs(normal[1]) > .999;
+  for (let i = 0; i < source.count; i++) {
+    const base = normals[i], sum = [0, 0, 0];
+    for (const neighbor of groups.get(keys[i])) {
+      const normal = normals[neighbor];
+      if (horizontal(base) !== horizontal(normal)) continue;
+      if (base[0] * normal[0] + base[1] * normal[1] + base[2] * normal[2] < cosine) continue;
+      for (let axis = 0; axis < 3; axis++) sum[axis] += normal[axis];
+    }
+    const length = Math.hypot(...sum);
+    output.set(length > 1e-8 ? sum.map(value => value / length) : base, i * 3);
+  }
+  const smooth = new THREE.Float32BufferAttribute(output, 3);
+  geometry.setAttribute('normal', smooth);
+  geometry.setAttribute('aSnowNormal', smooth);
+  return geometry;
+}
 
 function clipTriangle(polygon, triangle) {
   const direction = Math.sign(area(...triangle)); let result = polygon;
@@ -127,13 +160,16 @@ export function configurePathMaterial(material, snow, feather, surfaces) {
     Object.assign(shader.uniforms,surfaces);
     shader.uniforms.uPathSnow = snow;
     shader.vertexShader = `varying vec3 vPathWorld; varying float vMountain;
+      ${feather ? '' : 'varying vec3 vPathStoneNormal;'}
       ${feather ? 'attribute float aMountain; attribute float aPathEdge; attribute float aTrailPresence; varying float vPathEdge; varying float vTrailPresence;' : ''}
       ${shader.vertexShader}`;
     shader.vertexShader = shader.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
       vPathWorld = (modelMatrix * vec4(transformed, 1.0)).xyz;
       vMountain = ${feather ? 'aMountain' : '1.0'};
+      ${feather ? '' : 'vPathStoneNormal = inverseTransformDirection(transformedNormal, viewMatrix);'}
       ${feather ? 'vPathEdge = aPathEdge; vTrailPresence = aTrailPresence;' : ''}`);
     shader.fragmentShader = `uniform float uPathSnow; varying vec3 vPathWorld; varying float vMountain;
+      ${feather ? '' : 'varying vec3 vPathStoneNormal;'}
       ${feather ? 'varying float vPathEdge; varying float vTrailPresence;' : ''}
       ${PATH_NOISE}\n${COASTAL_SURFACE_GLSL}\nuniform float uLandWetness;\n${shader.fragmentShader}`;
     shader.fragmentShader = shader.fragmentShader.replace('#include <color_fragment>', `#include <color_fragment>
@@ -144,8 +180,9 @@ export function configurePathMaterial(material, snow, feather, surfaces) {
         1.0 - smoothstep(0.35, 1.3, pathFootprint));
       float pathRelief = (pathMedium * 0.014 + pathFine * 0.010) * vMountain;
       diffuseColor.rgb *= mix(1.0, 0.81 + pathBroad * 0.21 + pathMedium * 0.10 + pathFine * 0.08, vMountain);
-      vec3 pathFace = cross(dFdx(vPathWorld), dFdy(vPathWorld));
-      float pathUp = abs(pathFace.y) / max(length(pathFace), 0.00001);
+      ${feather ? `vec3 pathFace = cross(dFdx(vPathWorld), dFdy(vPathWorld));
+        float pathUp = abs(pathFace.y) / max(length(pathFace), 0.00001);`
+        : 'float pathUp = abs(normalize(vPathStoneNormal).y);'}
       ${feather ? '' : `float pathStrata = pathStoneNoise(vec3(vPathWorld.x * 1.4,
           vPathWorld.y * 7.5 + pathBroad * 0.8, vPathWorld.z * 1.4));
         float pathWall = 1.0 - smoothstep(0.45, 0.85, pathUp);
@@ -163,9 +200,6 @@ export function configurePathMaterial(material, snow, feather, surfaces) {
           * (1.0 - uLandWetness * 0.18),0.95);
         pathRelief = dot(stepAlbedo,vec3(0.2126,0.7152,0.0722)) * 0.065;
       }`}
-      float pathSnow = uPathSnow * smoothstep(12.0, 30.0, vPathWorld.y)
-        * smoothstep(0.35, 0.8, pathUp) * vMountain;
-      diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.78, 0.80, 0.76), pathSnow * 0.75);
       ${feather ? `float pathEdgeNoise = pathNoise(vPathWorld.xz * 2.5 + 9.1);
         float pathFeather = 1.0 - smoothstep(0.74 + (pathEdgeNoise - 0.5) * 0.15 - fwidth(vPathEdge),
           1.0, abs(vPathEdge));
@@ -178,7 +212,10 @@ export function configurePathMaterial(material, snow, feather, surfaces) {
         normal = perturbNormalArb(-vViewPosition, normal, vec2(dFdx(pathRelief), dFdy(pathRelief)), faceDirection);
       #endif`);
   };
-  material.customProgramCacheKey = () => feather ? 'island-path-feather-natural-beach-v3' : 'island-path-stone-textured-v3';
+  material.customProgramCacheKey = () => feather ? 'island-path-feather-natural-beach-v3' : 'island-path-stone-textured-v4-smooth';
+  // 石裙的原 normal 已做局部平滑；共用材质的灯塔等模型直接使用标准法线，
+  // 不要求额外 aSnowNormal，避免缺失属性时将零向量归一化而渲染成黑面。
+  attachSnowSurface(material,snow,{surface:surfaces});
 }
 
 function rowTriangles(footprint) {
@@ -848,7 +885,7 @@ function* mountainStonework(layout, caveFloor) {
     geometry.setAttribute('color', new THREE.Float32BufferAttribute(builder.colors, 3));
     geometry.setAttribute('uv', new THREE.Float32BufferAttribute(builder.uvs, 2));
     geometry.userData.rows = builder.rows;
-    geometry.computeVertexNormals(); geometry.computeBoundingSphere();
+    geometry.computeVertexNormals(); smoothStoneSurfaceNormals(geometry); geometry.computeBoundingSphere();
     return { geometry, count: builder.count, stairs: builder.stairs, platforms: builder.rows.filter(row => row.role !== 'stair').length };
   });
 }
@@ -958,7 +995,7 @@ function decorations(layout, heightAt) {
 export function* createIslandPathsGenerator(parent, { heightAt = terrainHeight, layout = getIslandPathLayout({ heightAt }), windUniforms } = {}) {
   const group = new THREE.Group(); group.name = '环岛小路与山间步道'; parent.add(group);
   const geometries = new Set(), materials = new Set(), textures = new Set(), instances = [];
-  const snow = { value: 0 };
+  const snow = { value: 0 }, winter=windUniforms?.uFoliageWinter??{value:0};
   const surfaces = {uLandWetness:{value:0},...createCoastalSurfaceUniforms(),...windUniforms};
   const localWind = windUniforms ? null : createVegetationWindState();
   const plantUniforms = windUniforms ?? { uTime: { value: 0 }, uWindDirection: { value: new THREE.Vector2() },
@@ -967,6 +1004,8 @@ export function* createIslandPathsGenerator(parent, { heightAt = terrainHeight, 
     const material = new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness });
     material.onBeforeCompile = shader => configureVegetationWindShader(shader, plantUniforms, 'road');
     material.customProgramCacheKey = () => 'island-path-plant-wind-v1-road';
+    attachWinterFoliage(material,winter);
+    attachSnowSurface(material,snow,{surface:surfaces});
     return material;
   };
   const plantDepth = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking, side: THREE.DoubleSide });
@@ -1026,9 +1065,10 @@ export function* createIslandPathsGenerator(parent, { heightAt = terrainHeight, 
     const season = ['spring', 'summer', 'autumn', 'winter'].indexOf(env.season ?? 'summer');
     const index = Number.isFinite(env.seasonIndex) ? THREE.MathUtils.clamp(Math.round(env.seasonIndex), 0, 3) : Math.max(0, season);
     const quality = env.quality === 'low' ? .5 : env.quality === 'medium' ? .75 : 1;
-    snow.value = THREE.MathUtils.clamp(Math.max(Number.isFinite(env.snow) ? env.snow : 0, index === 3 ? .65 : 0), 0, 1);
+    snow.value = getSnowCover(env);
+    if(!windUniforms?.uFoliageWinter)winter.value=Math.max(env.snow??0,Math.min(1,snow.value*1.5),index===3?1:0);
     flowers.count = Math.floor(planting.flowers.length * [1, .80, .26, 0][index] * quality);
-    flowers.visible = flowers.count > 0;
+    flowers.visible = flowers.count > 0&&!isSnowLandscape(env);
     grass.count = Math.floor(planting.grass.length * quality); pebbles.count = Math.floor(planting.pebbles.length * quality);
     grass.material.color.setHex(index === 2 ? 0xc5bc8f : index === 3 ? 0xc4cac1 : 0xffffff);
   }

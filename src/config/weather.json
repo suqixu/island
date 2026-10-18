@@ -1,9 +1,12 @@
 {
   "seasons": ["spring", "summer", "autumn", "winter"],
   "seasonNames": ["春日", "夏日", "金秋", "冬日"],
-  "names": {"sunny": "晴朗", "cloudy": "多云", "rain": "细雨", "fog": "薄雾", "storm": "雷暴", "snow": "飘雪", "typhoon": "台风"},
+  "names": {"sunny": "晴朗", "cloudy": "多云", "rain": "细雨", "fog": "薄雾", "storm": "雷暴", "snow": "飘雪", "blizzard": "暴风雪", "typhoon": "台风"},
   "rainCycle": ["rain", "typhoon", "sunny"],
   "rainModeNames": {"rain": "普通下雨", "typhoon": "台风", "sunny": "关闭降雨"},
+  "snowCycle": ["snow", "blizzard", "sunny"],
+  "snowModeNames": {"snow": "飘雪", "blizzard": "暴风雪", "sunny": "关闭降雪"},
+  "snowpack": {"accumulationPerSecond": 0.012, "blizzardMultiplier": 2.8, "retentionSeconds": 25, "meltPerSecond": 0.0007, "warmthMultiplier": 0.14, "rainMeltMultiplier": 4, "dockDepth": 0.16, "pavilionDepth": 0.22},
   "cloudModes": [
     {"value": "default", "label": "默认（仅 v1）", "icon": "cloud", "coverage": null},
     {"value": "few", "label": "全部云形·少", "icon": "cloud-few", "coverage": 0.22, "cloudiness": 0.22, "fog": 0},
@@ -17,6 +20,7 @@
     "fog": {"cloudiness": 0.52, "rain": 0, "snow": 0, "fog": 0.9, "storm": 0, "wind": 0.12},
     "storm": {"cloudiness": 1, "rain": 1, "snow": 0, "fog": 0.35, "storm": 1, "wind": 0.95},
     "snow": {"cloudiness": 0.76, "rain": 0, "snow": 1, "fog": 0.25, "storm": 0, "wind": 0.36},
+    "blizzard": {"cloudiness": 1, "rain": 0, "snow": 1, "fog": 0.48, "storm": 0, "wind": 1},
     "typhoon": {"cloudiness": 1, "rain": 1, "snow": 0, "fog": 0.24, "storm": 1, "wind": 1}
   },
   "seasonTemperatures": [23, 29, 21, 8],
@@ -24,11 +28,12 @@
     "durationSeconds": {"min": 35, "range": 50},
     "typhoonSeasonIndices": [1, 2],
     "typhoonProbability": 0.05,
+    "blizzardProbability": 0.05,
     "forecasts": [
       ["sunny", "cloudy", "rain", "fog", "storm"],
       ["sunny", "cloudy", "rain", "fog", "storm", "typhoon"],
       ["sunny", "cloudy", "rain", "fog", "storm", "typhoon"],
-      ["sunny", "cloudy", "rain", "fog", "snow"]
+      ["sunny", "cloudy", "rain", "fog", "snow", "blizzard"]
     ]
   }
 }

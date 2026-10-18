@@ -1,3 +1,4 @@
+import {isSnowLandscape} from '../snow-surface.js';
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { seededRandom } from '../terrain.js';
@@ -74,7 +75,7 @@ export function createCaveFlowerMeadow(parent,{heightAt,distanceAt}={}) {
       if(disposed)return;advanceVegetationWind(wind,time,env);
       uniforms.uTime.value=wind.time;uniforms.uWindDirection.value.fromArray(wind.direction);
       uniforms.uPlantAmplitudes.value.fromArray(wind.amplitudes).multiplyScalar(.40);uniforms.uLeafFlutter.value=wind.flutter*.18;
-      const visible=env.season!=='winter'&&env.seasonIndex!==3&&(env.snow??0)<.5;
+      const visible=env.season!=='winter'&&env.seasonIndex!==3&&!isSnowLandscape(env);
       meshes.forEach(mesh=>{mesh.visible=visible;});
     },
     dispose() {

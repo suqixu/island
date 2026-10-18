@@ -22,7 +22,7 @@ function withAtmosphere(run) {
   const atmosphere = createAtmosphere(scene, { moonMap });
   let time = 0;
   const update = weather => atmosphere.update(time += .05, getEnvironment(createSimulation({ hour: 12, weather, windSeed: 1 })), camera);
-  try { run({ atmosphere, scene, update }); }
+  try { run({ atmosphere, scene, camera, update }); }
   finally {
     atmosphere.dispose();moonMap.dispose();
     for (const [key, descriptor] of previous) {
@@ -30,6 +30,51 @@ function withAtmosphere(run) {
     }
   }
 }
+
+test('长时间运行后切换暴风雪仍连续旋转雪晶，重复时间不推进粒子且低画质限量', () => {
+  withAtmosphere(({atmosphere,scene,camera})=>{
+    const snow=getEnvironment(createSimulation({weather:'snow',windSeed:42}));
+    const blizzard=getEnvironment(createSimulation({weather:'blizzard',windSeed:42}));
+    atmosphere.update(3600,snow,camera);
+    const layers=['近景大片雪','中景密雪','远景雪幕'].map(name=>scene.getObjectByName(name));
+    const before=layers.map(layer=>layer.material.uniforms.uRotation?.value);
+    assert.ok(before.every(Number.isFinite),'雪晶旋转必须作为累计相位传给GPU');
+    atmosphere.update(3600.05,blizzard,camera);
+    layers.forEach((layer,i)=>{
+      const rotation=layer.material.uniforms.uRotation.value;
+      assert.ok(rotation>=before[i]&&rotation-before[i]<.06,'转角增量只由本帧时长决定');
+    });
+    const rotations=layers.map(layer=>layer.material.uniforms.uRotation.value);
+    atmosphere.update(3600.05,blizzard,camera);
+    layers.forEach((layer,i)=>assert.equal(layer.material.uniforms.uRotation.value,rotations[i]));
+    atmosphere.setQuality('low');atmosphere.update(3600.10,blizzard,camera);
+    assert.ok(layers.every(layer=>layer.geometry.drawRange.count<=layer.geometry.attributes.position.count*.5));
+    assert.equal(atmosphere.lightningActive,false);
+  });
+});
+
+test('三层雪花共享透明图集，替换基础纹理后正确释放且释放不重复', () => {
+  withAtmosphere(({atmosphere,scene})=>{
+    const atlas=new THREE.Texture();let released=0;
+    atlas.addEventListener('dispose',()=>released++);
+    atmosphere.setSnowTexture(atlas);
+    for(const name of ['近景大片雪','中景密雪','远景雪幕']) {
+      const uniforms=scene.getObjectByName(name).material.uniforms;
+      assert.equal(uniforms.uTexture.value,atlas);assert.equal(uniforms.uSnowAtlas.value,1);
+    }
+    atmosphere.dispose();atmosphere.dispose();assert.equal(released,1);
+  });
+});
+
+test('暴风雪阵风间歇恢复岛屿轮廓，白茫只在强阵风出现', () => {
+  withAtmosphere(({atmosphere,scene,camera})=>{
+    const env=getEnvironment(createSimulation({weather:'blizzard',hour:14}));
+    atmosphere.update(0,{...env,gust:.55},camera);const calm=scene.fog.density;
+    assert.ok(calm<.0023,'持续强风不能让雪幕一直白茫');
+    atmosphere.update(.1,{...env,gust:1},camera);
+    assert.ok(scene.fog.density>calm*1.7,'强阵风应产生短暂雪幕');
+  });
+});
 
 test('雨、雾、雷暴切换保留全岛远景细节，海上远处仍有雾气', () => {
   withAtmosphere(({ scene, update }) => {

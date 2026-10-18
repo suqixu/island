@@ -1,3 +1,4 @@
+import {attachSnowSurface,getSnowCover} from '../snow-surface.js';
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { createStructureSurfaceState, attachStructureSurface } from '../structure-surfaces.js';
@@ -253,7 +254,7 @@ function stairPlan(heightAt, position, direction, platformTop, approach) {
   return best?.steps || [];
 }
 
-export function createLighthouse(scene, { heightAt, position, doorDirection = { x: 0, z: 1 }, approach } = {}) {
+export function createLighthouse(scene, { heightAt, position, doorDirection = { x: 0, z: 1 }, approach, snowSurface } = {}) {
   if (typeof heightAt !== 'function' || !Number.isFinite(position?.x) || !Number.isFinite(position?.z)) {
     throw new TypeError('灯塔需要真实地形采样函数与有限的 x/z 坐标');
   }
@@ -269,7 +270,7 @@ export function createLighthouse(scene, { heightAt, position, doorDirection = { 
   const group = new THREE.Group(); group.name = '山顶灯塔'; group.position.set(position.x, platformTop, position.z);
   const architecture = new THREE.Group(); architecture.name = '灯塔建筑'; architecture.rotation.y = angle; group.add(architecture);
   const surface = createStructureSurfaceState();
-  const stepSurfaces = { ...createCoastalSurfaceUniforms(), uLandWetness: { value: 0 } }, stepSnow = { value: 0 };
+  const stepSurfaces = { ...createCoastalSurfaceUniforms(), ...snowSurface?.uniforms, uLandWetness: { value: 0 } }, stepSnow = { value: 0 };
   const masonry = new THREE.MeshStandardMaterial({ color: 0xaaa594, roughness: .98, side: THREE.DoubleSide });
   configurePathMaterial(masonry, stepSnow, false, stepSurfaces);
   const limewash = attachStructureSurface(weatheredMaterial(0xe8e4d8), surface, { plaster: true });
@@ -282,6 +283,7 @@ export function createLighthouse(scene, { heightAt, position, doorDirection = { 
   const lensMaterial = new THREE.MeshStandardMaterial({ color: 0xd8c486, roughness: .18, metalness: .1,
     emissive: 0xffb24c, emissiveIntensity: 0, transparent: true, opacity: .67 });
   const glowMaterial = new THREE.MeshStandardMaterial({ color: 0xf7d795, roughness: .32, emissive: 0xffad40, emissiveIntensity: 0 });
+  for(const material of [limewash,bronze,roofMaterial,wood])attachSnowSurface(material,stepSnow,{surface:snowSurface});
   const geometries = new Set(), materials = new Set([masonry, limewash, bronze, roofMaterial, wood, recess,
     windowMaterial, lanternGlass, lensMaterial, glowMaterial]);
   const add = (parent, name, geometry, material, x = 0, y = 0, z = 0) => {
@@ -369,7 +371,7 @@ export function createLighthouse(scene, { heightAt, position, doorDirection = { 
   function update(time, environment = {}) {
     if (disposed) return;
     stepSurfaces.uLandWetness.value = clamp(environment.rain ?? 0, 0, 1);
-    stepSnow.value = Math.max(environment.snow ?? 0, environment.season === 'winter' ? .85 : 0);
+    stepSnow.value = getSnowCover(environment);
     if (environment.quality && environment.quality !== quality) setQuality(environment.quality);
     const strength = environment.artificialLightsOff || environment.lighthouseLightsOff ? 0 : getLighthouseLampStrength(environment.daylight);
     light.intensity = strength * 23; light.visible = strength > .0001;

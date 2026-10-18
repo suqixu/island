@@ -1,3 +1,5 @@
+import {attachSnowSurface,getSnowCover} from '../snow-surface.js';
+import {addSmoothSnowNormals} from './snow-normals.js';
 import * as THREE from 'three';
 import { CAVE_LAYOUT, caveToWorld, caveToLocal, caveProfile, isCaveOpeningTriangle, getCaveOpeningRemainder } from '../cave-layout.js';
 import { noise } from '../terrain.js';
@@ -240,6 +242,12 @@ function makePortal() {
   const indexed = builder.finish(), geometry = indexed.toNonIndexed();
   indexed.dispose();
   geometry.computeVertexNormals();
+  addSmoothSnowNormals(geometry);
+  // 双面岩壳的原绕序朝洞内；仅将外拱的积雪法线转向露天侧，保留原光照与碰撞。
+  const snowNormal=geometry.attributes.aSnowNormal,exterior=geometry.attributes.aCaveExterior;
+  for(let i=0;i<snowNormal.count;i++)if(exterior.getX(i)>.5) {
+    snowNormal.setXYZ(i,-snowNormal.getX(i),-snowNormal.getY(i),-snowNormal.getZ(i));
+  }
   return geometry;
 }
 
@@ -415,14 +423,17 @@ function makeLooseRockGeometry() {
   return geometry;
 }
 
-export function createIslandCave(parent, { heightAt, leafTexture } = {}) {
+export function createIslandCave(parent, { heightAt, leafTexture, snowSurface } = {}) {
   const group = new THREE.Group();
   group.name = '东南山侧天然岩洞';
   parent.add(group);
   const rockTextures = makeRockTextures();
   const material = rockMaterial(rockTextures);
+  const exteriorSnow={value:0};
+  attachSnowSurface(material,exteriorSnow,{surface:snowSurface,mask:'step(.999,vCaveExterior)',smoothNormals:true});
   const floorMaterial = rockMaterial(rockTextures, true); floorMaterial.roughness = 1; floorMaterial.bumpScale = .024;
   const add = (geometry, name, surfaceMaterial = material) => {
+    if(surfaceMaterial===material)addSmoothSnowNormals(geometry);
     const mesh = new THREE.Mesh(geometry, surfaceMaterial);
     mesh.name = name; mesh.castShadow = true; mesh.receiveShadow = true;
     group.add(mesh);
@@ -432,7 +443,7 @@ export function createIslandCave(parent, { heightAt, leafTexture } = {}) {
   const portal = add(makePortal(), '厚岩拱与裂隙洞口');
   const floor = add(makeFloor(heightAt), '洞穴坡口与地面', floorMaterial);
   add(makeEndWall(), '洞穴深处不规则岩壁');
-  const rockGeometry = makeLooseRockGeometry();
+  const rockGeometry = addSmoothSnowNormals(makeLooseRockGeometry());
   // Irregular shoulders soften the cut grid edge; the central aperture stays open.
   const shoulderRocks = [
     [-4.1, .7, .7, 1.12, 1.45, 1.08], [4.05, .72, .8, 1.07, 1.3, .98],
@@ -477,7 +488,7 @@ export function createIslandCave(parent, { heightAt, leafTexture } = {}) {
     rocks.setColorAt(index, color);
   });
   rocks.computeBoundingSphere(); group.add(rocks);
-  const vegetation = createCaveVegetation(group, portal, leafTexture);
+  const vegetation = createCaveVegetation(group, portal, leafTexture,{snowSurface});
   // A hidden light beyond the first bend hints at depth without lighting the entrance.
   const turnLight = new THREE.PointLight(0xffbd72, 30, 5, 2);
   const glowPoint = caveToWorld(tunnelBend(-7.5) + .6, 2.35, -7.5);
@@ -520,6 +531,7 @@ export function createIslandCave(parent, { heightAt, leafTexture } = {}) {
       turnLight.visible = !env.artificialLightsOff;
       const glowTime = Number.isFinite(time) ? time : 0;
       turnLight.intensity = env.artificialLightsOff ? 0 : 30 + 4 * Math.sin(glowTime * .73) + 2 * Math.sin(glowTime * 1.43);
+      exteriorSnow.value=getSnowCover(env);
       vegetation.update(time, env);
     },
     dispose() {

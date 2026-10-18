@@ -26,9 +26,10 @@ function geometryDigest(group) {
 function structureDigest(group) {
   const hash = createHash('sha256');
   group.traverse(object => {
-    if (object.userData.caveFlowerMeadow) return;
-    hash.update(JSON.stringify([object.name, object.type, object.children.length, object.count ?? null]));
-    for (const [name, attribute] of Object.entries(object.geometry?.attributes ?? {}).sort()) {
+    if (object.userData.caveFlowerMeadow||object.name==='码头铺板积雪') return;
+    hash.update(JSON.stringify([object.name, object.type, object.children.filter(child=>child.name!=='码头铺板积雪').length, object.count ?? null]));
+    // 冬叶留存属性由独立测试守护，固定几何结构基线继续覆盖原有顶点与索引。
+    for (const [name, attribute] of Object.entries(object.geometry?.attributes ?? {}).filter(([name])=>name!=='aWinterLeaf'&&name!=='aSnowNormal').sort()) {
       hash.update(JSON.stringify([name, attribute.array.constructor.name, attribute.itemSize, attribute.count, attribute.normalized]));
     }
     for (const attribute of [object.geometry?.index, object.instanceMatrix, object.instanceColor]) {
@@ -46,8 +47,9 @@ test('分阶段海岛保留现有全部顶点、索引、实例矩阵、颜色�
   const before = geometryDigest(original.group);
   // 包含细沙岸坡、洞口精确裁切/封闭后缘和洞外纹理遮罩；保留码头纹理UV及叶片遮罩。
   // 低岸细沙不再重复覆盖浅色环路，保留内陆路径与其自然衔接权重。
-  // 固定结构快照防止同步与异步实现同时丢失旧模型。
-  assert.equal(structureDigest(original.group), '4309b90fd701ec119c2e327eef3360a4c7828f4ae1a9863ca51df8594a6c55ba');
+  // 南峰局部14顶点修圆后，贴地石阶支撑面减少126个三角形；其余对象、索引与实例数量不变。
+  // 固定结构快照继续防止同步与异步实现同时丢失模型。
+  assert.equal(structureDigest(original.group), 'a89df96fc4d90e20c1ae76bcb327a94faf52cea45a5ea1503be2a55fa6574683');
   const scene = new THREE.Scene(), stages = [], slices = [];
   let stage, clock = 0, paints = 0;
   const asynchronous = await islandApi.createIslandAsync(scene, {

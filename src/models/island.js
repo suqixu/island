@@ -1,3 +1,8 @@
+import {addSmoothSnowNormals} from './snow-normals.js';
+import {createSnowBoardGeometry} from './snow-layers.js';
+import {WEATHER_CONFIG} from '../runtime-config.js';
+import {attachWinterFoliage} from '../winter-foliage.js';
+import {attachSnowSurface,getSnowCover,isSnowLandscape} from '../snow-surface.js';
 import * as THREE from 'three';
 import { BEACH_SWASH_GLSL } from '../beach-swash.js';
 import { getAnimationDelta } from '../animation-time.js';
@@ -98,6 +103,7 @@ function vegetationDepthMaterial(uniforms, kind) {
   const material = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking, side: THREE.DoubleSide });
   material.onBeforeCompile = shader => addVegetationWind(shader, uniforms, kind);
   material.customProgramCacheKey = () => `island-vegetation-depth-v4-${kind}`;
+  if(kind==='crown')attachWinterFoliage(material,uniforms.uFoliageWinter,{sparse:true,depth:true});
   return material;
 }
 
@@ -115,8 +121,8 @@ function vegetationMaterial(uniforms, color = 0xffffff, kind = 'ground', leafTex
     shader.fragmentShader = `uniform float uSnow; varying float vLeafCover; varying vec3 vPlantWorld;
       ${shader.fragmentShader}`;
     shader.fragmentShader = shader.fragmentShader.replace('#include <color_fragment>', `#include <color_fragment>
-      float frost = uSnow * smoothstep(20.0, 36.0, vPlantWorld.y) * vLeafCover;
-      diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.88, 0.92, 0.91), frost * 0.92);`);
+      float frost = uSnow * vLeafCover;
+      // 表面颜色与颗粒统一由雪面着色器处理。`);
     if (kind === 'crown' || kind === 'palm') shader.fragmentShader = shader.fragmentShader.replace('#include <lights_fragment_end>', `#include <lights_fragment_end>
       #if NUM_DIR_LIGHTS > 0
         float leafBacklight = max(0.0, -dot(normal, directionalLights[0].direction));
@@ -126,6 +132,8 @@ function vegetationMaterial(uniforms, color = 0xffffff, kind = 'ground', leafTex
   };
   material.customProgramCacheKey = () => `island-vegetation-v4-${kind}`;
   if(kind === 'crown' || kind === 'palm') attachVegetationSurface(material, {kind:'leaf'});
+  attachWinterFoliage(material,uniforms.uFoliageWinter,{sparse:kind==='crown'});
+  attachSnowSurface(material,uniforms.uSnow,{surface:uniforms});
   return leafTexture ? attachLeafTexture(material,leafTexture,{mixed}) : material;
 }
 
@@ -133,6 +141,7 @@ function vegetationBodyMaterial(uniforms, color, kind = 'tree', palm = false) {
   const material = new THREE.MeshStandardMaterial({ color, roughness: .94 });
   material.onBeforeCompile = shader => addVegetationWind(shader, uniforms, kind);
   material.customProgramCacheKey = () => `island-vegetation-body-v4-${kind}`;
+  attachSnowSurface(material,uniforms.uSnow,{surface:uniforms});
   return attachVegetationSurface(material, { kind: 'bark', palm });
 }
 
@@ -250,10 +259,7 @@ function* terrainMesh(uniforms) {
       float edgeSoil = grassBoundary * (1.0 - vBiome) * (1.0 - terrainRock)
         * (1.0 - smoothstep(7.0,10.0,vLandWorld.y));
       diffuseColor.rgb *= soilTransitionFactor(edgeSoil,rockBody);
-      float snowline = 33.0 - uSnow * 7.0 + sin(vLandWorld.x * 0.45 + vLandWorld.z * 0.23) * 1.5;
-      float frost = smoothstep(snowline, snowline + 5.0, vLandWorld.y) * uSnow;
-      frost *= 1.0 - smoothstep(0.60, 1.0, vSlope) * 0.64;
-      diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.9, 0.94, 0.95), frost);`);
+      `);
     shader.fragmentShader = shader.fragmentShader.replace('#include <normal_fragment_maps>', `vec3 landGeometricNormal = normal;
       #include <normal_fragment_maps>
       normal = normalize(mix(normal,landGeometricNormal,sandArea * max(uSandMapEnabled,sedimentArea)));
@@ -266,9 +272,10 @@ function* terrainMesh(uniforms) {
       #endif`);
     shader.fragmentShader = shader.fragmentShader.replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
       roughnessFactor = clamp(roughnessFactor - terrainRock * (rockBody * 0.14 + uLandWetness * 0.27)
-        - sandArea * sandWet * 0.16 + frost * 0.08, 0.52, 1.0);`);
+        - sandArea * sandWet * 0.16, 0.52, 1.0);`);
   };
   material.customProgramCacheKey = () => 'island-terrain-natural-soil-transition-v9';
+  attachSnowSurface(material,uniforms.uSnow,{surface:uniforms,shoreline:true});
   const mesh = new THREE.Mesh(geometry, material);
   mesh.name = '连续海床与火山岛'; mesh.receiveShadow = true; mesh.castShadow = true;
   return mesh;
@@ -589,7 +596,7 @@ function rockGeometry(seed) {
     colors[i * 3] = color.r; colors[i * 3 + 1] = color.g; colors[i * 3 + 2] = color.b;
   }
   geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3)); geometry.computeVertexNormals();
-  return geometry;
+  return addSmoothSnowNormals(geometry);
 }
 
 function addRocks(group, random, uniforms) {
@@ -621,6 +628,7 @@ function addRocks(group, random, uniforms) {
       #endif`);
   };
   material.customProgramCacheKey = () => 'island-textured-rock-v3';
+  attachSnowSurface(material,uniforms.uSnow,{surface:uniforms,smoothNormals:true});
   const rocks = [];
   for (let i = 0; i < 130; i++) {
     const angle = random() * TAU, distance = -5.0 + random() * 9;
@@ -683,13 +691,14 @@ function addRocks(group, random, uniforms) {
   return rocks.length;
 }
 
-function addDock(group) {
+function addDock(group, uniforms) {
   const dock = new THREE.Group(); dock.name = '旧木码头';
   const surface = createStructureSurfaceState();
   const wood = texture('wood'); wood.repeat.set(2, 1);
   const material = new THREE.MeshStandardMaterial({ map: wood, bumpMap: wood, bumpScale: 0.04, roughness: 0.83, color: 0xded4c2 });
   const darkWood = material.clone(); darkWood.color.setHex(0xa3a090);
   attachStructureSurface(material, surface); attachStructureSurface(darkWood, surface);
+  attachSnowSurface(material,uniforms.uSnow,{surface:uniforms}); attachSnowSurface(darkWood,uniforms.uSnow,{surface:uniforms});
   const dummy = new THREE.Object3D();
   const boards = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), material, 47);
   boards.name = '独立木铺板'; boards.castShadow = true; boards.receiveShadow = true;
@@ -699,6 +708,17 @@ function addDock(group) {
     dummy.scale.set(i > 36 ? 6.2 : 4.7, 0.17, 0.73); dummy.updateMatrix(); boards.setMatrixAt(i, dummy.matrix);
   }
   dock.add(boards);
+  const capMaterial=new THREE.MeshStandardMaterial({color:0xffffff,roughness:.98,transparent:true,opacity:.98,depthWrite:false});
+  attachSnowSurface(capMaterial,uniforms.uSnow,{surface:uniforms,layer:true,volume:true,growth:true});
+  const snowCaps=new THREE.InstancedMesh(createSnowBoardGeometry(),capMaterial,47);
+  snowCaps.name='码头铺板积雪';snowCaps.visible=false;snowCaps.receiveShadow=true;
+  for(let i=0;i<47;i++) {
+    const depth=WEATHER_CONFIG.snowpack.dockDepth*(.8+.4*hash(i*1.31,7.9));
+    dummy.position.set(0,2.03+Math.sin(i*2.17)*.016+.085+depth*.5,65+i*.79);
+    dummy.rotation.set(0,Math.sin(i*1.13)*.002,Math.cos(i)*.002);
+    dummy.scale.set((i>36?6.2:4.7)-.025,depth,.71);dummy.updateMatrix();snowCaps.setMatrixAt(i,dummy.matrix);
+  }
+  dock.add(snowCaps);
   const supportPositions = [];
   for (let i = 0; i < 7; i++) {
     const z = 66 + i * 5.8, halfWidth = i > 4 ? 2.85 : 2.13;
@@ -778,7 +798,7 @@ function addDock(group) {
   }
   dock.add(lampPoles, lampFrames, lanterns);
   group.add(dock);
-  return { lights, material: lampGlow, setSurfaceMaps: surface.setMaps, dispose: surface.dispose };
+  return { lights, snowCaps, material: lampGlow, setSurfaceMaps: surface.setMaps, dispose: surface.dispose };
 }
 
 function gullWing() {
@@ -825,25 +845,25 @@ function addBirds(group, random) {
 }
 
 /** Build the visible island. All animated assets are built once and reused. */
-function* buildIsland(scene) {
+function* buildIsland(scene, {snowSurface}={}) {
   const group = new THREE.Group(); group.name = 'ISOLA · 自然海岛';
   const random = seededRandom(802194);
   const leafTextures = createLeafTextureState();
   const uniforms = {
-    uTime: { value: 0 }, uWind: { value: 0.3 }, uSnow: { value: 0 }, uLandWetness: { value: 0 }, uBeachDaylight: {value:1},
+    uTime: { value: 0 }, uWind: { value: 0.3 }, uSnow: { value: 0 }, uFoliageWinter:{value:0}, uLandWetness: { value: 0 }, uBeachDaylight: {value:1},
     uWindDirection: { value: new THREE.Vector2(.83, .55).normalize() },
     uPlantAmplitudes: { value: new THREE.Vector3() }, uLeafFlutter: { value: 0 },
     uTreeAmplitudes: { value: new THREE.Vector2() },
     uGroundTint: { value: new THREE.Vector3(1, 1, 1) },
     uRockMap: { value: null }, uRockMapEnabled: { value: 0 },
-    ...createCoastalSurfaceUniforms(),
+    ...createCoastalSurfaceUniforms(), ...snowSurface?.uniforms,
   };
   yield { stage: 'terrain' };
   const land = yield* terrainMesh(uniforms); group.add(land);
   yield { stage: 'cave-opening' };
   const caveTriangles = applyCaveOpening(land);
   yield { stage: 'cave' };
-  const cave = createIslandCave(group, { heightAt, leafTexture:leafTextures.broadleaf });
+  const cave = createIslandCave(group, { heightAt, leafTexture:leafTextures.broadleaf, snowSurface });
   const caveFlowers = createCaveFlowerMeadow(group, { heightAt: PATH_LAYOUT.heightAtRendered, distanceAt: PATH_LAYOUT.distanceAt });
   yield { stage: 'paths' };
   const paths = yield* createIslandPathsGenerator(group, { heightAt, layout: PATH_LAYOUT, windUniforms: uniforms });
@@ -856,7 +876,7 @@ function* buildIsland(scene) {
   yield { stage: 'rocks' };
   const rockCount = addRocks(group, random, uniforms);
   yield { stage: 'dock' };
-  const dockLighting = addDock(group);
+  const dockLighting = addDock(group,uniforms);
   yield { stage: 'birds' };
   const birds = addBirds(group, random);
   scene.add(group);
@@ -906,9 +926,12 @@ function* buildIsland(scene) {
     uniforms.uPlantAmplitudes.value.fromArray(vegetationWind.amplitudes);
     uniforms.uTreeAmplitudes.value.fromArray(vegetationWind.treeAmplitudes);
     uniforms.uLeafFlutter.value = vegetationWind.flutter;
-    const snowTarget = Math.max(env.snow ?? 0, season === 3 ? 0.85 : 0);
+    const winterTarget=Math.max(env.snow??0,Math.min(1,getSnowCover(env)*1.5),season===3?1:0);
+    uniforms.uFoliageWinter.value+=(winterTarget-uniforms.uFoliageWinter.value)*(1-Math.exp(-delta*1.8));
+    const snowTarget = getSnowCover(env);
     uniforms.uSnow.value += (snowTarget - uniforms.uSnow.value) * (1 - Math.exp(-delta * 1.9));
     uniforms.uLandWetness.value += (clamp(env.rain ?? 0, 0, 1) - uniforms.uLandWetness.value) * (1 - Math.exp(-delta * 1.25));
+    dockLighting.snowCaps.visible=uniforms.uSnow.value>.005;
     const darkness = env.artificialLightsOff ? 0 : 1 - smooth(0.12, 0.48, env.daylight ?? 1);
     dockLighting.material.emissiveIntensity = darkness * 3.1;
     for (const light of dockLighting.lights) light.intensity = darkness * 48;
@@ -927,6 +950,7 @@ function* buildIsland(scene) {
       understory.flowers.visible = season === 0 || season === 1;
       setQuality(lastQuality);
     }
+    understory.flowers.visible=(season===0||season===1)&&!isSnowLandscape(env);
     if (env.quality && env.quality !== lastQuality) setQuality(env.quality);
     paths.update(time, { ...env, seasonIndex: season, quality: lastQuality });
     const birdLimit = lastQuality === 'low' ? 14 : lastQuality === 'medium' ? 24 : birds.length;
@@ -1005,8 +1029,8 @@ function* buildIsland(scene) {
 }
 
 /** Keep the synchronous API for tools and tests; both paths share every vertex. */
-export function createIsland(scene) {
-  const iterator = buildIsland(scene);
+export function createIsland(scene, options) {
+  const iterator = buildIsland(scene, options);
   let result;
   do { result = iterator.next(); } while (!result.done);
   return result.value;
@@ -1014,7 +1038,7 @@ export function createIsland(scene) {
 
 /** Let the browser paint between measured batches instead of one long task. */
 export function createIslandAsync(scene, options) {
-  return runStartupGenerator(buildIsland(scene), options);
+  return runStartupGenerator(buildIsland(scene, options), options);
 }
 
 export { heightAt };

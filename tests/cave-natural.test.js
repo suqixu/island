@@ -5,6 +5,29 @@ import { createIslandCave } from '../src/models/island-cave.js';
 import { CAVE_LAYOUT, caveToWorld, caveToLocal } from '../src/cave-layout.js';
 import { heightAt } from '../src/terrain.js';
 import { getVegetationDisplacement } from '../src/vegetation-motion.js';
+import {createSnowSurfaceState} from '../src/snow-surface.js';
+
+test('洞口外露拱岩共享雪面纹理与残雪量，洞内的遮蔽属性仍为零', () => {
+  const surface=createSnowSurfaceState(),map=new THREE.Texture();surface.setMap(map);
+  const cave=createIslandCave(new THREE.Group(),{heightAt,snowSurface:surface});
+  try {
+    const portal=cave.group.getObjectByName('厚岩拱与裂隙洞口');
+    const shader={uniforms:{},vertexShader:THREE.ShaderLib.standard.vertexShader,fragmentShader:THREE.ShaderLib.standard.fragmentShader};
+    portal.material.onBeforeCompile(shader);
+    assert.ok(shader.uniforms.uSurfaceSnow,'洞口岩石必须接入积雪状态');
+    assert.match(shader.fragmentShader,/step\(\.999,vCaveExterior\)/,'洞口与内壁之间的纹理渐变不能把积雪带入遮蔽区');
+    assert.equal(shader.uniforms.uSnowMap,surface.uniforms.uSnowMap);
+    cave.update(1,{snow:0,snowCover:.75});assert.equal(shader.uniforms.uSurfaceSnow.value,.75);
+    assert.ok([...portal.geometry.attributes.aCaveExterior.array].some(value=>value>.9));
+    const tunnel=cave.group.getObjectByName('天然岩洞内壁');
+    assert.ok([...tunnel.geometry.attributes.aCaveExterior.array].every(value=>value===0));
+    assert.ok(portal.geometry.attributes.aSnowNormal);
+    const p=portal.geometry.attributes.position,n=portal.geometry.attributes.aSnowNormal;
+    const crown=[];
+    for(let i=0;i<p.count;i++)if(p.getY(i)>CAVE_LAYOUT.entrance.y+6&&portal.geometry.attributes.aCaveExterior.getX(i)>.9)crown.push(n.getY(i));
+    assert.ok(crown.length>0&&crown.every(up=>up>.2),'外拱顶积雪法线应朝上，不能沿用双面岩壳朝内的法线');
+  } finally {cave.dispose();surface.dispose();}
+});
 
 const point = (side, height, forward) => {
   const p = caveToWorld(side, height, forward);

@@ -165,24 +165,60 @@ function benchedTerrain(heightAt, rawHeight, routes, summits, anchors) {
   }
   const anchorConstraints = [];
   for (const point of nodes.values()) if (point.fixed) anchorConstraints.push({ terms: meshWeights(point.x, point.z), target: rawHeight(point.x, point.z) });
+  let editableVertices = null;
+  const canMove = id => !isProtected(id) && (!editableVertices || editableVertices.has(id));
   const project = (terms, excess) => {
-    const norm = terms.reduce((sum, [id, weight]) => sum + (isProtected(id) ? 0 : weight * weight), 0);
+    const norm = terms.reduce((sum, [id, weight]) => sum + (canMove(id) ? weight * weight : 0), 0);
     if (norm < 1e-16) return;
-    for (const [id, weight] of terms) if (!isProtected(id)) { const raw = rawVertex(id); values.set(id, clamp(get(id) - excess * weight / norm, raw - 2, raw + 2)); }
+    for (const [id, weight] of terms) if (canMove(id)) { const raw = rawVertex(id); values.set(id, clamp(get(id) - excess * weight / norm, raw - 2, raw + 2)); }
   };
   let maximumGrade = Infinity;
-  for (let pass = 0; pass < 800; pass++) {
-    for (const { terms, run, cap } of constraints) {
-      const diff = terms.reduce((sum, [id, weight]) => sum + get(id) * weight, 0), limit = cap * run;
-      if (Math.abs(diff) > limit) project(terms, diff - Math.sign(diff) * limit);
+  const solve = (activeConstraints, activeAnchors) => {
+    for (let pass = 0; pass < 800; pass++) {
+      for (const { terms, run, cap } of activeConstraints) {
+        const diff = terms.reduce((sum, [id, weight]) => sum + get(id) * weight, 0), limit = cap * run;
+        if (Math.abs(diff) > limit) project(terms, diff - Math.sign(diff) * limit);
+      }
+      for (const { terms, target } of activeAnchors) project(terms, terms.reduce((sum, [id, weight]) => sum + get(id) * weight, 0) - target);
+      if (pass % 10 === 9) {
+        maximumGrade = Math.max(...activeConstraints.map(({ terms, run }) => Math.abs(terms.reduce((sum, [id, weight]) => sum + get(id) * weight, 0)) / run));
+        const capError = Math.max(...activeConstraints.map(({ terms, run, cap }) => Math.abs(terms.reduce((sum, [id, weight]) => sum + get(id) * weight, 0)) / run - cap));
+        const anchorError = Math.max(...activeAnchors.map(({ terms, target }) => Math.abs(terms.reduce((sum, [id, weight]) => sum + get(id) * weight, 0) - target)));
+        if (capError < .001 && anchorError < .00001) break;
+      }
     }
-    for (const { terms, target } of anchorConstraints) project(terms, terms.reduce((sum, [id, weight]) => sum + get(id) * weight, 0) - target);
-    if (pass % 10 === 9) {
-      maximumGrade = Math.max(...constraints.map(({ terms, run }) => Math.abs(terms.reduce((sum, [id, weight]) => sum + get(id) * weight, 0)) / run));
-      const capError = Math.max(...constraints.map(({ terms, run, cap }) => Math.abs(terms.reduce((sum, [id, weight]) => sum + get(id) * weight, 0)) / run - cap));
-      const anchorError = Math.max(...anchorConstraints.map(({ terms, target }) => Math.abs(terms.reduce((sum, [id, weight]) => sum + get(id) * weight, 0) - target)));
-      if (capError < .001 && anchorError < .00001) break;
+  };
+  solve(constraints, anchorConstraints);
+  // 南峰斜脊横过网格对角线，单独保护最高顶点会留下孤立尖锥。
+  // 先保留原道路解，再只在两格半内抬肩、最多削低45cm并重投影。
+  // 范围外冻结原解，防止约束修正沿相连步道传播；锚点和±2m切填不变。
+  const southSummit = summits.find(top => top.id === 'south');
+  if (southSummit) {
+    const peakId = Math.round((southSummit.z + 155) / grid) * 257 + Math.round((southSummit.x + 155) / grid);
+    const shoulderMean = [peakId - 1, peakId + 1, peakId - 257, peakId + 257]
+      .reduce((sum, id) => sum + get(id) / 4, 0);
+    const peakCut = clamp(southSummit.y - shoulderMean - .75, 0, .45);
+    southSummit.y -= peakCut;
+    values.set(peakId, southSummit.y);
+    const radius = grid * 2.5;
+    editableVertices = new Set();
+    for (let iz = Math.floor((southSummit.z - radius + 155) / grid); iz <= Math.ceil((southSummit.z + radius + 155) / grid); iz++) {
+      for (let ix = Math.floor((southSummit.x - radius + 155) / grid); ix <= Math.ceil((southSummit.x + radius + 155) / grid); ix++) {
+        const id = iz * 257 + ix;
+        if (isProtected(id)) continue;
+        const p = vertexPoint(id), gap = distance(p, southSummit);
+        if (gap >= radius) continue;
+        editableVertices.add(id);
+        const t = clamp((gap - grid) / (radius - grid), 0, 1), weight = 1 - t * t * (3 - 2 * t);
+        const shoulder = southSummit.y - gap * gap * .32;
+        const current = get(id), target = Math.min(rawVertex(id) + 2, shoulder);
+        if (target > current) values.set(id, current + (target - current) * weight);
+      }
     }
+    const localConstraints = constraints.filter(({ terms }) => terms.some(([id]) => editableVertices.has(id)));
+    const localAnchors = anchorConstraints.filter(({ terms }) => terms.some(([id]) => editableVertices.has(id)));
+    solve(localConstraints, localAnchors);
+    maximumGrade = Math.max(...constraints.map(({ terms, run }) => Math.abs(terms.reduce((sum, [id, weight]) => sum + get(id) * weight, 0)) / run));
   }
   if (constraints.some(({ terms, run, hardCap }) => Math.abs(terms.reduce((sum, [id, weight]) => sum + get(id) * weight, 0)) / run > hardCap + .000001)) {
     throw new Error(`沿路局部土方仍不能满足可走坡度: ${maximumGrade.toFixed(3)}`);

@@ -128,7 +128,7 @@ test('灯塔入口石阶与山路共用石阶贴图和着色方式，由海岛�
     assert.equal(step.customProgramCacheKey(), mountain.customProgramCacheKey());
     assert.ok(steps.every(mesh => mesh.material === step), '踏面、立面和侧面共用同一材质');
     assert.equal(tower.group.getObjectByName('灯塔贴坡石基').material, step);
-    tower.update(10, {rain:.8,season:'winter'});
+    tower.update(10, {rain:.8,season:'winter',snowCover:.85});
     assert.equal(stepShader.uniforms.uLandWetness.value, .8);
     assert.equal(stepShader.uniforms.uPathSnow.value, .85);
     assert.equal(tower.group.children.length, meshCount);

@@ -42,7 +42,7 @@ export function createCameraWaterSampler(geometry,bathymetry,extent=240) {
   const {data,width:size}=bathymetry.image;
   const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
   function channel(x,z,c) {
-    const u=(x/(extent*2)+.5)*size-.5,v=(z/(extent*2)+.5)*size-.5;
+    const u=(x/(extent*2)+.5)*(size-1),v=(z/(extent*2)+.5)*(size-1);
     const ix=Math.floor(u),iz=Math.floor(v),fx=u-ix,fz=v-iz;
     const a=(clamp(iz,0,size-1)*size+clamp(ix,0,size-1))*4+c;
     const b=(clamp(iz,0,size-1)*size+clamp(ix+1,0,size-1))*4+c;

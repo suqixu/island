@@ -114,8 +114,8 @@ test('暖灯从白天到夜晚平滑亮起，局部照明不照亮整座山且�
   pavilion.dispose();
 });
 
-test('现有冬季及降雪环境让瓦顶积雪，回暖渐消且不重建屋顶资源', () => {
-  // Catches ignoring production seasonIndex/snow fields, or instant snow popping on season change.
+test('亭顶读取共享积雪量，停雪仍保留覆盖且不重建资源', () => {
+  // 显式积雪量应在停雪后继续覆盖屋顶，模型无需重建资源。
   const { pavilion } = create();
   const snow = pavilion.group.getObjectByName('山亭屋顶积雪');
   assert.ok(snow?.isMesh);
@@ -123,7 +123,7 @@ test('现有冬季及降雪环境让瓦顶积雪，回暖渐消且不重建屋�
   pavilion.update(0, { season: 'summer', snow: 0, daylight: 1 }); assert.equal(snow.visible, false);
   let previous = 0;
   for (let step = 1; step <= 30; step++) {
-    pavilion.update(step / 10, { seasonIndex: 3, snow: 0, daylight: 1 });
+    pavilion.update(step / 10, { seasonIndex: 3, snowCover:.85, snow: 0, daylight: 1 });
     assert.ok(snow.material.opacity >= previous && snow.material.opacity - previous < .18); previous = snow.material.opacity;
   }
   assert.ok(snow.visible && snow.material.opacity > .6);
