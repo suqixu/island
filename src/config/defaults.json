@@ -143,6 +143,7 @@
     "scenePreparation": {
       "timeoutMs": 12000,
       "retries": 0
-    }
+    },
+    "deferredIdleTimeoutMs": 500
   }
 }

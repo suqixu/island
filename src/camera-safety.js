@@ -1,6 +1,7 @@
 /** Keep orbit/pan/zoom cameras above visible ground, including the near plane. */
 export function createCameraSafety(camera,controls,{heightAt,waterHeightAt,interiorFloorAt,clearance=1.25}={}) {
   const offsets=[[0,0],[.75,0],[-.75,0],[0,.75],[0,-.75]];
+  let sampleX = NaN, sampleZ = NaN, groundFloor = 2;
   function update() {
     let changed=false;
     if(controls.target.y<0) {
@@ -9,9 +10,16 @@ export function createCameraSafety(camera,controls,{heightAt,waterHeightAt,inter
     const eye=camera.position,interior=interiorFloorAt?.(eye);
     let floor=2;
     if(Number.isFinite(interior))floor=Math.max(floor,interior+clearance);
-    else for(const [dx,dz] of offsets) {
-      const ground=heightAt?.(eye.x+dx,eye.z+dz);
-      if(Number.isFinite(ground))floor=Math.max(floor,ground+clearance);
+    else {
+      // Terrain is fixed; camera height and changing waves do not invalidate it.
+      if (eye.x !== sampleX || eye.z !== sampleZ) {
+        sampleX = eye.x; sampleZ = eye.z; groundFloor = 2;
+        for (const [dx,dz] of offsets) {
+          const ground = heightAt?.(eye.x + dx, eye.z + dz);
+          if (Number.isFinite(ground)) groundFloor = Math.max(groundFloor, ground + clearance);
+        }
+      }
+      floor = Math.max(floor, groundFloor);
     }
     // Even fully developed wind seas + surge stay below 30m. Skip expensive
     // local water sampling while an eye/terrain floor is safely above them.

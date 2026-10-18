@@ -353,10 +353,12 @@ function createPrecipitation(count, snow, random, span=240, size=4.2) {
       uniform vec2 uDrift;
       uniform float uSnow;
       uniform float uSize;
+      uniform float uRainAngle;
       uniform float uSpan; uniform float uFall; uniform float uBlizzard; uniform float uRotation;
-      varying float vOpacity; varying float vFlakeRotation; varying vec2 vSnowCell;
+      varying float vOpacity; varying vec2 vParticleRotation; varying vec2 vSnowCell;
       void main() {
-        vFlakeRotation=aPhase+uRotation;
+        float particleAngle = mix(uRainAngle,aPhase+uRotation,uSnow);
+        vParticleRotation=vec2(cos(particleAngle),sin(particleAngle));
         float snowCell=floor(aPhase*0.63661977);
         vSnowCell=vec2(mod(snowCell,2.0),floor(snowCell/2.0));
         vec3 p = position;
@@ -377,11 +379,12 @@ function createPrecipitation(count, snow, random, span=240, size=4.2) {
       uniform sampler2D uTexture;
       uniform float uStrength;
       uniform vec3 uColor;
-      uniform float uRainAngle; uniform float uSnow; uniform float uSnowAtlas;
-      varying float vOpacity; varying float vFlakeRotation; varying vec2 vSnowCell;
+      uniform float uSnowAtlas;
+      varying float vOpacity; varying vec2 vParticleRotation; varying vec2 vSnowCell;
       void main() {
-        float angle=mix(uRainAngle,vFlakeRotation,uSnow);
-        float c = cos(angle), s = sin(angle);
+        // 仅按整点常量提前丢弃；UV边界保留一致采样，确保隐式mipmap导数有效。
+        if(uStrength*vOpacity<0.012)discard;
+        float c = vParticleRotation.x, s = vParticleRotation.y;
         vec2 rainUv = mat2(c, s, -s, c) * (gl_PointCoord - 0.5) + 0.5;
         float inside = step(0.0, rainUv.x) * step(rainUv.x, 1.0)
           * step(0.0, rainUv.y) * step(rainUv.y, 1.0);

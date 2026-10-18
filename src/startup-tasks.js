@@ -9,11 +9,21 @@ export function nextStartupPaint({
   });
 }
 
+/** Yield CPU batches without requiring an otherwise empty animation frame. */
+export function nextStartupWork({
+  scheduler = globalThis.scheduler,
+  scheduleTask = globalThis.setTimeout.bind(globalThis),
+} = {}) {
+  if (typeof scheduler?.yield === 'function') return scheduler.yield();
+  return new Promise(resolve => scheduleTask(resolve, 0));
+}
+
 /** Consume the same construction iterator used by the synchronous scene API. */
 export async function runStartupGenerator(iterator, {
   budgetMs = 8,
   now = () => performance.now(),
   yieldToBrowser = nextStartupPaint,
+  yieldForBudget = yieldToBrowser,
   onProgress = () => {},
   onSlice = () => {},
 } = {}) {
@@ -39,7 +49,7 @@ export async function runStartupGenerator(iterator, {
         sliceStart = now();
       } else if (end - sliceStart >= budgetMs) {
         reportSlice(end);
-        await yieldToBrowser();
+        await yieldForBudget();
         sliceStart = now();
       }
     }

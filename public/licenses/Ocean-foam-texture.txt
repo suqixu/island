@@ -3,13 +3,43 @@ Ocean foam detail texture
 File: src/assets/textures/water/ocean-foam-lace-v1.webp
 Created: 2026-10-17, using OpenAI's built-in imagegen tool at the user's request.
 Original generated image: 1254 x 1254 RGBA PNG.
-Runtime encoding: lossless WebP; decoded RGBA bytes and dimensions are unchanged.
+Source encoding: lossless WebP; decoded RGBA bytes and dimensions are unchanged.
+The original WebP remains the source asset and is no longer downloaded at runtime.
 
 Purpose: a top-down, neutral white sea-foam lace texture with transparent gaps,
 varied bubble sizes and dissolving edges. No water color or directional lighting
-is baked into the material. Runtime code reads its alpha channel into one
-512 x 512 R8 mask, generates mipmaps, and animates sampling coordinates inside
-the existing ocean shader. Mirrored wrapping softens the generated tile edges.
+is baked into the material. The alpha channel is baked offline into one
+512 x 512 R8 mask; runtime generates the same mipmaps and animates sampling
+coordinates inside the existing ocean shader. Mirrored wrapping softens the
+generated tile edges. No image decoding or canvas readback is needed at runtime.
+
+Runtime asset: src/assets/textures/water/ocean-foam-mask-v1.bin
+Layout: exactly 262144 unsigned bytes, one alpha density byte per pixel,
+512 pixels per row, original top-to-bottom order, with no header or padding.
+The R8 format, texture orientation, dimensions, filtering and GPU memory use
+remain unchanged. The original runtime request was 1714638 bytes; the baked
+request is 262144 bytes (84.71% smaller before transport compression).
+
+Reproduction script: scripts/assets/bake-ocean-foam.mjs
+Run with Node.js, Playwright and local Google Chrome:
+  node scripts/assets/bake-ocean-foam.mjs
+Use --playwright-module /path/to/playwright/index.mjs when Playwright is provided
+outside the project. Add --check to compare every byte without rewriting it.
+The script resolves project files relative to itself, starts a loopback-only
+temporary server, and uses the original runtime operations:
+  createImageBitmap(blob, {resizeWidth:512, resizeHeight:512,
+    resizeQuality:'high', premultiplyAlpha:'none', colorSpaceConversion:'none'})
+  OffscreenCanvas drawImage -> getImageData -> alpha channel
+It closes the bitmap, canvas, browser and temporary server after completion.
+
+Baked/verified on 2026-10-18 with Google Chrome 155.0.8059.84.
+Reproduction check: all 262144 bytes identical; 0 changed bytes.
+Source WebP SHA256:
+7888c3a597979ac4b38a842ca24103274449b1ade842c814b52014c8d0b87d1e
+Baked mask SHA256:
+70a12fd51d284bbb0b639bc4f434c9fb05fbf878b0aae36d837585de78362f96
+Future browser image-resampling changes may produce a different result; the
+checked-in mask preserves the verified appearance independently of those changes.
 
 The separate foam-crest-v1.png study under tmp/artifacts/ocean-foam-textures is a
 preview asset and is not loaded by the production ocean material.

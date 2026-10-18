@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
 const FOAM_SIZE = 512;
-const foamUrl = new URL('./assets/textures/water/ocean-foam-lace-v1.webp', import.meta.url).href;
+const foamUrl = new URL('./assets/textures/water/ocean-foam-mask-v1.bin', import.meta.url).href;
 
 // Alpha contains foam density; transparent pixels can retain arbitrary RGB.
 export function extractFoamMask({ data, width, height }) {
@@ -12,8 +12,8 @@ export function extractFoamMask({ data, width, height }) {
   return mask;
 }
 
-/** Decode once at the GPU mask size. Waves animate UVs, never this pixel data. */
-export function createOceanFoamTexture() {
+/** Prebaked R8 bytes already match the GPU mask. Waves animate only the UVs. */
+export function createOceanFoamTexture({ signal, fetchMask = globalThis.fetch?.bind(globalThis) } = {}) {
   const texture = new THREE.DataTexture(new Uint8Array(FOAM_SIZE * FOAM_SIZE), FOAM_SIZE, FOAM_SIZE, THREE.RedFormat);
   texture.name = '海浪泡沫 · imagegen 单通道遮罩';
   texture.wrapS = texture.wrapT = THREE.MirroredRepeatWrapping;
@@ -23,37 +23,30 @@ export function createOceanFoamTexture() {
   texture.unpackAlignment = 1;
   texture.needsUpdate = true;
   const controller = new AbortController();
+  const abort = () => controller.abort(signal.reason);
+  if (signal?.aborted) abort();
+  else signal?.addEventListener('abort', abort, { once: true });
   let disposed = false;
-  const ready = typeof document !== 'undefined' && typeof createImageBitmap === 'function'
+  const ready = fetchMask && !controller.signal.aborted
     ? (async () => {
-      let bitmap, canvas;
       try {
-        const response = await fetch(foamUrl, { signal: controller.signal });
-        if (!response.ok) return false;
-        bitmap = await createImageBitmap(await response.blob(), {
-          resizeWidth: FOAM_SIZE, resizeHeight: FOAM_SIZE, resizeQuality: 'high',
-          premultiplyAlpha: 'none', colorSpaceConversion: 'none',
-        });
-        if (disposed) return false;
-        canvas = typeof OffscreenCanvas === 'function' ? new OffscreenCanvas(FOAM_SIZE, FOAM_SIZE)
-          : Object.assign(document.createElement('canvas'), { width: FOAM_SIZE, height: FOAM_SIZE });
-        const context = canvas.getContext('2d', { willReadFrequently: true });
-        if (!context) return false;
-        context.drawImage(bitmap, 0, 0, FOAM_SIZE, FOAM_SIZE);
-        const mask = extractFoamMask(context.getImageData(0, 0, FOAM_SIZE, FOAM_SIZE));
+        const response = await fetchMask(foamUrl, { signal: controller.signal });
+        if (!response.ok || disposed || controller.signal.aborted) return false;
+        const mask = new Uint8Array(await response.arrayBuffer());
+        if (disposed || controller.signal.aborted || mask.length !== FOAM_SIZE * FOAM_SIZE) return false;
         texture.image.data.set(mask);
         texture.needsUpdate = true;
         return true;
-      } catch { return false; } // Offline/unsupported decode retains procedural foam.
+      } catch { return false; } // Offline or invalid masks retain procedural foam.
       finally {
-        bitmap?.close();
-        if (canvas) canvas.width = canvas.height = 1;
+        signal?.removeEventListener('abort', abort);
       }
     })() : Promise.resolve(false);
   function dispose() {
     if (disposed) return;
     disposed = true;
     controller.abort();
+    signal?.removeEventListener('abort', abort);
     texture.dispose();
   }
   return { texture, ready, dispose };

@@ -4,7 +4,6 @@ import { createSprayAtlas } from './ocean-spray-texture.js';
 import { createImpactPlumes } from './ocean-impact.js';
 
 export function createOceanSpray(scene, { heightAt, shelterAt } = {}) {
-  const atlas=createSprayAtlas();
   const capacity = 1600;
   const positions = new Float32Array(capacity * 3);
   const sizes = new Float32Array(capacity);
@@ -27,6 +26,8 @@ export function createOceanSpray(scene, { heightAt, shelterAt } = {}) {
       exposure: 1 - THREE.MathUtils.clamp(shelterAt?.(x, z) ?? 0, 0, 1) * .72,
       credit: 0, previousImpact: 0, cooldown: 0 });
   }
+  // 此处只创建共享纹理；真实台风首次出现后才下载图集。
+  const atlas=createSprayAtlas();
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3).setUsage(THREE.DynamicDrawUsage));
   geometry.setAttribute('aSize', new THREE.BufferAttribute(sizes, 1).setUsage(THREE.DynamicDrawUsage));
@@ -91,6 +92,7 @@ export function createOceanSpray(scene, { heightAt, shelterAt } = {}) {
     if (disposed) return;
     const strength = env.typhoon ?? 0;
     if (strength > .01) {
+      atlas.load();
       resting = false;
       if (!attached) { scene.add(points); attached = true; }
     }
@@ -161,5 +163,5 @@ export function createOceanSpray(scene, { heightAt, shelterAt } = {}) {
     previousTime = time;
   }
   function dispose() { if (disposed) return; disposed = true; scene.remove(points); geometry.dispose(); material.dispose();plumes.dispose();atlas.dispose(); }
-  return { update, setQuality, dispose, points,ready:atlas.ready };
+  return { update, setQuality, dispose, points,get ready(){return atlas.ready;} };
 }

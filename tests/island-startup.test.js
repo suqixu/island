@@ -36,7 +36,18 @@ function structureDigest(group) {
       hash.update(JSON.stringify(attribute ? [attribute.array.constructor.name, attribute.itemSize, attribute.count, attribute.normalized] : null));
     }
     const index = object.geometry?.index;
-    if (index) hash.update(Buffer.from(index.array.buffer, index.array.byteOffset, index.array.byteLength));
+    if (index) {
+      let array = index.array;
+      if (object.name.startsWith('阔叶冠层')) {
+        // 冬叶按排名重排完整叶片。固定结构摘要恢复叶片顶点编号顺序，
+        // 保留每片叶原有三角形和绕向；上下同步/异步摘要仍比较实际字节。
+        const leaves = Array.from({ length: index.count / 18 }, (_, leaf) => array.subarray(leaf * 18, leaf * 18 + 18));
+        leaves.sort((a, b) => a[0] - b[0]);
+        array = new array.constructor(index.count);
+        leaves.forEach((leaf, number) => array.set(leaf, number * 18));
+      }
+      hash.update(Buffer.from(array.buffer, array.byteOffset, array.byteLength));
+    }
   });
   return hash.digest('hex');
 }

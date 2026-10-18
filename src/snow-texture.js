@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import {loadOptionalResource} from './resource-loading.js';
 
 const surfaceUrl=new URL('./assets/textures/terrain/powder-snow-albedo-v1.webp',import.meta.url).href;
-const flakeUrl=new URL('./assets/textures/sky/snowflake-atlas-v1.webp',import.meta.url).href;
+const flakeUrl=new URL('./assets/textures/sky/snowflake-atlas-runtime-512-v1.webp',import.meta.url).href;
 
 async function load(url,{signal,atlas=false}={}) {
   return loadOptionalResource(async()=>{

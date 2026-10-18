@@ -1,7 +1,7 @@
 import {createSnowSurfaceState} from './snow-surface.js';
 import {loadSnowSurface,loadSnowFlakes} from './snow-texture.js';
 import loadingConfig from './config/loading.json' with {type:'json'};
-import { DEFAULTS, WEATHER_CONFIG, CAMERA_CONFIG, RENDERING_CONFIG, initializeSettingInputs } from './runtime-config.js';
+import { DEFAULTS, WEATHER_CONFIG, CAMERA_CONFIG, RENDERING_CONFIG, initializeSettingInputs, getInitialQuality } from './runtime-config.js';
 import musicConfig from './config/music.json' with {type:'json'};
 import {prepareAuroraPreview} from './aurora.js';
 import * as THREE from 'three';
@@ -25,9 +25,11 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { createBloomPass } from './bloom.js';
 import { createScreenOutputPass } from './screen-output-pass.js';
 import { createIslandAsync } from './models/island.js';
-import { nextStartupPaint } from './startup-tasks.js';
-import { createOcean } from './ocean.js';
+import { nextStartupPaint, nextStartupWork } from './startup-tasks.js';
+import { createOceanAsync } from './ocean.js';
+import { createDeferredAssets, needsSnowTextures } from './deferred-assets.js';
 import { createMarine } from './models/marine.js';
+import { createFishWave } from './models/fish-wave.js';
 import { createSailboats } from './models/sailboats.js';
 import { createLagoonLife } from './models/lagoon-life.js';
 import { createLighthouse } from './models/lighthouse.js';
@@ -151,7 +153,7 @@ async function boot() {
   cleanup.add(() => renderer.forceContextLoss());
   cleanup.add(() => renderer.domElement.remove());
   cleanup.add(() => renderer.dispose());
-  const initialQuality = RENDERING_CONFIG.qualityOptions.find(option => option.value === RENDERING_CONFIG.defaultQuality);
+  const initialQuality = getInitialQuality();
   renderer.setSize(innerWidth, innerHeight); renderer.setPixelRatio(Math.min(devicePixelRatio, initialQuality.pixelRatio));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = RENDERING_CONFIG.renderer.toneMappingExposure;
@@ -182,12 +184,13 @@ async function boot() {
     .finally(() => startup.stages.push({ stage: 'assets', durationMs: performance.now() - assetStart }));
   const snowSurface=createSnowSurfaceState();cleanup.add(()=>snowSurface.dispose());
   const island = await stage('island', loadingConfig.startupStages['island'], () => createIslandAsync(scene, {
-    snowSurface,
+    snowSurface, yieldForBudget: nextStartupWork,
     onProgress: name => loadingScreen.setStage(islandStageLabels[name]),
     onSlice: slice => startup.slices.push(slice),
   }));
   const ocean = await stage('ocean', loadingConfig.startupStages['ocean'], () =>
-    createOcean(scene, { heightAt: island.heightAtRendered, shelterAt: getLagoonShelter }));
+    createOceanAsync(scene, { heightAt: island.heightAtRendered, shelterAt: getLagoonShelter, signal: startupController.signal, yieldForBudget: nextStartupWork,
+      onSlice: slice => startup.slices.push(slice) }));
   const cameraSafety=createCameraSafety(camera,controls,{heightAt:island.heightAtRendered,
     interiorFloorAt:getCaveCameraFloor,waterHeightAt:(x,z)=>ocean.cameraWaterHeightAt(x,z)});
   const marine = await stage('marine', loadingConfig.startupStages['marine'], () => createMarine(scene, { heightAt: island.heightAt }));
@@ -210,6 +213,9 @@ async function boot() {
     pavilion.group.name = `${site.id === 'south' ? '南峰' : '东峰'}观景木亭`;
     restPavilions.push(pavilion);
   }
+  const fishWave = createFishWave(scene, { heightAt: island.heightAt, waterHeightAt: ocean.cameraWaterHeightAt,
+    occluders: [lighthouse.group, ...restPavilions.map(pavilion => pavilion.group)] });
+  cleanup.add(() => fishWave.dispose());
   const loaded = await stage('resource-wait', loadingConfig.startupStages['resource-wait'], () => resources);
   if (loaded.error) throw loaded.error;
   const [moonAsset, cloudAsset, rockAsset] = loaded.values;
@@ -380,7 +386,7 @@ async function boot() {
   addPass(bloom); addPass(createScreenOutputPass());
   let cameraMotion = null, lastUI = 0, frames = 0, fpsTime = 0;
   let interacting = false, interactionUntil = 0;
-  let quality = RENDERING_CONFIG.defaultQuality;
+  let quality = initialQuality.value;
   initializeSettingInputs(document, state, quality);
   const seasons = WEATHER_CONFIG.seasonNames;
   const weathers = WEATHER_CONFIG.names;
@@ -691,6 +697,7 @@ async function boot() {
     island.setQuality?.(quality);
     ocean.setQuality(quality);
     marine.setQuality(quality);
+    fishWave.setQuality(quality);
     sailboats.setQuality(quality);
     sunsetBirds.setQuality(quality);
     lagoonLife.setQuality(quality);
@@ -714,6 +721,15 @@ async function boot() {
   });
   cleanup.listen(renderer.domElement, 'webglcontextlost',event => { event.preventDefault(); toast('图形连接中断，正在恢复'); });
   cleanup.listen(renderer.domElement, 'webglcontextrestored',() => location.reload());
+  const deferredAssets = createDeferredAssets();
+  cleanup.add(() => deferredAssets.dispose());
+  let detailsReady = false, snowTexturesRequested = false;
+  function requestSnowTextures(env) {
+    if (!detailsReady || snowTexturesRequested || !needsSnowTextures(env)) return;
+    snowTexturesRequested = true;
+    deferredAssets.enqueue('snow-surface', () => loadSnowSurface({signal:startupController.signal}).then(map => snowSurface.setMap(map)), {priority:true});
+    deferredAssets.enqueue('snowflakes', () => loadSnowFlakes({signal:startupController.signal}).then(map => atmosphere.setSnowTexture(map)), {priority:true});
+  }
   let previousTime = performance.now();
   function frame(now, render = true) {
     const delta = Math.max(0, Math.min((now-previousTime)/1000,.1)); previousTime = now;
@@ -726,6 +742,7 @@ async function boot() {
     controls.update(delta * getAnimationRate(state));
     cameraSafety.update();
     const baseEnv = getEnvironment(state);
+    requestSnowTextures(baseEnv);
     syncCloudTextures(baseEnv.cloudMode);
     baseEnv.skyCloudCover = advanceCloudCover(cloudCover, state.elapsed, baseEnv).coverage;
     lunarEclipseState=lunarEclipse.update(delta,baseEnv);
@@ -747,9 +764,10 @@ async function boot() {
     env.moonDirection = getMoonBackdropDirection(camera, innerWidth, env);
     env.seaHorizon = getLunarEclipseSeaHorizon(env,getSeaHorizonState(env));
     Object.assign(env,getArtificialLightControls(artificialLightMode));
-    island.update(state.elapsed,env); ocean.update(state.elapsed,env); audio?.update(state.elapsed,env);
+    island.update(state.elapsed,env,camera); ocean.update(state.elapsed,env); audio?.update(state.elapsed,env);
     cameraSafety.update();
     marine.update(state.elapsed,env,camera);
+    fishWave.update(state.elapsed,env,camera);
     sailboats.update(state.elapsed,env,camera);
     sunsetBirds.update(state.elapsed,env,camera);
     lagoonLife.update(state.elapsed,env,camera);
@@ -786,27 +804,23 @@ async function boot() {
       showOpeningSeal();
       // Fine ground detail is optional: let the first landscape paint before
       // downloading/decoding these maps. The island owns late-load disposal.
-      nextStartupPaint().then(() => loadCoastalSurfaces({signal:startupController.signal})).then(maps => {
+      detailsReady = true;
+      const enqueueDetail = (name, load, message) => deferredAssets.enqueue(name, load,
+        {onError:error => console.warn(message, error)});
+      enqueueDetail('coast', () => loadCoastalSurfaces({signal:startupController.signal}).then(maps => {
         lighthouse.setStepMap(maps.stone); island.setCoastalMaps(maps);
-      })
-        .catch(error => console.warn('地表细节贴图未能加载',error));
-      nextStartupPaint().then(()=>loadSnowSurface({signal:startupController.signal})).then(map=>snowSurface.setMap(map));
-      nextStartupPaint().then(()=>loadSnowFlakes({signal:startupController.signal})).then(map=>atmosphere.setSnowTexture(map));
-      nextStartupPaint().then(() => loadLeafTextures({signal:startupController.signal})).then(maps => island.setLeafMaps(maps))
-        .catch(error => console.warn('叶片细节贴图未能加载',error));
-      nextStartupPaint().then(() => loadCaveSurface({signal:startupController.signal})).then(maps => island.setCaveMaps(maps))
-        .catch(error => console.warn('洞穴细节贴图未能加载',error));
-      nextStartupPaint().then(() => sailboats.loadSurfaces({signal:startupController.signal}))
-        .catch(error => console.warn('帆船细节贴图未能加载',error));
-      nextStartupPaint().then(() => loadDockSurfaces({signal:startupController.signal})).then(maps=>{
-        restPavilions.forEach(pavilion=>pavilion.setSurfaceMaps({wood:maps})); island.setDockMaps(maps);
-      })
-        .catch(error => console.warn('码头细节贴图未能加载',error));
-      nextStartupPaint().then(() => loadLighthouseSurfaces({signal:startupController.signal})).then(maps=>lighthouse.setSurfaceMaps(maps))
-        .catch(error => console.warn('灯塔细节贴图未能加载',error));
-      nextStartupPaint().then(() => loadPavilionRoofSurfaces({signal:startupController.signal})).then(maps=>{
-        pavilionRoofSurface.setMaps(maps);restPavilions.forEach(pavilion=>pavilion.setSurfaceMaps({roof:maps}));
-      }).catch(error => console.warn('亭子瓦面贴图未能加载',error));
+      }), '地表细节贴图未能加载');
+      enqueueDetail('leaves', () => loadLeafTextures({signal:startupController.signal}).then(maps => island.setLeafMaps(maps)), '叶片细节贴图未能加载');
+      enqueueDetail('cave', () => loadCaveSurface({signal:startupController.signal}).then(maps => island.setCaveMaps(maps)), '洞穴细节贴图未能加载');
+      // Distant sails occupy only a few dozen pixels. Keep their lit colors
+      // instead of deriving four maps whose detail cannot be seen at this scale.
+      enqueueDetail('dock', () => loadDockSurfaces({signal:startupController.signal}).then(maps => {
+        restPavilions.forEach(pavilion => pavilion.setSurfaceMaps({wood:maps})); island.setDockMaps(maps);
+      }), '码头细节贴图未能加载');
+      enqueueDetail('lighthouse', () => loadLighthouseSurfaces({signal:startupController.signal}).then(maps => lighthouse.setSurfaceMaps(maps)), '灯塔细节贴图未能加载');
+      enqueueDetail('pavilion-roof', () => loadPavilionRoofSurfaces({signal:startupController.signal}).then(maps => {
+        pavilionRoofSurface.setMaps(maps); restPavilions.forEach(pavilion => pavilion.setSurfaceMaps({roof:maps}));
+      }), '亭子瓦面贴图未能加载');
     } catch (error) {
       cleanup.fail(error);
     }

@@ -1,0 +1,36 @@
+{
+  "source": {
+    "path": "src/assets/textures/sky/snowflake-atlas-v1.webp",
+    "bytes": 275270,
+    "sha256": "8d619229a8d18be3adcb5758a091ddb8776ea17e8e3da12a2fe8a56aed3f2bb6",
+    "width": 1024,
+    "height": 1024,
+    "provenance": "prompts/textures/snow-imagegen-v1.json；原 ImageGen 资产保持不变。"
+  },
+  "derived": {
+    "path": "src/assets/textures/sky/snowflake-atlas-runtime-512-v1.webp",
+    "bytes": 160348,
+    "sha256": "eff3fe0161d0459366abbb9df61eacc52f8f34c0135023197354f79a1a479533",
+    "width": 512,
+    "height": 512,
+    "encoding": "lossless WebP RGBA"
+  },
+  "processing": {
+    "script": "scripts/assets/bake-snowflake-atlas.mjs",
+    "encoder": "libwebp 1.6.0",
+    "command": "cwebp -quiet -resize 512 512 -lossless -exact -m 6 SOURCE -o TARGET",
+    "note": "仅数学等比缩放，不重绘；四宫格每格由512变为256像素。运行时保留mipmap，最大雪花仍为34屏幕像素。",
+    "quadrantAlphaCoverageBefore": [
+      0.15601944268918505,
+      0.14450797286688113,
+      0.29000419167911307,
+      0.1071012160357307
+    ],
+    "quadrantAlphaCoverageAfter": [
+      0.1561217663334865,
+      0.14464895211014092,
+      0.2901254092945772,
+      0.10722734039905024
+    ]
+  }
+}

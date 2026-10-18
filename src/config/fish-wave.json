@@ -1,0 +1,16 @@
+{
+  "durationSeconds": 24,
+  "gatherSeconds": 4,
+  "fadeSeconds": 4,
+  "initialWaitSeconds": { "min": 45, "range": 60 },
+  "cooldownSeconds": { "min": 180, "range": 240 },
+  "afterRainSeconds": 180,
+  "placement": { "minimumRepeatDistance": 35 },
+  "morningHours": [5.5, 8],
+  "eveningHours": [16.5, 18.8],
+  "quality": {
+    "high": { "fish": 1200, "spray": 600, "ripples": 64 },
+    "medium": { "fish": 700, "spray": 360, "ripples": 40 },
+    "low": { "fish": 320, "spray": 160, "ripples": 24 }
+  }
+}

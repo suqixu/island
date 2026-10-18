@@ -157,7 +157,7 @@ export function createSailboats(scene, { heightAt, seed, loadSurfaces=loadSailbo
   return {
     group,
     setSurfaceMaps,
-    // The caller starts this after the first landscape paint, never during boot.
+    // Optional close-up material inspection only; the main scene uses lit colors.
     loadSurfaces({signal,...options}={}){
       if(pending)return pending;
       if(disposed||signal?.aborted)return Promise.resolve(false);

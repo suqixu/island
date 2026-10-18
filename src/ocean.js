@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { runStartupGenerator } from './startup-tasks.js';
+import { createCleanupScope } from './cleanup-scope.js';
 import { getAnimationDelta } from './animation-time.js';
 import { createOceanFoamTexture } from './ocean-foam.js';
 import { TYPHOON_WAVES_GLSL } from './typhoon-waves.js';
@@ -15,7 +17,7 @@ const COAST_RESOLUTION = 768;
 const MAX_DEPTH = 48;
 
 // Baking bathymetry once keeps the shoreline fixed while the water moves.
-function createBathymetry(heightAt, shelterAt) {
+function* buildBathymetry(heightAt, shelterAt, signal) {
   const size = COAST_RESOLUTION;
   const bytes = new Uint8Array(size * size * 4);
   const heights = new Float32Array(size * size);
@@ -24,7 +26,9 @@ function createBathymetry(heightAt, shelterAt) {
   const step = COAST_EXTENT * 2 / (size - 1);
   let hasSeabed = false;
 
+  yield { stage: 'ocean-sampling' };
   for (let z = 0; z < size; z++) {
+    throwIfAborted(signal);
     for (let x = 0; x < size; x++) {
       const index = z * size + x;
       const wx = (x / (size - 1) - 0.5) * COAST_EXTENT * 2;
@@ -37,11 +41,14 @@ function createBathymetry(heightAt, shelterAt) {
       distance[index] = height > -0.05 ? 0 : 10000;
       if (height < -1) hasSeabed = true;
     }
+    yield;
   }
 
   // A chamfer field measures shore distance independently of sea-floor slope.
   const diagonal = step * Math.SQRT2;
+  yield { stage: 'ocean-distance-forward' };
   for (let z = 0; z < size; z++) {
+    throwIfAborted(signal);
     for (let x = 0; x < size; x++) {
       const i = z * size + x;
       if (x > 0) distance[i] = Math.min(distance[i], distance[i - 1] + step);
@@ -49,8 +56,11 @@ function createBathymetry(heightAt, shelterAt) {
       if (x > 0 && z > 0) distance[i] = Math.min(distance[i], distance[i - size - 1] + diagonal);
       if (x < size - 1 && z > 0) distance[i] = Math.min(distance[i], distance[i - size + 1] + diagonal);
     }
+    yield;
   }
+  yield { stage: 'ocean-distance-backward' };
   for (let z = size - 1; z >= 0; z--) {
+    throwIfAborted(signal);
     for (let x = size - 1; x >= 0; x--) {
       const i = z * size + x;
       if (x < size - 1) distance[i] = Math.min(distance[i], distance[i + 1] + step);
@@ -58,16 +68,34 @@ function createBathymetry(heightAt, shelterAt) {
       if (x < size - 1 && z < size - 1) distance[i] = Math.min(distance[i], distance[i + size + 1] + diagonal);
       if (x > 0 && z < size - 1) distance[i] = Math.min(distance[i], distance[i + size - 1] + diagonal);
     }
+    yield;
   }
 
-  for (let i = 0; i < heights.length; i++) {
-    const depth = hasSeabed ? Math.max(0, -heights[i]) : distance[i] * 0.44;
-    bytes[i * 4] = Math.round(THREE.MathUtils.clamp(depth / MAX_DEPTH, 0, 1) * 255);
-    bytes[i * 4 + 1] = Math.round(THREE.MathUtils.clamp(distance[i] / 32, 0, 1) * 255);
-    bytes[i * 4 + 2] = Math.round(THREE.MathUtils.clamp((heights[i] + 80) / 160, 0, 1) * 255);
-    // The existing alpha channel carries exposure without another texture.
-    bytes[i * 4 + 3] = Math.round(exposure[i] * 255);
+  const halfHeights = new Uint16Array(heights.length);
+  yield { stage: 'ocean-packing' };
+  for (let row = 0; row < size; row++) {
+    throwIfAborted(signal);
+    for (let i = row * size; i < (row + 1) * size; i++) {
+      const depth = hasSeabed ? Math.max(0, -heights[i]) : distance[i] * 0.44;
+      bytes[i * 4] = Math.round(THREE.MathUtils.clamp(depth / MAX_DEPTH, 0, 1) * 255);
+      bytes[i * 4 + 1] = Math.round(THREE.MathUtils.clamp(distance[i] / 32, 0, 1) * 255);
+      bytes[i * 4 + 2] = Math.round(THREE.MathUtils.clamp((heights[i] + 80) / 160, 0, 1) * 255);
+      // The existing alpha channel carries exposure without another texture.
+      bytes[i * 4 + 3] = Math.round(exposure[i] * 255);
+      halfHeights[i] = THREE.DataUtils.toHalfFloat(heights[i]);
+    }
+    yield;
   }
+  throwIfAborted(signal);
+  return { bytes, halfHeights };
+}
+
+function throwIfAborted(signal) {
+  if (signal?.aborted) throw signal.reason ?? new DOMException('Ocean startup cancelled', 'AbortError');
+}
+
+function createBathymetry({ bytes, halfHeights }) {
+  const size = COAST_RESOLUTION;
   const texture = new THREE.DataTexture(bytes, size, size, THREE.RGBAFormat);
   texture.minFilter = THREE.LinearFilter;
   texture.magFilter = THREE.LinearFilter;
@@ -75,7 +103,7 @@ function createBathymetry(heightAt, shelterAt) {
   texture.needsUpdate = true;
   // R16F preserves millimetre-scale depth near sea level; the old 8-bit
   // height channel has 63cm steps and cannot place a thin swash film.
-  const heightMap=new THREE.DataTexture(Uint16Array.from(heights,THREE.DataUtils.toHalfFloat),size,size,THREE.RedFormat,THREE.HalfFloatType);
+  const heightMap=new THREE.DataTexture(halfHeights,size,size,THREE.RedFormat,THREE.HalfFloatType);
   heightMap.name='浅滩连续高度';heightMap.minFilter=heightMap.magFilter=THREE.LinearFilter;
   heightMap.generateMipmaps=false;heightMap.needsUpdate=true;
   return {texture,heightMap};
@@ -713,9 +741,29 @@ const fragmentShader = /* glsl */ `
 `;
 
 export function createOcean(scene, { heightAt, shelterAt } = {}) {
-  const {texture:bathymetry,heightMap} = createBathymetry(heightAt, shelterAt);
-  const foam = createOceanFoamTexture();
+  const iterator = buildBathymetry(heightAt, shelterAt);
+  let result;
+  do { result = iterator.next(); } while (!result.done);
+  return createOceanFromData(scene, { heightAt, shelterAt }, result.value);
+}
+
+/** Preserve the synchronous ocean exactly, yielding between bathymetry rows. */
+export async function createOceanAsync(scene, { heightAt, shelterAt, signal, ...startupOptions } = {}) {
+  throwIfAborted(signal);
+  const data = await runStartupGenerator(buildBathymetry(heightAt, shelterAt, signal), startupOptions);
+  throwIfAborted(signal);
+  return createOceanFromData(scene, { heightAt, shelterAt, signal }, data);
+}
+
+function createOceanFromData(scene, { heightAt, shelterAt, signal }, data) {
+  const cleanup = createCleanupScope();
   let disposed = false;
+  try {
+  const {texture:bathymetry,heightMap} = createBathymetry(data);
+  cleanup.add(() => bathymetry.dispose());
+  cleanup.add(() => heightMap.dispose());
+  const foam = createOceanFoamTexture();
+  cleanup.add(() => foam.dispose());
   const seaHorizon = getSeaHorizonState();
   const uniforms = {
     uTime: { value: 0 },
@@ -773,12 +821,16 @@ export function createOcean(scene, { heightAt, shelterAt } = {}) {
     transparent: true,
     depthWrite: true,
   });
-  const mesh = new THREE.Mesh(createOceanGeometry(), material);
+  cleanup.add(() => material.dispose());
+  const geometry = createOceanGeometry();
+  cleanup.add(() => geometry.dispose());
+  const mesh = new THREE.Mesh(geometry, material);
   mesh.name = '动态海洋';
   mesh.frustumCulled = false;
   mesh.renderOrder = 0;
-  scene.add(mesh);
   const spray = createOceanSpray(scene, { heightAt, shelterAt });
+  cleanup.add(() => spray.dispose());
+  cleanup.add(() => scene.remove(mesh));
 
   const dayHorizon = new THREE.Color('#bddeeb');
   const duskHorizon = new THREE.Color('#ef9a70');
@@ -958,19 +1010,21 @@ export function createOcean(scene, { heightAt, shelterAt } = {}) {
   function dispose() {
     if (disposed) return;
     disposed = true;
-    foam.dispose();
-    spray.dispose();
-    scene.remove(mesh);
-    mesh.geometry.dispose();
-    material.dispose();
-    bathymetry.dispose();
-    heightMap.dispose();
+    cleanup.dispose();
   }
 
   function cameraWaterHeightAt(x,z) {
     return sampleCameraWater(x,z,lastUpdateTime??0,waveTime,windAngle,weatherState);
   }
   const sampleCameraWater=createCameraWaterSampler(mesh.geometry,bathymetry);
+  // Publish only when every owner has registered its cleanup.
+  throwIfAborted(signal);
+  scene.add(mesh);
   return { mesh, update, dispose, setQuality: spray.setQuality, bathymetry,cameraWaterHeightAt,
     ready: Promise.all([foam.ready,spray.ready]).then(([foamReady])=>foamReady) };
+  } catch (error) {
+    disposed = true;
+    cleanup.dispose();
+    throw error;
+  }
 }

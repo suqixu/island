@@ -27,3 +27,14 @@ export function initializeSettingInputs(document, state, quality = RENDERING_CON
   button.textContent = option.label;
   button.setAttribute('aria-label', `渲染画质：${option.label}，点击切换`);
 }
+
+/** A narrow touch display starts balanced; users retain the full quality switch. */
+export function getInitialQuality({
+  width = globalThis.innerWidth ?? Infinity,
+  coarsePointer = globalThis.matchMedia?.('(pointer: coarse)').matches ?? false,
+} = {}) {
+  const value = coarsePointer && width < CAMERA_CONFIG.mobileBreakpoint
+    ? RENDERING_CONFIG.mobileDefaultQuality : RENDERING_CONFIG.defaultQuality;
+  return RENDERING_CONFIG.qualityOptions.find(option => option.value === value)
+    ?? RENDERING_CONFIG.qualityOptions.find(option => option.value === RENDERING_CONFIG.defaultQuality);
+}

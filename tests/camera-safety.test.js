@@ -76,3 +76,12 @@ test('台风边缘深水的镜头保护覆盖水平位移后的实际网格水�
       '保护随当地浪相变化，不使用整个海域固定的最高浪');
   } finally {ocean.dispose();}
 });
+
+test('静止镜头复用固定地表高度，移动后重新采样，水浪高度仍逐帧更新', () => {
+  let terrainSamples=0, waterSamples=0, wave=4;
+  const h=setup([150,8,150],[0,0,0],{heightAt:()=>{terrainSamples++;return -30;},waterHeightAt:()=>{waterSamples++;return wave;}});
+  for(let i=0;i<100;i++)h.guard.update();
+  assert.equal(terrainSamples,5,'不必每帧重算五处固定地面'); assert.equal(waterSamples,100);
+  h.camera.position.x+=1;h.guard.update();assert.equal(terrainSamples,10);
+  wave=12;h.guard.update();assert.ok(h.camera.position.y>=13.25);assert.equal(terrainSamples,10);
+});

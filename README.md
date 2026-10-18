@@ -2,11 +2,14 @@
 
 基于 HTML、Three.js 和 Vite 的交互海岛。可以漫游海岸、码头、泻湖、山洞、山顶亭与灯塔，观看昼夜、四季、天气和天象，聆听海浪与器乐。
 
-## 当前版本：v1.2.1
+## 当前版本：v1.3.0
 
 本版本的重要更新：
 
-- **鲸豚回归验证**：补充长时间活动的原始调度快照，兼容不同运行平台的浮点末位差异。
+- **鱼群跃浪**：偶发的鱼影聚集、成片跃起与水花消退，按视角在合适海域随机选位，避开台风与暴风雪。
+- **加载更平顺**：海岛和海面分段初始化，精细贴图在首帧后有序加载，雪景和台风浪花素材按需请求。
+- **手机与冬景优化**：手机默认均衡画质，远景简化树冠，冬季跳过不可见叶片，保留可见叶片和阴影。
+- **资源更轻**：远海帆船取消常规细节贴图，泡沫使用预烘焙遮罩，雪花图集缩小并减少重复旋转计算，完善取消与退出释放。
 
 各版本人工聚合的重要更新保存在 [release-notes.json](src/config/release-notes.json)，按最新版本在前排列，并由设置面板直接读取。
 
@@ -66,13 +69,14 @@ tmp/                 临时文件，不提交
 | [weather.json](src/config/weather.json) | 天气预设、雨与台风循环、云量档位及图标、季节候选、温度及自动天气轮换 |
 | [camera.json](src/config/camera.json) | 初始视角、各观景位置、视野与控制距离 |
 | [rendering.json](src/config/rendering.json) | 默认画质、像素比例、帧率、曝光和星点数量 |
+| [fish-wave.json](src/config/fish-wave.json) | 鱼群跃浪的时段、等待、阶段、数量与海域筛选 |
 | [music.json](src/config/music.json) | 曲目、标题、文件名、播放列表、播放方式、切换时间、音量及声音预设 |
 | [loading.json](src/config/loading.json) | 启动随机提示、真实构建阶段、轮播时间与失败文案 |
 | [release-notes.json](src/config/release-notes.json) | 当前版本及按版本归纳的更新说明 |
 
 配置通过静态导入随应用打包，不增加额外的配置下载请求。修改 JSON 后开发服务器会更新页面；部署前需要重新构建。运行时随机种子仍现场生成，每个新场景使用独立状态；几何和着色器公式保留在对应实现中。
 
-默认进入夏日晴天，时间 14:30，速度 0.5×，精细画质，自动轮换天气、季节和月相；诗和声音默认关闭，背景乐音量 80%、环境音 30%。声音始终遵守浏览器的用户手势限制。
+默认进入夏日晴天，时间 14:30，速度 0.5×，桌面使用精细画质、窄屏触控设备使用均衡画质，自动轮换天气、季节和月相；诗和声音默认关闭，背景乐音量 80%、环境音 30%。声音始终遵守浏览器的用户手势限制。
 
 ### 添加或替换音乐
 
@@ -115,6 +119,7 @@ PYTHONPYCACHEPREFIX=tmp/python-cache python3 tests/test_scenic_score_timing.py
 - `/tests/lunar-eclipse-browser.html`：偏食、红色日冕、血月和复圆。
 - `/tests/solar-eclipse-browser.html`：日食和日冕。
 - `/tests/performance-audit-browser.html`：场景性能采样。
+- `/tests/fish-wave-browser.html`：鱼群跃浪及随机海域验收。
 - `/tests/bloom-gpu.html`：辉光异常值回归。
 
 资源体积、长期缓存优化与测量边界详见 [性能与资源检查](docs/performance-and-resources.md)。

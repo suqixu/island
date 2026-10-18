@@ -76,3 +76,18 @@ test('绘制让步跨过动画帧和下一任务，避免只yield微任务继续
   await done;
   assert.deepEqual(events, ['request-frame', 'schedule-task', 'done']);
 });
+
+test('进度阶段仍等待绘制，计算分片可单独让步而不必每片空等下一帧', async () => {
+  let clock=0,paints=0,tasks=0;
+  function* build(){yield {stage:'ocean'};for(let i=0;i<10;i++){clock+=3;yield;}return 9;}
+  const value=await startup.runStartupGenerator(build(),{budgetMs:8,now:()=>clock,
+    yieldToBrowser:async()=>paints++,yieldForBudget:async()=>tasks++});
+  assert.equal(value,9);assert.equal(paints,1);assert.ok(tasks>=3);
+});
+
+test('计算让步使用浏览器调度器，旧浏览器仍跨到下一任务', async () => {
+  assert.equal(typeof startup.nextStartupWork,'function');
+  let yielded=0;await startup.nextStartupWork({scheduler:{yield(){yielded++;return Promise.resolve();}}});assert.equal(yielded,1);
+  let task,done=false;const waiting=startup.nextStartupWork({scheduler:null,scheduleTask:callback=>task=callback}).then(()=>done=true);
+  await Promise.resolve();assert.equal(done,false);task();await waiting;assert.equal(done,true);
+});

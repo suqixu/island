@@ -1,7 +1,7 @@
 import {addSmoothSnowNormals} from './snow-normals.js';
 import {createSnowBoardGeometry} from './snow-layers.js';
-import {WEATHER_CONFIG} from '../runtime-config.js';
-import {attachWinterFoliage} from '../winter-foliage.js';
+import {WEATHER_CONFIG, RENDERING_CONFIG} from '../runtime-config.js';
+import {attachWinterFoliage,createWinterLeafDrawRange} from '../winter-foliage.js';
 import {attachSnowSurface,getSnowCover,isSnowLandscape} from '../snow-surface.js';
 import * as THREE from 'three';
 import { BEACH_SWASH_GLSL } from '../beach-swash.js';
@@ -20,6 +20,7 @@ import { attachVegetationSurface } from '../vegetation-surface.js';
 import { isLighthouseReserved } from '../lighthouse-layout.js';
 import { isRestPavilionReserved } from '../rest-pavilion-layout.js';
 import { createForestCanopy } from '../forest-canopy.js';
+import { createForestCanopyLod } from '../forest-canopy-lod.js';
 import { runStartupGenerator } from '../startup-tasks.js';
 import { createCoastalSurfaceUniforms, COASTAL_SURFACE_GLSL } from '../coastal-surfaces.js';
 import { createLeafTextureState, attachLeafTexture } from '../leaf-texture.js';
@@ -298,7 +299,7 @@ function* addForest(group, uniforms, random, leafTextures) {
   const leafMaterial = vegetationMaterial(uniforms, 0xffffff, 'crown', leafTextures.broadleaf);
   const leafDepthMaterial = vegetationDepthMaterial(uniforms, 'crown');
   const branchDepthMaterial = vegetationDepthMaterial(uniforms, 'tree');
-  const canopies = [];
+  const canopies = [], canopyGeometries = [];
   const dummy = new THREE.Object3D(), color = new THREE.Color();
   const barkMaterial = vegetationBodyMaterial(uniforms, 0x9b8870);
   const twigMaterial = vegetationBodyMaterial(uniforms, 0x776c5b);
@@ -310,7 +311,19 @@ function* addForest(group, uniforms, random, leafTextures) {
     yield;
     const selected = trees.filter((tree) => tree.variant === variant);
     const form = createForestCanopy(1922 + variant * 97);
+    const distantLeaves = createForestCanopyLod(form.leaves);
+    // InstancedMesh caches world bounds independently of geometry switches.
+    // Both forms therefore use their union before any renderer computes bounds.
+    form.leaves.boundingBox.union(distantLeaves.boundingBox);
+    form.leaves.boundingSphere.union(distantLeaves.boundingSphere);
+    distantLeaves.boundingBox.copy(form.leaves.boundingBox);
+    distantLeaves.boundingSphere.copy(form.leaves.boundingSphere);
+    setPlantAnchors(distantLeaves, selected);
     const canopy = new THREE.InstancedMesh(setPlantAnchors(form.leaves, selected), leafMaterial, selected.length);
+    // 远景派生依赖原始整叶索引块，必须在派生完成后再排序两档索引。
+    canopyGeometries.push({ mesh: canopy, near: form.leaves, far: distantLeaves,
+      nearWinterRange: createWinterLeafDrawRange(form.leaves, 18),
+      farWinterRange: createWinterLeafDrawRange(distantLeaves, 6) });
     const branches = new THREE.InstancedMesh(setPlantAnchors(form.branches, selected), twigMaterial, selected.length);
     branches.name = `森林细枝-${variant + 1}`; branches.castShadow = true; branches.receiveShadow = true;
     branches.customDepthMaterial = branchDepthMaterial;
@@ -341,7 +354,7 @@ function* addForest(group, uniforms, random, leafTextures) {
     }
   }
   group.add(trunks);
-  return { trees, canopies, trunks };
+  return { trees, canopies, trunks, canopyGeometries };
 }
 
 function palmCrownGeometry() {
@@ -886,6 +899,9 @@ function* buildIsland(scene, {snowSurface}={}) {
   let lastQuality = 'high';
   let previousUpdateTime = 0;
   let disposed = false;
+  let distantCanopies = false;
+  const lodCameraPosition = new THREE.Vector3(), lodIslandCentre = new THREE.Vector3();
+  const { farDistance: farCanopyDistance, nearDistance: nearCanopyDistance } = RENDERING_CONFIG.forestCanopyLod;
   const instanceMeshes = [];
   group.traverse((object) => {
     if (object.isInstancedMesh) { object.userData.fullCount = object.count; instanceMeshes.push(object); }
@@ -911,8 +927,18 @@ function* buildIsland(scene, {snowSurface}={}) {
     pathLength: PATH_LAYOUT.routes.reduce((total, route) => total + route.points.slice(1).reduce((length, point, index) =>
       length + Math.hypot(point.x - route.points[index].x, point.z - route.points[index].z), 0), 0),
     pathFlowers: paths.counts.flowers, pathPebbles: paths.counts.pebbles };
-  const update = (time, env = {}) => {
+  const update = (time, env = {}, camera) => {
     if (disposed) return;
+    let nextDistant = false;
+    if (camera) {
+      camera.getWorldPosition(lodCameraPosition); group.getWorldPosition(lodIslandCentre);
+      const threshold = distantCanopies ? nearCanopyDistance : farCanopyDistance;
+      nextDistant = lodCameraPosition.distanceToSquared(lodIslandCentre) > threshold * threshold;
+    }
+    if (nextDistant !== distantCanopies) {
+      distantCanopies = nextDistant;
+      for (const { mesh, near, far } of forest.canopyGeometries) mesh.geometry = distantCanopies ? far : near;
+    }
     advanceVegetationWind(vegetationWind, time, env);
     time = vegetationWind.time;
     const requestedSeason = env.seasonIndex ?? seasonNames.indexOf(env.season || 'summer');
@@ -928,6 +954,9 @@ function* buildIsland(scene, {snowSurface}={}) {
     uniforms.uLeafFlutter.value = vegetationWind.flutter;
     const winterTarget=Math.max(env.snow??0,Math.min(1,getSnowCover(env)*1.5),season===3?1:0);
     uniforms.uFoliageWinter.value+=(winterTarget-uniforms.uFoliageWinter.value)*(1-Math.exp(-delta*1.8));
+    for (const { nearWinterRange, farWinterRange } of forest.canopyGeometries) {
+      nearWinterRange(uniforms.uFoliageWinter.value); farWinterRange(uniforms.uFoliageWinter.value);
+    }
     const snowTarget = getSnowCover(env);
     uniforms.uSnow.value += (snowTarget - uniforms.uSnow.value) * (1 - Math.exp(-delta * 1.9));
     uniforms.uLandWetness.value += (clamp(env.rain ?? 0, 0, 1) - uniforms.uLandWetness.value) * (1 - Math.exp(-delta * 1.25));
@@ -988,6 +1017,7 @@ function* buildIsland(scene, {snowSurface}={}) {
     paths.dispose();
     dockLighting.dispose();
     const geometries = new Set(), materials = new Set(), textures = new Set();
+    for (const { near, far } of forest.canopyGeometries) { geometries.add(near); geometries.add(far); }
     group.traverse(object => {
       if (object.isInstancedMesh) object.dispose();
       if (object.isLight) object.dispose?.();

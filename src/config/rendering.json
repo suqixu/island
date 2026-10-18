@@ -52,5 +52,10 @@
       "low": 1,
       "default": 1.7
     }
+  },
+  "mobileDefaultQuality": "medium",
+  "forestCanopyLod": {
+    "farDistance": 220,
+    "nearDistance": 180
   }
 }

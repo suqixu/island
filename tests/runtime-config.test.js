@@ -86,3 +86,11 @@ test('修改配置默认模式与画质后，独立运行的天象首帧和星�
   `], { cwd: new URL('..', import.meta.url), encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr || result.stdout);
 });
+
+test('触屏手机首屏采用均衡，桌面和非触屏窄窗保留精细，可继续手动切换', async () => {
+  const { getInitialQuality } = await import('../src/runtime-config.js');
+  assert.equal(typeof getInitialQuality, 'function');
+  assert.equal(getInitialQuality({width:390,coarsePointer:true}).value, 'medium');
+  assert.equal(getInitialQuality({width:1280,coarsePointer:false}).value, 'high');
+  assert.equal(getInitialQuality({width:390,coarsePointer:false}).value, 'high');
+});
