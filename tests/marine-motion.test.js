@@ -367,21 +367,35 @@ test('松散海豚小群保留游动间距，随机布局不能让可见身体�
 });
 
 test('长时鲸豚调度保留原种子结果，包括跨日跳时与绝对活动周期', async () => {
-  const { createHash } = await import('node:crypto');
+  const { readFile } = await import('node:fs/promises');
   const { createMarineTimeline } = api();
-  // Captured from the original scheduler before bounding its history. Include
-  // every episode/member property so pruning cannot silently reset cycles.
-  const expected = new Map([
-    [0, 'b91c007613bad3e902b17812cc44b2b292ca4092a9cb93610b11a36033feb671'],
-    [42, 'ce71cf114d86f0ec9825badbebafe99641f803d63934a6a43efe057bf5df7a7e'],
-    [2718, '15a04ffa2fae13d87c23b9f7a7357c0c9a3d0033e63e8a59b76fc9513d66163f'],
-  ]);
-  for (const [seed, signature] of expected) {
+  // 快照来自缓存优化前的调度器，与原有三个 SHA-256 指纹一致。
+  // Math.sin 在 ARM/x64 上有末位差异；仅小数容许 1e-9 绝对误差。
+  const snapshot = JSON.parse(await readFile(new URL('./fixtures/marine-timeline.json', import.meta.url), 'utf8'));
+  const compare = (actual, expected, path) => {
+    if (typeof expected === 'number' && !Number.isInteger(expected)) {
+      assert.equal(typeof actual, 'number', `${path} 必须是数字`);
+      assert.ok(Number.isFinite(actual) && Math.abs(actual - expected) <= 1e-9,
+        `${path}: 实际 ${actual}，预期 ${expected}，允许误差 1e-9`);
+    } else if (expected === null || typeof expected !== 'object') {
+      assert.equal(actual, expected, path);
+    } else {
+      assert.ok(actual !== null && typeof actual === 'object', `${path} 必须保留结构`);
+      assert.equal(Array.isArray(actual), Array.isArray(expected), path);
+      assert.deepEqual(Object.keys(actual), Object.keys(expected), `${path} 字段必须一致`);
+      for (const key of Object.keys(expected)) compare(actual[key], expected[key], `${path}.${key}`);
+    }
+  };
+  for (const { seed, results: expected } of snapshot.cases) {
     const timeline = createMarineTimeline(seed), results = [];
-    for (const time of [0, 7.5, 12, 25, 90, 3599, 3600, 21600, 86400, 86400.25]) {
+    for (const time of snapshot.times) {
       for (const kind of ['whale', 'dolphin']) results.push(timeline.getEpisode(kind, time));
     }
-    assert.equal(createHash('sha256').update(JSON.stringify(results)).digest('hex'), signature);
+    assert.equal(results.length, expected.length, `seed=${seed} 的查询结果数量必须一致`);
+    for (let index = 0; index < expected.length; index++) {
+      const kind = index % 2 === 0 ? 'whale' : 'dolphin', time = snapshot.times[Math.floor(index / 2)];
+      compare(results[index], expected[index], `seed=${seed}, time=${time}, ${kind}`);
+    }
   }
 });
 

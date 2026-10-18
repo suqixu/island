@@ -1,6 +1,12 @@
 {
-  "currentVersion": "1.2.0",
+  "currentVersion": "1.2.1",
   "versions": [
+    {
+      "version": "1.2.1",
+      "items": [
+        "完善鲸豚长时间活动的回归验证，补充原始调度快照，兼容不同平台的浮点末位差异。"
+      ]
+    },
     {
       "version": "1.2.0",
       "items": [

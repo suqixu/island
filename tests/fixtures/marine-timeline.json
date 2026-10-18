@@ -1,0 +1,1173 @@
+{
+  "sourceCommit": "d5fb806018bb3c6866af965b8e410d65280bd74e",
+  "times": [
+    0,
+    7.5,
+    12,
+    25,
+    90,
+    3599,
+    3600,
+    21600,
+    86400,
+    86400.25
+  ],
+  "cases": [
+    {
+      "seed": 0,
+      "results": [
+        null,
+        null,
+        null,
+        null,
+        {
+          "start": 7.659957585670327,
+          "period": 67,
+          "duration": 11.5,
+          "spacing": 0,
+          "travel": 20,
+          "base": -3.7,
+          "kind": "whale",
+          "cycle": 0,
+          "count": 1,
+          "end": 19.159957585670327,
+          "placementSeed": 38461.738130718004,
+          "activityThreshold": 0.7875233935225696,
+          "members": [
+            {
+              "lateral": 0,
+              "along": 0
+            }
+          ]
+        },
+        null,
+        {
+          "start": 7.659957585670327,
+          "period": 67,
+          "duration": 11.5,
+          "spacing": 0,
+          "travel": 20,
+          "base": -3.7,
+          "kind": "whale",
+          "cycle": 0,
+          "count": 1,
+          "end": 19.159957585670327,
+          "placementSeed": 38461.738130718004,
+          "activityThreshold": 0.7875233935225696,
+          "members": [
+            {
+              "lateral": 0,
+              "along": 0
+            }
+          ]
+        },
+        {
+          "start": 23.02042586376001,
+          "period": 43,
+          "duration": 2.4,
+          "spacing": 0.6881215553270886,
+          "travel": 14,
+          "base": -3.15,
+          "kind": "dolphin",
+          "cycle": 0,
+          "count": 2,
+          "end": 26.976744124330708,
+          "placementSeed": 68387.79885438271,
+          "activityThreshold": 0.6732616068930657,
+          "members": [
+            {
+              "lateral": 5.633010647245101,
+              "along": 1.618303537939937,
+              "delay": 0,
+              "duration": 2.2886904363080247,
+              "travel": 13.447388955064525,
+              "leap": 5.788421933501377,
+              "heading": 0.020472720098041464,
+              "curve": -0.191408523467544
+            },
+            {
+              "lateral": -4.246728764890577,
+              "along": -3.323547448108002,
+              "delay": 1.4733457402486239,
+              "duration": 2.482972520322073,
+              "travel": 13.711173664225498,
+              "leap": 5.35029700399391,
+              "heading": -0.031818330509122465,
+              "curve": 0.6122805195755063
+            }
+          ]
+        },
+        {
+          "start": 78.18161599461337,
+          "period": 67,
+          "duration": 11.5,
+          "spacing": 0,
+          "travel": 20,
+          "base": -3.7,
+          "kind": "whale",
+          "cycle": 2,
+          "count": 1,
+          "end": 89.68161599461337,
+          "placementSeed": 75390.64529555617,
+          "activityThreshold": 0.7878901053144364,
+          "members": [
+            {
+              "lateral": 0,
+              "along": 0
+            }
+          ]
+        },
+        {
+          "start": 71.59644429324862,
+          "period": 43,
+          "duration": 2.4,
+          "spacing": 0.9130784832147402,
+          "travel": 14,
+          "base": -3.15,
+          "kind": "dolphin",
+          "cycle": 2,
+          "count": 3,
+          "end": 75.81785847059754,
+          "placementSeed": 88994.31532627204,
+          "activityThreshold": 0.4541109360169503,
+          "members": [
+            {
+              "lateral": 6.081234442463028,
+              "along": 2.2466697205090895,
+              "delay": 0,
+              "duration": 2.7034721210700807,
+              "travel": 15.539456127997255,
+              "leap": 4.986754248344733,
+              "heading": 0.048071723965040294,
+              "curve": 0.1250598694288101
+            },
+            {
+              "lateral": 0.0264050309342565,
+              "along": -2.941676845184702,
+              "delay": 0.7646829720099049,
+              "duration": 2.364559671349525,
+              "travel": 13.692482027261576,
+              "leap": 4.752629480934411,
+              "heading": -0.020969739482097793,
+              "curve": -0.35021387923916336
+            },
+            {
+              "lateral": -4.832539166876813,
+              "along": -3.3891666981071467,
+              "delay": 1.500940167317458,
+              "duration": 2.7204740100314666,
+              "travel": 14.056328257138375,
+              "leap": 5.89780409264713,
+              "heading": -0.00043876738200197,
+              "curve": -0.19575657124187273
+            }
+          ]
+        },
+        {
+          "start": 3590.664344840809,
+          "period": 67,
+          "duration": 11.5,
+          "spacing": 0,
+          "travel": 20,
+          "base": -3.7,
+          "kind": "whale",
+          "cycle": 96,
+          "count": 1,
+          "end": 3602.164344840809,
+          "placementSeed": 80270.14128456358,
+          "activityThreshold": 0.49752027528564213,
+          "members": [
+            {
+              "lateral": 0,
+              "along": 0
+            }
+          ]
+        },
+        {
+          "start": 3581.052893358698,
+          "period": 43,
+          "duration": 2.4,
+          "spacing": 0.968869821558983,
+          "travel": 14,
+          "base": -3.15,
+          "kind": "dolphin",
+          "cycle": 165,
+          "count": 1,
+          "end": 3583.4292217791944,
+          "placementSeed": 63783.935943502,
+          "activityThreshold": 0.5776823953510029,
+          "members": [
+            {
+              "lateral": -5.589128978157532,
+              "along": 0.758901611327019,
+              "delay": 0,
+              "duration": 2.3763284204964292,
+              "travel": 13.012853335101681,
+              "leap": 4.979147501030093,
+              "heading": 0.04645982533256757,
+              "curve": 0.026528051021159627
+            }
+          ]
+        },
+        {
+          "start": 3590.664344840809,
+          "period": 67,
+          "duration": 11.5,
+          "spacing": 0,
+          "travel": 20,
+          "base": -3.7,
+          "kind": "whale",
+          "cycle": 96,
+          "count": 1,
+          "end": 3602.164344840809,
+          "placementSeed": 80270.14128456358,
+          "activityThreshold": 0.49752027528564213,
+          "members": [
+            {
+              "lateral": 0,
+              "along": 0
+            }
+          ]
+        },
+        {
+          "start": 3581.052893358698,
+          "period": 43,
+          "duration": 2.4,
+          "spacing": 0.968869821558983,
+          "travel": 14,
+          "base": -3.15,
+          "kind": "dolphin",
+          "cycle": 165,
+          "count": 1,
+          "end": 3583.4292217791944,
+          "placementSeed": 63783.935943502,
+          "activityThreshold": 0.5776823953510029,
+          "members": [
+            {
+              "lateral": -5.589128978157532,
+              "along": 0.758901611327019,
+              "delay": 0,
+              "duration": 2.3763284204964292,
+              "travel": 13.012853335101681,
+              "leap": 4.979147501030093,
+              "heading": 0.04645982533256757,
+              "curve": 0.026528051021159627
+            }
+          ]
+        },
+        {
+          "start": 21569.42039934007,
+          "period": 67,
+          "duration": 11.5,
+          "spacing": 0,
+          "travel": 20,
+          "base": -3.7,
+          "kind": "whale",
+          "cycle": 576,
+          "count": 1,
+          "end": 21580.92039934007,
+          "placementSeed": 49153.56386118219,
+          "activityThreshold": 0.5029526711485233,
+          "members": [
+            {
+              "lateral": 0,
+              "along": 0
+            }
+          ]
+        },
+        {
+          "start": 21598.99244593599,
+          "period": 43,
+          "duration": 2.4,
+          "spacing": 0.9979043949185871,
+          "travel": 14,
+          "base": -3.15,
+          "kind": "dolphin",
+          "cycle": 1016,
+          "count": 1,
+          "end": 21601.308652211435,
+          "placementSeed": 45981.442548145424,
+          "activityThreshold": 0.6249903370809624,
+          "members": [
+            {
+              "lateral": -0.5300559130555484,
+              "along": -1.269208631645597,
+              "delay": 0,
+              "duration": 2.316206275444711,
+              "travel": 15.363366132136434,
+              "leap": 4.7060934294371695,
+              "heading": 0.09584556162080844,
+              "curve": -0.3075621572879754
+            }
+          ]
+        },
+        {
+          "start": 86380.86376038307,
+          "period": 67,
+          "duration": 11.5,
+          "spacing": 0,
+          "travel": 20,
+          "base": -3.7,
+          "kind": "whale",
+          "cycle": 2305,
+          "count": 1,
+          "end": 86392.36376038307,
+          "placementSeed": 95524.69606023806,
+          "activityThreshold": 0.7539136485249764,
+          "members": [
+            {
+              "lateral": 0,
+              "along": 0
+            }
+          ]
+        },
+        {
+          "start": 86394.59598841924,
+          "period": 43,
+          "duration": 2.4,
+          "spacing": 0.9390475540366606,
+          "travel": 14,
+          "base": -3.15,
+          "kind": "dolphin",
+          "cycle": 4068,
+          "count": 1,
+          "end": 86397.31242745579,
+          "placementSeed": 23286.352579816594,
+          "activityThreshold": 0.4171318794367835,
+          "members": [
+            {
+              "lateral": -0.017478353023761883,
+              "along": -0.18994614614348393,
+              "delay": 0,
+              "duration": 2.716439036554584,
+              "travel": 12.496383870566206,
+              "leap": 5.1188927445222365,
+              "heading": -0.08397559630247997,
+              "curve": 0.49480789408335113
+            }
+          ]
+        },
+        {
+          "start": 86380.86376038307,
+          "period": 67,
+          "duration": 11.5,
+          "spacing": 0,
+          "travel": 20,
+          "base": -3.7,
+          "kind": "whale",
+          "cycle": 2305,
+          "count": 1,
+          "end": 86392.36376038307,
+          "placementSeed": 95524.69606023806,
+          "activityThreshold": 0.7539136485249764,
+          "members": [
+            {
+              "lateral": 0,
+              "along": 0
+            }
+          ]
+        },
+        {
+          "start": 86394.59598841924,
+          "period": 43,
+          "duration": 2.4,
+          "spacing": 0.9390475540366606,
+          "travel": 14,
+          "base": -3.15,
+          "kind": "dolphin",
+          "cycle": 4068,
+          "count": 1,
+          "end": 86397.31242745579,
+          "placementSeed": 23286.352579816594,
+          "activityThreshold": 0.4171318794367835,
+          "members": [
+            {
+              "lateral": -0.017478353023761883,
+              "along": -0.18994614614348393,
+              "delay": 0,
+              "duration": 2.716439036554584,
+              "travel": 12.496383870566206,
+              "leap": 5.1188927445222365,
+              "heading": -0.08397559630247997,
+              "curve": 0.49480789408335113
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "seed": 42,
+      "results": [
+        null,
+        null,
+        null,
+        null,
+        {
+          "start": 8.414503836214863,
+          "period": 67,
+          "duration": 11.5,
+          "spacing": 0,
+          "travel": 20,
+          "base": -3.7,
+          "kind": "whale",
+          "cycle": 0,
+          "count": 1,
+          "end": 19.914503836214863,
+          "placementSeed": 16868.573319879943,
+          "activityThreshold": 0.5011232581717195,
+          "members": [
+            {
+              "lateral": 0,
+              "along": 0
+            }
+          ]
+        },
+        null,
+        {
+          "start": 8.414503836214863,
+          "period": 67,
+          "duration": 11.5,
+          "spacing": 0,
+          "travel": 20,
+          "base": -3.7,
+          "kind": "whale",
+          "cycle": 0,
+          "count": 1,
+          "end": 19.914503836214863,
+          "placementSeed": 16868.573319879943,
+          "activityThreshold": 0.5011232581717195,
+          "members": [
+            {
+              "lateral": 0,
+              "along": 0
+            }
+          ]
+        },
+        {
+          "start": 22.745659508876997,
+          "period": 43,
+          "duration": 2.4,
+          "spacing": 0.912350196272164,
+          "travel": 14,
+          "base": -3.15,
+          "kind": "dolphin",
+          "cycle": 0,
+          "count": 2,
+          "end": 26.026385961361665,
+          "placementSeed": 84657.29441595613,
+          "activityThreshold": 0.4712259044291568,
+          "members": [
+            {
+              "lateral": 2.0363333668356063,
+              "along": -1.5681057160982164,
+              "delay": 0,
+              "duration": 2.5846142403817796,
+              "travel": 14.62539755034959,
+              "leap": 4.785258441869155,
+              "heading": 0.06042108634173929,
+              "curve": -0.13861397764787853
+            },
+            {
+              "lateral": 6.044159985496663,
+              "along": 2.4562221242886153,
+              "delay": 1.0373703868724988,
+              "duration": 2.24335606561217,
+              "travel": 13.579170319688274,
+              "leap": 5.2821678749118295,
+              "heading": -0.052639566044672396,
+              "curve": -0.3102163641269726
+            }
+          ]
+        },
+        {
+          "start": 81.40249740550644,
+          "period": 67,
+          "duration": 11.5,
+          "spacing": 0,
+          "travel": 20,
+          "base": -3.7,
+          "kind": "whale",
+          "cycle": 2,
+          "count": 1,
+          "end": 92.90249740550644,
+          "placementSeed": 93184.63356212305,
+          "activityThreshold": 0.6619210785056566,
+          "members": [
+            {
+              "lateral": 0,
+              "along": 0
+            }
+          ]
+        },
+        {
+          "start": 60.95034665415369,
+          "period": 43,
+          "duration": 2.4,
+          "spacing": 0.6847489292307001,
+          "travel": 14,
+          "base": -3.15,
+          "kind": "dolphin",
+          "cycle": 2,
+          "count": 3,
+          "end": 65.06540921717314,
+          "placementSeed": 76375.63007765493,
+          "activityThreshold": 0.47114402027866165,
+          "members": [
+            {
+              "lateral": 5.367975446726632,
+              "along": -1.0619874776857614,
+              "delay": 0,
+              "duration": 2.661919817960734,
+              "travel": 15.766940371890087,
+              "leap": 5.221343638257531,
+              "heading": -0.08236847919761203,
+              "curve": 0.2940371710938052
+            },
+            {
+              "lateral": 0.898795971726031,
+              "along": 2.207661783475487,
+              "delay": 0.9071954522485612,
+              "duration": 2.1299115002620965,
+              "travel": 14.742543614673195,
+              "leap": 5.609632247055197,
+              "heading": -0.03580306047988415,
+              "curve": -0.7010374712042449
+            },
+            {
+              "lateral": -5.172989067774324,
+              "along": -1.375143183475302,
+              "delay": 1.5647918806418604,
+              "duration": 2.550270682377595,
+              "travel": 14.714699960335565,
+              "leap": 4.562222989434668,
+              "heading": -0.017031794384820387,
+              "curve": -0.4514141216823191
+            }
+          ]
+        },
+        {
+          "start": 3571.28887571169,
+          "period": 67,
+          "duration": 11.5,
+          "spacing": 0,
+          "travel": 20,
+          "base": -3.7,
+          "kind": "whale",
+          "cycle": 95,
+          "count": 1,
+          "end": 3582.78887571169,
+          "placementSeed": 96963.31678351271,
+          "activityThreshold": 0.46246996672962265,
+          "members": [
+            {
+              "lateral": 0,
+              "along": 0
+            }
+          ]
+        },
+        {
+          "start": 3586.546447732356,
+          "period": 43,
+          "duration": 2.4,
+          "spacing": 0.9396875504835044,
+          "travel": 14,
+          "base": -3.15,
+          "kind": "dolphin",
+          "cycle": 166,
+          "count": 2,
+          "end": 3591.166868803301,
+          "placementSeed": 21266.81501740677,
+          "activityThreshold": 0.5587936839969188,
+          "members": [
+            {
+              "lateral": -0.0628111367514066,
+              "along": 2.1762647578489123,
+              "delay": 0,
+              "duration": 2.704682225919896,
+              "travel": 13.088599113980308,
+              "leap": 5.454635194064759,
+              "heading": -0.01140591632865835,
+              "curve": -0.34733082546154037
+            },
+            {
+              "lateral": 6.849767991297995,
+              "along": -0.5348922462144401,
+              "delay": 2.3381094577751353,
+              "duration": 2.2823116131701684,
+              "travel": 12.122817746450892,
+              "leap": 5.773491791018751,
+              "heading": -0.0277435593703558,
+              "curve": -0.39820310528921254
+            }
+          ]
+        },
+        {
+          "start": 3571.28887571169,
+          "period": 67,
+          "duration": 11.5,
+          "spacing": 0,
+          "travel": 20,
+          "base": -3.7,
+          "kind": "whale",
+          "cycle": 95,
+          "count": 1,
+          "end": 3582.78887571169,
+          "placementSeed": 96963.31678351271,
+          "activityThreshold": 0.46246996672962265,
+          "members": [
+            {
+              "lateral": 0,
+              "along": 0
+            }
+          ]
+        },
+        {
+          "start": 3586.546447732356,
+          "period": 43,
+          "duration": 2.4,
+          "spacing": 0.9396875504835044,
+          "travel": 14,
+          "base": -3.15,
+          "kind": "dolphin",
+          "cycle": 166,
+          "count": 2,
+          "end": 3591.166868803301,
+          "placementSeed": 21266.81501740677,
+          "activityThreshold": 0.5587936839969188,
+          "members": [
+            {
+              "lateral": -0.0628111367514066,
+              "along": 2.1762647578489123,
+              "delay": 0,
+              "duration": 2.704682225919896,
+              "travel": 13.088599113980308,
+              "leap": 5.454635194064759,
+              "heading": -0.01140591632865835,
+              "curve": -0.34733082546154037
+            },
+            {
+              "lateral": 6.849767991297995,
+              "along": -0.5348922462144401,
+              "delay": 2.3381094577751353,
+              "duration": 2.2823116131701684,
+              "travel": 12.122817746450892,
+              "leap": 5.773491791018751,
+              "heading": -0.0277435593703558,
+              "curve": -0.39820310528921254
+            }
+          ]
+        },
+        {
+          "start": 21582.70800431242,
+          "period": 67,
+          "duration": 11.5,
+          "spacing": 0,
+          "travel": 20,
+          "base": -3.7,
+          "kind": "whale",
+          "cycle": 576,
+          "count": 1,
+          "end": 21594.20800431242,
+          "placementSeed": 3450.9826418798184,
+          "activityThreshold": 0.57579988191952,
+          "members": [
+            {
+              "lateral": 0,
+              "along": 0
+            }
+          ]
+        },
+        {
+          "start": 21596.424196959884,
+          "period": 43,
+          "duration": 2.4,
+          "spacing": 0.9024633231510234,
+          "travel": 14,
+          "base": -3.15,
+          "kind": "dolphin",
+          "cycle": 1010,
+          "count": 1,
+          "end": 21599.13116814367,
+          "placementSeed": 42534.792288029166,
+          "activityThreshold": 0.6201418578514131,
+          "members": [
+            {
+              "lateral": -1.8347478469986527,
+              "along": 1.8309996894661253,
+              "delay": 0,
+              "duration": 2.7069711837848445,
+              "travel": 13.759442942362512,
+              "leap": 4.917216649721377,
+              "heading": -0.09385863292263821,
+              "curve": 0.5487748340128746
+            }
+          ]
+        },
+        {
+          "start": 86382.27858821345,
+          "period": 67,
+          "duration": 11.5,
+          "spacing": 0,
+          "travel": 20,
+          "base": -3.7,
+          "kind": "whale",
+          "cycle": 2304,
+          "count": 1,
+          "end": 86393.77858821345,
+          "placementSeed": 82084.62260809029,
+          "activityThreshold": 0.5976737999977195,
+          "members": [
+            {
+              "lateral": 0,
+              "along": 0
+            }
+          ]
+        },
+        {
+          "start": 86397.33048746412,
+          "period": 43,
+          "duration": 2.4,
+          "spacing": 0.7805092012719251,
+          "travel": 14,
+          "base": -3.15,
+          "kind": "dolphin",
+          "cycle": 4079,
+          "count": 1,
+          "end": 86399.80380267715,
+          "placementSeed": 2060.6683669029735,
+          "activityThreshold": 0.579855285971571,
+          "members": [
+            {
+              "lateral": 2.2945492962480785,
+              "along": 1.9120126412453828,
+              "delay": 0,
+              "duration": 2.473315213029855,
+              "travel": 15.280587079527322,
+              "leap": 5.221661870908429,
+              "heading": -0.026364467536041047,
+              "curve": -0.6785929148172727
+            }
+          ]
+        },
+        {
+          "start": 86382.27858821345,
+          "period": 67,
+          "duration": 11.5,
+          "spacing": 0,
+          "travel": 20,
+          "base": -3.7,
+          "kind": "whale",
+          "cycle": 2304,
+          "count": 1,
+          "end": 86393.77858821345,
+          "placementSeed": 82084.62260809029,
+          "activityThreshold": 0.5976737999977195,
+          "members": [
+            {
+              "lateral": 0,
+              "along": 0
+            }
+          ]
+        },
+        {
+          "start": 86397.33048746412,
+          "period": 43,
+          "duration": 2.4,
+          "spacing": 0.7805092012719251,
+          "travel": 14,
+          "base": -3.15,
+          "kind": "dolphin",
+          "cycle": 4079,
+          "count": 1,
+          "end": 86399.80380267715,
+          "placementSeed": 2060.6683669029735,
+          "activityThreshold": 0.579855285971571,
+          "members": [
+            {
+              "lateral": 2.2945492962480785,
+              "along": 1.9120126412453828,
+              "delay": 0,
+              "duration": 2.473315213029855,
+              "travel": 15.280587079527322,
+              "leap": 5.221661870908429,
+              "heading": -0.026364467536041047,
+              "curve": -0.6785929148172727
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "seed": 2718,
+      "results": [
+        null,
+        null,
+        null,
+        null,
+        {
+          "start": 8.447731781816401,
+          "period": 67,
+          "duration": 11.5,
+          "spacing": 0,
+          "travel": 20,
+          "base": -3.7,
+          "kind": "whale",
+          "cycle": 0,
+          "count": 1,
+          "end": 19.9477317818164,
+          "placementSeed": 85602.05981993931,
+          "activityThreshold": 0.6781556893936067,
+          "members": [
+            {
+              "lateral": 0,
+              "along": 0
+            }
+          ]
+        },
+        null,
+        {
+          "start": 8.447731781816401,
+          "period": 67,
+          "duration": 11.5,
+          "spacing": 0,
+          "travel": 20,
+          "base": -3.7,
+          "kind": "whale",
+          "cycle": 0,
+          "count": 1,
+          "end": 19.9477317818164,
+          "placementSeed": 85602.05981993931,
+          "activityThreshold": 0.6781556893936067,
+          "members": [
+            {
+              "lateral": 0,
+              "along": 0
+            }
+          ]
+        },
+        {
+          "start": 24.095931147829106,
+          "period": 43,
+          "duration": 2.4,
+          "spacing": 0.7177275293564163,
+          "travel": 14,
+          "base": -3.15,
+          "kind": "dolphin",
+          "cycle": 0,
+          "count": 1,
+          "end": 26.491288597400125,
+          "placementSeed": 33381.87563713291,
+          "activityThreshold": 0.5347900957026286,
+          "members": [
+            {
+              "lateral": -4.46444872833672,
+              "along": 2.2548106840476976,
+              "delay": 0,
+              "duration": 2.39535744957102,
+              "travel": 12.850878767356335,
+              "leap": 5.142587528637614,
+              "heading": 0.029076602109125816,
+              "curve": 0.4989373310781957
+            }
+          ]
+        },
+        {
+          "start": 83.32391182157153,
+          "period": 67,
+          "duration": 11.5,
+          "spacing": 0,
+          "travel": 20,
+          "base": -3.7,
+          "kind": "whale",
+          "cycle": 2,
+          "count": 1,
+          "end": 94.82391182157153,
+          "placementSeed": 81955.95628167212,
+          "activityThreshold": 0.436535181704603,
+          "members": [
+            {
+              "lateral": 0,
+              "along": 0
+            }
+          ]
+        },
+        {
+          "start": 69.04394217631125,
+          "period": 43,
+          "duration": 2.4,
+          "spacing": 0.7495355156043662,
+          "travel": 14,
+          "base": -3.15,
+          "kind": "dolphin",
+          "cycle": 2,
+          "count": 1,
+          "end": 71.15678218575704,
+          "placementSeed": 84669.30598442559,
+          "activityThreshold": 0.6646848162353853,
+          "members": [
+            {
+              "lateral": 6.4854230118507985,
+              "along": -2.0421327824697073,
+              "delay": 0,
+              "duration": 2.11284000944579,
+              "travel": 12.291583964368328,
+              "leap": 5.216063618396584,
+              "heading": -0.06702070942847059,
+              "curve": -0.28321767868328607
+            }
+          ]
+        },
+        {
+          "start": 3596.031396469263,
+          "period": 67,
+          "duration": 11.5,
+          "spacing": 0,
+          "travel": 20,
+          "base": -3.7,
+          "kind": "whale",
+          "cycle": 95,
+          "count": 1,
+          "end": 3607.531396469263,
+          "placementSeed": 42110.101461730665,
+          "activityThreshold": 0.5299436328315642,
+          "members": [
+            {
+              "lateral": 0,
+              "along": 0
+            }
+          ]
+        },
+        {
+          "start": 3584.061744618766,
+          "period": 43,
+          "duration": 2.4,
+          "spacing": 0.7662772087322447,
+          "travel": 14,
+          "base": -3.15,
+          "kind": "dolphin",
+          "cycle": 165,
+          "count": 2,
+          "end": 3586.85726553407,
+          "placementSeed": 51434.84452928533,
+          "activityThreshold": 0.45256355995225017,
+          "members": [
+            {
+              "lateral": 5.65473944801488,
+              "along": 0.423142368781555,
+              "delay": 0,
+              "duration": 2.313137249634019,
+              "travel": 15.639116689839284,
+              "leap": 5.349224502932339,
+              "heading": -0.08960837648191955,
+              "curve": 0.4276047166931676
+            },
+            {
+              "lateral": -6.3213028168502206,
+              "along": 2.4404758605619463,
+              "delay": 0.49624820767876376,
+              "duration": 2.299272707624914,
+              "travel": 14.876786348468158,
+              "leap": 5.802795878810139,
+              "heading": -0.0261867064065882,
+              "curve": -0.12861363128831726
+            }
+          ]
+        },
+        {
+          "start": 3596.031396469263,
+          "period": 67,
+          "duration": 11.5,
+          "spacing": 0,
+          "travel": 20,
+          "base": -3.7,
+          "kind": "whale",
+          "cycle": 95,
+          "count": 1,
+          "end": 3607.531396469263,
+          "placementSeed": 42110.101461730665,
+          "activityThreshold": 0.5299436328315642,
+          "members": [
+            {
+              "lateral": 0,
+              "along": 0
+            }
+          ]
+        },
+        {
+          "start": 3584.061744618766,
+          "period": 43,
+          "duration": 2.4,
+          "spacing": 0.7662772087322447,
+          "travel": 14,
+          "base": -3.15,
+          "kind": "dolphin",
+          "cycle": 165,
+          "count": 2,
+          "end": 3586.85726553407,
+          "placementSeed": 51434.84452928533,
+          "activityThreshold": 0.45256355995225017,
+          "members": [
+            {
+              "lateral": 5.65473944801488,
+              "along": 0.423142368781555,
+              "delay": 0,
+              "duration": 2.313137249634019,
+              "travel": 15.639116689839284,
+              "leap": 5.349224502932339,
+              "heading": -0.08960837648191955,
+              "curve": 0.4276047166931676
+            },
+            {
+              "lateral": -6.3213028168502206,
+              "along": 2.4404758605619463,
+              "delay": 0.49624820767876376,
+              "duration": 2.299272707624914,
+              "travel": 14.876786348468158,
+              "leap": 5.802795878810139,
+              "heading": -0.0261867064065882,
+              "curve": -0.12861363128831726
+            }
+          ]
+        },
+        {
+          "start": 21573.596185773662,
+          "period": 67,
+          "duration": 11.5,
+          "spacing": 0,
+          "travel": 20,
+          "base": -3.7,
+          "kind": "whale",
+          "cycle": 573,
+          "count": 1,
+          "end": 21585.096185773662,
+          "placementSeed": 98788.79064708599,
+          "activityThreshold": 0.6328216560651344,
+          "members": [
+            {
+              "lateral": 0,
+              "along": 0
+            }
+          ]
+        },
+        {
+          "start": 21587.520856297248,
+          "period": 43,
+          "duration": 2.4,
+          "spacing": 0.7900585851268261,
+          "travel": 14,
+          "base": -3.15,
+          "kind": "dolphin",
+          "cycle": 1022,
+          "count": 1,
+          "end": 21590.292577248656,
+          "placementSeed": 56646.52736122662,
+          "activityThreshold": 0.7119427356078813,
+          "members": [
+            {
+              "lateral": 2.82181993231643,
+              "along": -2.887129955674027,
+              "delay": 0,
+              "duration": 2.7717209514074965,
+              "travel": 13.89215387533477,
+              "leap": 4.848336888337508,
+              "heading": -0.08216811640304514,
+              "curve": -0.3751197287965624
+            }
+          ]
+        },
+        {
+          "start": 86398.4007209292,
+          "period": 67,
+          "duration": 11.5,
+          "spacing": 0,
+          "travel": 20,
+          "base": -3.7,
+          "kind": "whale",
+          "cycle": 2300,
+          "count": 1,
+          "end": 86409.9007209292,
+          "placementSeed": 77577.35895211226,
+          "activityThreshold": 0.6033902800019132,
+          "members": [
+            {
+              "lateral": 0,
+              "along": 0
+            }
+          ]
+        },
+        {
+          "start": 86389.68218074476,
+          "period": 43,
+          "duration": 2.4,
+          "spacing": 1.017084323547024,
+          "travel": 14,
+          "base": -3.15,
+          "kind": "dolphin",
+          "cycle": 4082,
+          "count": 1,
+          "end": 86392.22305363405,
+          "placementSeed": 26315.804652767838,
+          "activityThreshold": 0.5997389425690198,
+          "members": [
+            {
+              "lateral": -6.851127444126178,
+              "along": -3.4496040875746985,
+              "delay": 0,
+              "duration": 2.5408728892980434,
+              "travel": 14.480353845618083,
+              "leap": 4.441585614895667,
+              "heading": -0.03306006217608228,
+              "curve": 0.3991326777068025
+            }
+          ]
+        },
+        {
+          "start": 86398.4007209292,
+          "period": 67,
+          "duration": 11.5,
+          "spacing": 0,
+          "travel": 20,
+          "base": -3.7,
+          "kind": "whale",
+          "cycle": 2300,
+          "count": 1,
+          "end": 86409.9007209292,
+          "placementSeed": 77577.35895211226,
+          "activityThreshold": 0.6033902800019132,
+          "members": [
+            {
+              "lateral": 0,
+              "along": 0
+            }
+          ]
+        },
+        {
+          "start": 86389.68218074476,
+          "period": 43,
+          "duration": 2.4,
+          "spacing": 1.017084323547024,
+          "travel": 14,
+          "base": -3.15,
+          "kind": "dolphin",
+          "cycle": 4082,
+          "count": 1,
+          "end": 86392.22305363405,
+          "placementSeed": 26315.804652767838,
+          "activityThreshold": 0.5997389425690198,
+          "members": [
+            {
+              "lateral": -6.851127444126178,
+              "along": -3.4496040875746985,
+              "delay": 0,
+              "duration": 2.5408728892980434,
+              "travel": 14.480353845618083,
+              "leap": 4.441585614895667,
+              "heading": -0.03306006217608228,
+              "curve": 0.3991326777068025
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
