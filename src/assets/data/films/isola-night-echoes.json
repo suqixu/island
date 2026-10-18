@@ -1,0 +1,1306 @@
+{
+  "format": "isola-film",
+  "schemaVersion": 2,
+  "title": "浮屿 · 夜的回声",
+  "duration": 180,
+  "music": {
+    "trackId": "yueer",
+    "musicVolume": 0.48,
+    "ambientVolume": 0.38,
+    "fadeIn": 5,
+    "fadeOut": 6
+  },
+  "shots": [
+    {
+      "id": "01-night-island",
+      "label": "海上看见灯火",
+      "start": 0,
+      "end": 12,
+      "landmark": "island",
+      "camera": [
+        {
+          "at": 0.0,
+          "position": [
+            185,
+            58,
+            230
+          ],
+          "target": [
+            0,
+            -3,
+            0
+          ],
+          "fov": 50
+        },
+        {
+          "at": 6.0,
+          "position": [
+            169,
+            51,
+            214
+          ],
+          "target": [
+            0,
+            -3,
+            0
+          ],
+          "fov": 48
+        },
+        {
+          "at": 12.0,
+          "position": [
+            153,
+            45,
+            198
+          ],
+          "target": [
+            0,
+            -3,
+            0
+          ],
+          "fov": 46
+        }
+      ],
+      "environment": [
+        {
+          "at": 0,
+          "hour": 21,
+          "season": 1,
+          "weather": "sunny",
+          "snowCover": 0
+        }
+      ],
+      "description": "缓慢靠近小岛，码头与灯塔逐渐清楚，片名淡入。"
+    },
+    {
+      "id": "02-dock-arrival",
+      "label": "沿栈桥靠岸",
+      "start": 12,
+      "end": 22,
+      "landmark": "dock",
+      "camera": [
+        {
+          "at": 0.0,
+          "position": [
+            20,
+            -1.3,
+            49
+          ],
+          "target": [
+            0,
+            -1,
+            0
+          ],
+          "fov": 48
+        },
+        {
+          "at": 10.0,
+          "position": [
+            12,
+            -1.3,
+            35
+          ],
+          "target": [
+            0,
+            -1,
+            0
+          ],
+          "fov": 45
+        }
+      ],
+      "environment": [
+        {
+          "at": 0,
+          "hour": 21.1,
+          "season": 1,
+          "weather": "sunny",
+          "snowCover": 0
+        }
+      ],
+      "description": "低机位沿码头方向缓慢前移，保留前景海面。"
+    },
+    {
+      "id": "04-path-lights",
+      "label": "循着路灯上山",
+      "start": 22,
+      "end": 34,
+      "landmark": "island",
+      "camera": [
+        {
+          "at": 0.0,
+          "position": [
+            12.418,
+            1.8199000000000005,
+            41.447
+          ],
+          "target": [
+            24.984,
+            -0.5558999999999994,
+            42.106
+          ],
+          "fov": 48
+        },
+        {
+          "at": 6.0,
+          "position": [
+            15.4,
+            1.8316999999999979,
+            41.56
+          ],
+          "target": [
+            26.5,
+            -0.9627999999999997,
+            41.8
+          ],
+          "fov": 46
+        },
+        {
+          "at": 12.0,
+          "position": [
+            18.544,
+            -0.14209999999999923,
+            41.675
+          ],
+          "target": [
+            28,
+            -2.3179999999999996,
+            41.5
+          ],
+          "fov": 44
+        }
+      ],
+      "environment": [
+        {
+          "at": 0,
+          "hour": 21.5,
+          "season": 1,
+          "weather": "sunny",
+          "snowCover": 0
+        }
+      ],
+      "description": "采用实际洞前山径控制点与地表高度；实施时复核最近路灯和树木遮挡。"
+    },
+    {
+      "id": "05-cave-mouth",
+      "label": "山洞留在暗处",
+      "start": 34,
+      "end": 44,
+      "landmark": "cave",
+      "camera": [
+        {
+          "at": 0.0,
+          "position": [
+            7.5,
+            1.8,
+            9.4
+          ],
+          "target": [
+            0,
+            -0.2,
+            0
+          ],
+          "fov": 43
+        },
+        {
+          "at": 10.0,
+          "position": [
+            11.8,
+            3.4,
+            14.8
+          ],
+          "target": [
+            0,
+            -0.2,
+            0
+          ],
+          "fov": 47
+        }
+      ],
+      "environment": [
+        {
+          "at": 0,
+          "hour": 21.5,
+          "season": 1,
+          "weather": "sunny",
+          "snowCover": 0
+        }
+      ],
+      "description": "从洞口侧前方缓慢后退，显出藤叶与岩壁，不进入洞内。"
+    },
+    {
+      "id": "07-moths-lamp",
+      "label": "飞蛾掠过亭灯",
+      "start": 44,
+      "end": 60,
+      "landmark": "moths",
+      "camera": [
+        {
+          "at": 0.0,
+          "position": [
+            0,
+            -0.8,
+            1.85
+          ],
+          "target": [
+            0,
+            -0.1,
+            0
+          ],
+          "fov": 50
+        },
+        {
+          "at": 16.0,
+          "position": [
+            0.25,
+            -0.75,
+            1.7
+          ],
+          "target": [
+            0,
+            -0.1,
+            0
+          ],
+          "fov": 48
+        }
+      ],
+      "environment": [
+        {
+          "at": 0,
+          "hour": 21.5,
+          "season": 1,
+          "weather": "sunny",
+          "snowCover": 0
+        }
+      ],
+      "description": "对准实际有飞蛾停留的亮灯，从亭内较低机位观察，避开檐梁。"
+    },
+    {
+      "id": "08-fireflies",
+      "label": "林缘的微光",
+      "start": 60,
+      "end": 76,
+      "landmark": "fireflies",
+      "camera": [
+        {
+          "at": 0.0,
+          "position": [
+            0,
+            0.7,
+            3.5
+          ],
+          "target": [
+            0,
+            0,
+            0
+          ],
+          "fov": 50
+        },
+        {
+          "at": 8.0,
+          "position": [
+            0.35,
+            0.6,
+            3.3
+          ],
+          "target": [
+            0,
+            0,
+            0
+          ],
+          "fov": 48
+        },
+        {
+          "at": 16.0,
+          "position": [
+            0.65,
+            0.55,
+            3.2
+          ],
+          "target": [
+            0,
+            0,
+            0
+          ],
+          "fov": 46
+        }
+      ],
+      "environment": [
+        {
+          "at": 0,
+          "hour": 22,
+          "season": 1,
+          "weather": "sunny",
+          "snowCover": 0
+        }
+      ],
+      "description": "直接读取本夜真实萤火虫群落，从山径一侧观察草间微光，不依赖离屏停止上传的顶点。"
+    },
+    {
+      "id": "09-moon-cycle",
+      "label": "月相流转",
+      "start": 76,
+      "end": 84,
+      "landmark": "moon",
+      "camera": [
+        {
+          "at": 0.0,
+          "position": [
+            150,
+            -41,
+            200
+          ],
+          "target": [
+            0,
+            0,
+            0
+          ],
+          "fov": 52
+        },
+        {
+          "at": 8.0,
+          "position": [
+            150,
+            -41,
+            200
+          ],
+          "target": [
+            0,
+            0,
+            0
+          ],
+          "fov": 52
+        }
+      ],
+      "environment": [
+        {
+          "at": 0,
+          "hour": 22,
+          "season": 1,
+          "weather": "sunny",
+          "snowCover": 0
+        }
+      ],
+      "description": "固定同一机位，八秒连续完成一轮月相变化，取消逐相停顿与切镜。"
+    },
+    {
+      "id": "09-constellations",
+      "label": "星座的连线与名字",
+      "start": 84,
+      "end": 98,
+      "landmark": "moon",
+      "camera": [
+        {
+          "at": 0.0,
+          "position": [
+            150,
+            -41,
+            200
+          ],
+          "target": [
+            -18,
+            48,
+            0
+          ],
+          "fov": 82
+        },
+        {
+          "at": 7.0,
+          "position": [
+            150,
+            -41,
+            200
+          ],
+          "target": [
+            0,
+            53,
+            0
+          ],
+          "fov": 82
+        },
+        {
+          "at": 14.0,
+          "position": [
+            150,
+            -41,
+            200
+          ],
+          "target": [
+            18,
+            58,
+            0
+          ],
+          "fov": 82
+        }
+      ],
+      "environment": [
+        {
+          "at": 0,
+          "hour": 22,
+          "season": 1,
+          "weather": "sunny",
+          "snowCover": 0
+        }
+      ],
+      "description": "晴朗弱月光夜空，同时显示当前入镜星座的连线和中文名称，缓慢横向扫过并保留阅读时间；使用既有labels模式，结束后关闭。"
+    },
+    {
+      "id": "10-weather-passage",
+      "label": "风雨过亭檐",
+      "start": 98,
+      "end": 118,
+      "landmark": "pavilion-south",
+      "camera": [
+        {
+          "at": 0,
+          "position": [
+            5,
+            2.8,
+            9
+          ],
+          "target": [
+            0,
+            0,
+            0
+          ],
+          "fov": 54
+        },
+        {
+          "at": 20,
+          "position": [
+            4.6,
+            2.7,
+            8.8
+          ],
+          "target": [
+            0,
+            0,
+            0
+          ],
+          "fov": 53
+        }
+      ],
+      "environment": [
+        {
+          "at": 0,
+          "hour": 22,
+          "season": 1,
+          "weather": "sunny",
+          "snowCover": 0
+        },
+        {
+          "at": 2,
+          "hour": 22,
+          "season": 1,
+          "weather": "cloudy",
+          "snowCover": 0
+        },
+        {
+          "at": 4,
+          "hour": 22,
+          "season": 1,
+          "weather": "fog",
+          "snowCover": 0
+        },
+        {
+          "at": 6,
+          "hour": 22,
+          "season": 1,
+          "weather": "rain",
+          "snowCover": 0
+        },
+        {
+          "at": 9,
+          "hour": 22,
+          "season": 1,
+          "weather": "storm",
+          "snowCover": 0
+        },
+        {
+          "at": 12,
+          "hour": 22,
+          "season": 1,
+          "weather": "typhoon",
+          "snowCover": 0
+        },
+        {
+          "at": 14,
+          "hour": 22,
+          "season": 3,
+          "weather": "snow",
+          "snowCover": 0.45
+        },
+        {
+          "at": 17,
+          "hour": 22,
+          "season": 3,
+          "weather": "blizzard",
+          "snowCover": 0.75
+        }
+      ],
+      "description": "同一亭檐宽景展示天气快速流转，取消逐天气重复切镜。"
+    },
+    {
+      "id": "18-meteors",
+      "label": "流星经过",
+      "start": 118,
+      "end": 128,
+      "landmark": "moon",
+      "camera": [
+        {
+          "at": 0.0,
+          "position": [
+            150,
+            -41,
+            200
+          ],
+          "target": [
+            0,
+            15,
+            0
+          ],
+          "fov": 72
+        },
+        {
+          "at": 10.0,
+          "position": [
+            150,
+            -41,
+            200
+          ],
+          "target": [
+            0,
+            15,
+            0
+          ],
+          "fov": 72
+        }
+      ],
+      "environment": [
+        {
+          "at": 0,
+          "hour": 22,
+          "season": 1,
+          "weather": "sunny",
+          "snowCover": 0
+        }
+      ],
+      "description": "下方保留岛屿剪影，流星划过后留空镜。"
+    },
+    {
+      "id": "19-comet",
+      "label": "彗星与海平线",
+      "start": 128,
+      "end": 140,
+      "landmark": "moon",
+      "camera": [
+        {
+          "at": 0.0,
+          "position": [
+            150,
+            -41,
+            200
+          ],
+          "target": [
+            0,
+            35,
+            0
+          ],
+          "fov": 76
+        },
+        {
+          "at": 12.0,
+          "position": [
+            150,
+            -41,
+            200
+          ],
+          "target": [
+            0,
+            35,
+            0
+          ],
+          "fov": 76
+        }
+      ],
+      "environment": [
+        {
+          "at": 0,
+          "hour": 22,
+          "season": 1,
+          "weather": "sunny",
+          "snowCover": 0
+        }
+      ],
+      "description": "宽景稳定展示既有彗星与尾迹，不追逐彗星。"
+    },
+    {
+      "id": "20-aurora",
+      "label": "冬夜极光",
+      "start": 140,
+      "end": 154,
+      "landmark": "moon",
+      "camera": [
+        {
+          "at": 0.0,
+          "position": [
+            150,
+            -41,
+            200
+          ],
+          "target": [
+            0,
+            80,
+            0
+          ],
+          "fov": 82
+        },
+        {
+          "at": 7.0,
+          "position": [
+            150,
+            -41,
+            200
+          ],
+          "target": [
+            0,
+            145,
+            0
+          ],
+          "fov": 86
+        },
+        {
+          "at": 14.0,
+          "position": [
+            150,
+            -41,
+            200
+          ],
+          "target": [
+            0,
+            209,
+            0
+          ],
+          "fov": 90
+        }
+      ],
+      "environment": [
+        {
+          "at": 0,
+          "hour": 22,
+          "season": 3,
+          "weather": "sunny",
+          "snowCover": 0.5
+        }
+      ],
+      "description": "先应用首帧机位再启动极光确定朝向，随后缓慢抬头。"
+    },
+    {
+      "id": "21-blood-moon-finale",
+      "label": "月染深红",
+      "start": 154,
+      "end": 180,
+      "landmark": "moon",
+      "camera": [
+        {
+          "at": 0,
+          "position": [
+            150,
+            -41,
+            200
+          ],
+          "target": [
+            0,
+            0,
+            0
+          ],
+          "fov": 52
+        },
+        {
+          "at": 17,
+          "position": [
+            150,
+            -41,
+            200
+          ],
+          "target": [
+            0,
+            0,
+            0
+          ],
+          "fov": 40
+        },
+        {
+          "at": 26,
+          "position": [
+            150,
+            -41,
+            200
+          ],
+          "target": [
+            0,
+            0,
+            0
+          ],
+          "fov": 40
+        }
+      ],
+      "environment": [
+        {
+          "at": 0,
+          "hour": 22,
+          "season": 1,
+          "weather": "sunny",
+          "snowCover": 0
+        }
+      ],
+      "description": "一次月食从初亏推进至血月，在深红月面结束，不展示复圆。"
+    }
+  ],
+  "captions": [
+    {
+      "start": 1,
+      "end": 6,
+      "text": "浮屿 · 夜的回声",
+      "style": "title"
+    },
+    {
+      "start": 7,
+      "end": 11,
+      "text": "当海风慢下来，灯火替小岛醒着。",
+      "style": "body"
+    },
+    {
+      "start": 14,
+      "end": 20,
+      "text": "沿着栈桥，走进一座岛的夜晚。",
+      "style": "body"
+    },
+    {
+      "start": 24,
+      "end": 32,
+      "text": "路灯把山径，照成一条温柔的归路。",
+      "style": "body"
+    },
+    {
+      "start": 36,
+      "end": 42,
+      "text": "山洞藏起白昼，也留住风的回声。",
+      "style": "body"
+    },
+    {
+      "start": 46,
+      "end": 53,
+      "text": "亭灯亮着，飞蛾偶尔掠过微光。",
+      "style": "body"
+    },
+    {
+      "start": 54,
+      "end": 59,
+      "text": "短暂的相逢，也值得停留。",
+      "style": "body"
+    },
+    {
+      "start": 62,
+      "end": 68,
+      "text": "林缘草间，萤火虫错落明灭。",
+      "style": "body"
+    },
+    {
+      "start": 69,
+      "end": 74,
+      "text": "不必照亮远方，微光也有自己的夜空。",
+      "style": "body"
+    },
+    {
+      "start": 77,
+      "end": 83,
+      "text": "阴晴圆缺，在一瞬间流转。",
+      "style": "body"
+    },
+    {
+      "start": 86,
+      "end": 96,
+      "text": "连起星光，记住它们的名字。",
+      "style": "body"
+    },
+    {
+      "start": 99,
+      "end": 106,
+      "text": "云来，雾起，雨声落进亭檐。",
+      "style": "body"
+    },
+    {
+      "start": 108,
+      "end": 116,
+      "text": "风雪奔涌，灯火始终温暖。",
+      "style": "body"
+    },
+    {
+      "start": 119,
+      "end": 126,
+      "text": "流星划过，像一句没有说完的话。",
+      "style": "body"
+    },
+    {
+      "start": 130,
+      "end": 138,
+      "text": "彗星拖着长尾，缓缓穿过寂静。",
+      "style": "body"
+    },
+    {
+      "start": 142,
+      "end": 151,
+      "text": "极光舒展，冬夜也有柔软的颜色。",
+      "style": "body"
+    },
+    {
+      "start": 156,
+      "end": 164,
+      "text": "地影漫过月面，银光渐渐沉静。",
+      "style": "body"
+    },
+    {
+      "start": 168,
+      "end": 176,
+      "text": "当月亮染上深红，整座岛屏住了呼吸。",
+      "style": "body"
+    },
+    {
+      "start": 176.5,
+      "end": 180,
+      "text": "浮屿，等你慢慢看见。",
+      "style": "ending"
+    }
+  ],
+  "tracks": [
+    {
+      "capability": "scene.moonPhase",
+      "interpolation": "step",
+      "keyframes": [
+        {
+          "at": 0,
+          "value": 0.5
+        },
+        {
+          "at": 76,
+          "value": 0,
+          "interpolation": "linear"
+        },
+        {
+          "at": 77,
+          "value": 0.125,
+          "interpolation": "linear"
+        },
+        {
+          "at": 78,
+          "value": 0.25,
+          "interpolation": "linear"
+        },
+        {
+          "at": 79,
+          "value": 0.375,
+          "interpolation": "linear"
+        },
+        {
+          "at": 80,
+          "value": 0.5,
+          "interpolation": "linear"
+        },
+        {
+          "at": 81,
+          "value": 0.625,
+          "interpolation": "linear"
+        },
+        {
+          "at": 82,
+          "value": 0.75,
+          "interpolation": "linear"
+        },
+        {
+          "at": 83,
+          "value": 0.875,
+          "interpolation": "linear"
+        },
+        {
+          "at": 84,
+          "value": 0
+        },
+        {
+          "at": 98,
+          "value": 0.5
+        },
+        {
+          "at": 118,
+          "value": 0
+        },
+        {
+          "at": 154,
+          "value": 0.5
+        }
+      ]
+    },
+    {
+      "capability": "sky.constellation.mode",
+      "interpolation": "step",
+      "keyframes": [
+        {
+          "at": 0,
+          "value": "off"
+        },
+        {
+          "at": 84,
+          "value": "labels"
+        },
+        {
+          "at": 98,
+          "value": "off"
+        }
+      ]
+    },
+    {
+      "capability": "sky.moon.enabled",
+      "interpolation": "step",
+      "keyframes": [
+        {
+          "at": 0,
+          "value": true
+        },
+        {
+          "at": 12,
+          "value": false
+        },
+        {
+          "at": 76,
+          "value": true
+        },
+        {
+          "at": 84,
+          "value": false
+        },
+        {
+          "at": 154,
+          "value": true
+        }
+      ]
+    },
+    {
+      "capability": "sky.moon.framing",
+      "interpolation": "step",
+      "keyframes": [
+        {
+          "at": 0,
+          "value": "complete"
+        }
+      ]
+    },
+    {
+      "capability": "sky.moon.size",
+      "interpolation": "step",
+      "keyframes": [
+        {
+          "at": 0,
+          "value": 0
+        },
+        {
+          "at": 76,
+          "value": 90
+        },
+        {
+          "at": 84,
+          "value": 0
+        }
+      ]
+    },
+    {
+      "capability": "scene.motionRate",
+      "interpolation": "step",
+      "keyframes": [
+        {
+          "at": 0,
+          "value": 1
+        },
+        {
+          "at": 12,
+          "value": 0.85
+        },
+        {
+          "at": 22,
+          "value": 1
+        },
+        {
+          "at": 34,
+          "value": 0.8
+        },
+        {
+          "at": 44,
+          "value": 0.85
+        },
+        {
+          "at": 60,
+          "value": 0.8
+        },
+        {
+          "at": 76,
+          "value": 1
+        },
+        {
+          "at": 84,
+          "value": 2
+        },
+        {
+          "at": 98,
+          "value": 6
+        },
+        {
+          "at": 107,
+          "value": 10
+        },
+        {
+          "at": 112,
+          "value": 6
+        },
+        {
+          "at": 118,
+          "value": 1
+        },
+        {
+          "at": 140,
+          "value": 2.5
+        },
+        {
+          "at": 154,
+          "value": 1
+        }
+      ]
+    },
+    {
+      "capability": "scene.hour",
+      "interpolation": "step",
+      "keyframes": [
+        {
+          "at": 0,
+          "value": 22
+        },
+        {
+          "at": 84,
+          "value": 22,
+          "interpolation": "linear"
+        },
+        {
+          "at": 98,
+          "value": 23.5,
+          "interpolation": "linear"
+        },
+        {
+          "at": 118,
+          "value": 22
+        },
+        {
+          "at": 154,
+          "value": 22
+        }
+      ]
+    },
+    {
+      "capability": "lights.mode",
+      "interpolation": "step",
+      "keyframes": [
+        {
+          "at": 0,
+          "value": "auto"
+        }
+      ]
+    },
+    {
+      "capability": "presentation.poetry",
+      "interpolation": "step",
+      "keyframes": [
+        {
+          "at": 0,
+          "value": false
+        }
+      ]
+    },
+    {
+      "capability": "environment.windSpeed",
+      "interpolation": "step",
+      "keyframes": [
+        {
+          "at": 0,
+          "value": 5
+        },
+        {
+          "at": 100,
+          "value": 8
+        },
+        {
+          "at": 102,
+          "value": 3
+        },
+        {
+          "at": 104,
+          "value": 8
+        },
+        {
+          "at": 107,
+          "value": 35
+        },
+        {
+          "at": 110,
+          "value": 50
+        },
+        {
+          "at": 112,
+          "value": 6
+        },
+        {
+          "at": 115,
+          "value": 45
+        },
+        {
+          "at": 118,
+          "value": 5
+        }
+      ]
+    },
+    {
+      "capability": "sky.meteor.mode",
+      "interpolation": "step",
+      "keyframes": [
+        {
+          "at": 0,
+          "value": "off"
+        }
+      ]
+    },
+    {
+      "capability": "sky.comet.mode",
+      "interpolation": "step",
+      "keyframes": [
+        {
+          "at": 0,
+          "value": "off"
+        }
+      ]
+    },
+    {
+      "capability": "sky.aurora.mode",
+      "interpolation": "step",
+      "keyframes": [
+        {
+          "at": 0,
+          "value": "off"
+        }
+      ]
+    },
+    {
+      "capability": "sky.solarEclipse.mode",
+      "interpolation": "step",
+      "keyframes": [
+        {
+          "at": 0,
+          "value": "off"
+        }
+      ]
+    },
+    {
+      "capability": "sky.lunarEclipse.mode",
+      "interpolation": "step",
+      "keyframes": [
+        {
+          "at": 0,
+          "value": "off"
+        }
+      ]
+    },
+    {
+      "capability": "environment.skyCloudCover",
+      "interpolation": "step",
+      "keyframes": [
+        {
+          "at": 0,
+          "value": 0
+        },
+        {
+          "at": 100,
+          "value": 0.75
+        },
+        {
+          "at": 102,
+          "value": 0.4
+        },
+        {
+          "at": 104,
+          "value": 0.85
+        },
+        {
+          "at": 107,
+          "value": 1
+        },
+        {
+          "at": 110,
+          "value": 1
+        },
+        {
+          "at": 112,
+          "value": 0.8
+        },
+        {
+          "at": 115,
+          "value": 1
+        },
+        {
+          "at": 118,
+          "value": 0
+        }
+      ]
+    }
+  ],
+  "clips": [
+    {
+      "id": "meteor-pass",
+      "capability": "sky.meteor",
+      "start": 118,
+      "end": 128,
+      "parameters": {
+        "mode": "instant",
+        "burstCount": 9,
+        "maxActive": 32,
+        "burstInterval": 3,
+        "flightDuration": 1.1,
+        "lingerDuration": 0.3,
+        "brightness": 1.25
+      }
+    },
+    {
+      "id": "comet-pass",
+      "capability": "sky.comet",
+      "start": 128,
+      "end": 140,
+      "parameters": {
+        "style": "emerald",
+        "duration": 12,
+        "brightness": 1.15
+      }
+    },
+    {
+      "id": "winter-aurora",
+      "capability": "sky.aurora",
+      "start": 140,
+      "end": 154,
+      "parameters": {
+        "shape": "curtain",
+        "brightness": 1.1
+      }
+    },
+    {
+      "id": "blood-moon-finale",
+      "capability": "sky.lunarEclipse",
+      "start": 154,
+      "end": 180,
+      "parameters": {
+        "duration": 48
+      }
+    }
+  ]
+}

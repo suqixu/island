@@ -31,7 +31,7 @@ test('可逐张加载八张图集，每张保留八种共享来源的云形', as
   }
 });
 
-test('抽中的图集加载失败后重试同一张，仍失败则返回本地云体回退', async t => {
+test('指定图集加载失败后重试同一张，仍失败则返回空结果保持无云', async t => {
   const requests = [];
   t.mock.method(THREE.TextureLoader.prototype, 'loadAsync', async url => {
     requests.push(url);

@@ -138,7 +138,7 @@ export function getEnvironment(state) {
     wind.gust = .55 + wind.gust * .45;
   }
   return { ...weather, ...cloudSettings, cloudMode:cloudMode.value, ...wind, typhoon, blizzard, roughSea:Math.max(typhoon,blizzard*(.72+wind.gust*.22)),
-    snowCover:state.snowCover??0, ...moonState, animationRate: getAnimationRate(state), dayIndex:state.dayIndex??0, hour: state.hour, daylight, moon, moonAltitude, moonVisibility, moonLight,
+    snowCover:state.snowCover??0, ...(state.filmMotionRate!==undefined?{filmMotionRate:state.filmMotionRate}:{}), ...moonState, animationRate: getAnimationRate(state), dayIndex:state.dayIndex??0, hour: state.hour, daylight, moon, moonAltitude, moonVisibility, moonLight,
     season: SEASONS[state.seasonIndex], seasonIndex: state.seasonIndex,
     weather: state.weather, temperature: temperatures[state.seasonIndex] - (1 - daylight) * 5 - weather.rain * 4 - weather.snow * 12,
     sun: [Math.cos((state.hour - 6) / 24 * Math.PI * 2) * .7, elevation, .55] };

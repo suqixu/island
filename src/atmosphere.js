@@ -8,7 +8,6 @@ import { createAfterRainState, advanceAfterRain } from './after-rain.js';
 import { getRainbowFraming, createRainbowAppearance, RAINBOW_GLSL } from './rainbow.js';
 import { getSunsetState } from './sunset.js';
 import { createCloudMotionState, advanceCloudMotion, getCloudLayerSpeed } from './cloud-motion.js';
-import { createCloudTextureData } from './cloud-texture.js';
 import { SEA_HORIZON_GLSL } from './sea-horizon.js';
 import { createNightSky } from './night-sky.js';
 import { LUNAR_ECLIPSE_GLSL, getLunarEclipseSeaHorizon } from './lunar-eclipse.js';
@@ -31,19 +30,6 @@ function canvasTexture(width, height, paint) {
   paint(canvas.getContext('2d'), width, height);
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
-  return texture;
-}
-
-// Bake volume, turbulent edges and self-shadow once; sprites reuse the result.
-function cloudTexture(seed, kind = 'cumulus') {
-  const { data, width, height } = createCloudTextureData(seed, { kind });
-  const texture = new THREE.DataTexture(data, width, height, THREE.RGBAFormat);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.flipY = true;
-  texture.magFilter = THREE.LinearFilter;
-  texture.minFilter = THREE.LinearMipmapLinearFilter;
-  texture.generateMipmaps = true;
-  texture.needsUpdate = true;
   return texture;
 }
 
@@ -620,8 +606,8 @@ export function createAtmosphere(scene, { moonMap, terrainHeightAt, cloudMaps: s
   group.add(moon);
 
   const cloudKinds = ['cumulus', 'cumulus', 'tower', 'cumulus', 'altocumulus', 'cirrus', 'cumulus', 'altocumulus'];
-  const cloudSeeds = [1701, 4367, 9481, 2609, 7823, 3811, 6289, 8513];
-  const cloudMaps = suppliedCloudMaps ?? cloudSeeds.map((seed, index) => cloudTexture(seed, cloudKinds[index]));
+  const cloudMaps = suppliedCloudMaps ?? [];
+  let cloudTexturesReady = cloudMaps.length > 0;
   const ownedCloudMaps=new Set(cloudMaps);
   const clouds = [];
   for (let i = 0; i < 78; i++) {
@@ -630,9 +616,10 @@ export function createAtmosphere(scene, { moonMap, terrainHeightAt, cloudMaps: s
     const azimuth = random() * Math.PI * 2;
     const radius = 700 + random() * 1150;
     const cloud = new THREE.Sprite(new THREE.SpriteMaterial({
-      map: cloudMaps[i % cloudMaps.length], transparent: true,
-      depthWrite: false, fog: false, opacity: 0.5,
+      map: cloudMaps.length ? cloudMaps[i % cloudMaps.length] : null, transparent: true,
+      depthWrite: false, fog: false, opacity: cloudTexturesReady ? 0.5 : 0,
     }));
+    cloud.visible = cloudTexturesReady;
     addCloudSunset(cloud.material);
     const width = patches ? 530 + random() * 310 : thin ? 380 + random() * 260 : 230 + random() * 220;
     const aspect = tower ? 1.06 : thin ? .30 : patches ? .60 : .69 + random() * .18;
@@ -743,6 +730,7 @@ export function createAtmosphere(scene, { moonMap, terrainHeightAt, cloudMaps: s
   const cloudFlowDirection = new THREE.Vector2();
   const precipitationWind = new THREE.Vector3();
   const afterRain = createAfterRainState();
+  let filmActive = false, filmStartedAt = 0, afterRainTimeOffset = 0;
   let nextStrike = Infinity;
   let strikeTime = -Infinity;
   let previousStorm = 0;
@@ -758,11 +746,14 @@ export function createAtmosphere(scene, { moonMap, terrainHeightAt, cloudMaps: s
     update,
     dispose,
     setCloudMaps(maps=cloudMaps) {
-      if(disposed||!maps.length)return;
-      maps.forEach(map=>ownedCloudMaps.add(map));
+      if(disposed)return;
+      cloudTexturesReady = !!maps?.length;
+      if(!cloudTexturesReady){skyMaterial.uniforms.uTyphoonCloudStrength.value=0;skyMaterial.uniforms.uTyphoonCloudBuild.value=0;}
+      maps?.forEach(map=>ownedCloudMaps.add(map));
       clouds.forEach((cloud,index)=>{
-        const map=maps[index%maps.length];
+        const map=cloudTexturesReady ? maps[index%maps.length] : null;
         if(cloud.material.map!==map){cloud.material.map=map;cloud.material.needsUpdate=true;}
+        if(!cloudTexturesReady){cloud.visible=false;cloud.material.opacity=0;}
       });
     },
     setSnowTexture(map) {
@@ -779,6 +770,22 @@ export function createAtmosphere(scene, { moonMap, terrainHeightAt, cloudMaps: s
     setQuality(value) {
       nightSky.setQuality(value);
       precipitationQuality=value==='low'?.42:value==='medium'?.7:1;
+    },
+    getRuntimeOptions: nightSky.getRuntimeOptions,
+    setRuntimeOptions: nightSky.setRuntimeOptions,
+    beginFilm() {
+      if (filmActive) return;
+      filmActive = true; filmStartedAt = lastTime;
+      nightSky.beginFilm();
+    },
+    sampleFilm: nightSky.sampleFilm,
+    endFilm() {
+      if (!filmActive) return;
+      // 观影期间不消耗漫游彩虹寿命，也不把影片的降雨写入自然水汽记忆。
+      // 使用独立自然时钟，保留 startedAt 的事件身份，避免重新随机单双虹。
+      afterRainTimeOffset += Math.max(0, lastTime - filmStartedAt);
+      filmActive = false;
+      nightSky.endFilm();
     },
     setConstellationsVisible: nightSky.setConstellationsVisible,
     setConstellationMode: nightSky.setConstellationMode,
@@ -880,7 +887,7 @@ export function createAtmosphere(scene, { moonMap, terrainHeightAt, cloudMaps: s
     // Elapsed animation time governs only weather transitions. Sun position and
     // daylight deliberately remain immediate so scrubbing the hour feels direct.
     const dt = getAnimationDelta(time - lastTime, .15, env);
-    const weatherBlend = weatherInitialized ? 1 - Math.exp(-dt * 1.7) : 1;
+    const weatherBlend = weatherInitialized&&!env.instantFilmFrame ? 1 - Math.exp(-dt * 1.7) : 1;
     weatherInitialized = true;
     function weatherValue(key, target) {
       weatherState[key] += (target - weatherState[key]) * weatherBlend;
@@ -906,7 +913,7 @@ export function createAtmosphere(scene, { moonMap, terrainHeightAt, cloudMaps: s
     const sunset = getSunsetState({ sunHeight: physicalSunHeight, daylight, cloudiness,
       rain: rainStrength, snow: snowStrength, fog: fogStrength, storm: stormStrength, hour });
     const legacyTwilight = twilight * (1 - sunset.glow);
-    const rainbowStrength = advanceAfterRain(afterRain, time, {
+    const rainbowStrength = filmActive ? clamp(env.rainbowStrength ?? 0, 0, 1) : advanceAfterRain(afterRain, time - afterRainTimeOffset, {
       weather, daylight, cloudiness, rain: rainStrength, snow: snowStrength,
       fog: fogStrength, storm: stormStrength, sunVisibility,
     });
@@ -1019,7 +1026,7 @@ export function createAtmosphere(scene, { moonMap, terrainHeightAt, cloudMaps: s
     camera.getWorldPosition(center);
     sky.position.copy(center);
     uniforms.uRainbowStrength.value = 0;
-    uniforms.uRainbowSecondary.value = rainbowAppearance.update(afterRain.startedAt);
+    uniforms.uRainbowSecondary.value = filmActive ? 0 : rainbowAppearance.update(afterRain.startedAt);
     if (rainbowStrength > 0.001) {
       // Frame a broad double bow over the sea, with its feet lost below the horizon.
       camera.getWorldDirection(forward);
@@ -1053,7 +1060,7 @@ export function createAtmosphere(scene, { moonMap, terrainHeightAt, cloudMaps: s
     const moonIllumination = env.moonIllumination ?? 1;
     const moonElevation = Number.isFinite(env.moonAltitude) ? Math.sin(env.moonAltitude) : moonDirection.y;
     uniforms.uMoonDirection.value.copy(moonDirection);
-    uniforms.uMoonStrength.value = Math.max(moonLight,env.lunarGlowLight??0) * night * (1 - cloudiness * 0.9) * (1 - fogStrength) * lunarHalo;
+    uniforms.uMoonStrength.value = Math.max(moonLight,env.lunarGlowLight??0) * night * (1 - cloudiness * 0.9) * (1 - fogStrength) * lunarHalo*(env.moonVisibility===0?0:1);
     const bloodHalo=clamp(env.lunarBloodStrength??0,0,1);
     uniforms.uMoonHaloTint.value.setRGB(.08+.26*bloodHalo,.13-.128*bloodHalo,.2-.199*bloodHalo);
     moon.position.copy(center).addScaledVector(moonDirection, 1900);
@@ -1061,7 +1068,7 @@ export function createAtmosphere(scene, { moonMap, terrainHeightAt, cloudMaps: s
     // The broad corona needs space only during its brief initial appearance.
     // Compensate UVs and geometry together to keep the visible Moon unchanged.
     moonMaterial.uniforms.uDiscUvScale.value=(env.lunarCoronaStrength??0)>.001?4.3:1.12;
-    moon.scale.setScalar(getMoonBackdropScale(camera, innerWidth, innerHeight, moonPhase, moonDirection)*moonMaterial.uniforms.uDiscUvScale.value);
+    moon.scale.setScalar(getMoonBackdropScale(camera, innerWidth, innerHeight, moonPhase, moonDirection,env.moonDiscSize??0)*moonMaterial.uniforms.uDiscUvScale.value);
     const phaseAngle = moonPhase * Math.PI * 2;
     moonMaterial.uniforms.uLightDirection.value.set(Math.sin(phaseAngle), 0, -Math.cos(phaseAngle));
     moonMaterial.uniforms.uTint.value.copy(colors.moonTint).lerp(colors.moonrise, 0.2 * Math.exp(-Math.max(moonElevation, 0) * 12));
@@ -1090,8 +1097,8 @@ export function createAtmosphere(scene, { moonMap, terrainHeightAt, cloudMaps: s
     // storm. Repeated timestamps do not thicken or move the cloud ceiling.
     typhoonCloudBuild += (Math.max(typhoonStrength,blizzardStrength*.85)-typhoonCloudBuild)
       * (1-Math.exp(-dt*(Math.max(typhoonStrength,blizzardStrength*.85)>typhoonCloudBuild ? .095 : .25)));
-    uniforms.uTyphoonCloudStrength.value=Math.max(typhoonStrength,blizzardStrength*.75);
-    uniforms.uTyphoonCloudBuild.value=typhoonCloudBuild;
+    uniforms.uTyphoonCloudStrength.value=cloudTexturesReady ? Math.max(typhoonStrength,blizzardStrength*.75) : 0;
+    uniforms.uTyphoonCloudBuild.value=cloudTexturesReady ? typhoonCloudBuild : 0;
     uniforms.uTyphoonCloudDrift.value.fromArray(motion.offset).multiplyScalar(.003);
     uniforms.uTyphoonCloudWind.value.copy(cloudFlowDirection);
     right.setFromMatrixColumn(camera.matrixWorld, 0).normalize();
@@ -1143,7 +1150,7 @@ export function createAtmosphere(scene, { moonMap, terrainHeightAt, cloudMaps: s
       cloudSunset.uCloudSunsetFacing.value = THREE.MathUtils.smoothstep(cloudDirection.dot(sunBackdropDirection), -0.1, 0.95);
       cloudSunset.uCloudSunsetVariation.value = data.sunsetVariation;
       cloudSunset.uCloudSunsetSide.value = sunsetSide;
-      cloud.material.opacity = data.opacity * coverage * border * backdropFade * sunClearance * moonClearance
+      cloud.material.opacity = (cloudTexturesReady ? 1 : 0) * data.opacity * coverage * border * backdropFade * sunClearance * moonClearance
         * Math.max(0.42 + daylight * 0.58, sunset.glow * 0.82) * (1 - fogStrength * 0.45)
         * (1 - typhoonCloudBuild * .72);
       cloud.visible = cloud.material.opacity > 0.008;

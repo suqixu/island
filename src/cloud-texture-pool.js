@@ -8,6 +8,7 @@ export function createCloudTexturePool({defaultMaps,loadAdditional,apply}) {
     wanted=useAll;
     if(!useAll){apply(defaultMaps);return;}
     if(allMaps){apply(allMaps);return;}
+    apply(null);
     if(pending)return pending;
     pending=Promise.resolve(loadAdditional()).then(additional=>{
       if(!additional?.length)return;

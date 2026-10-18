@@ -20,7 +20,7 @@ export function createScenicMusic(context, destination, {
   let available = false, disposed = false, revision = 0, active, pending, selection;
   let candidate, candidateAt = 0, startedAt = -Infinity, outgoing, fadeEnd = 0;
   let lastStatus = '';
-  let queuedNextId, sunsetSkipped = false;
+  let queuedNextId, restoreRequest, sunsetSkipped = false;
   const playlistIds = () => musicConfig.tracks.map(track => track.id).filter(id => tracks[id]?.url);
   let permitted = false, musicPaused = playback.paused, mode = playback.defaultMode, playbackRate = playback.rate, requestedTrack, lastEnvironment = {};
   const modeLabels = Object.fromEntries(playback.modes.map(({ id, label }) => [id, label]));
@@ -182,7 +182,7 @@ export function createScenicMusic(context, destination, {
   function setPlaybackOptions(options = {}) {
     if (disposed) return;
     const changedMode = Object.hasOwn(modeLabels, options.mode) && options.mode !== mode;
-    if (changedMode || options.trackId) queuedNextId = undefined;
+    if (changedMode || options.trackId) {queuedNextId = undefined;restoreRequest=undefined;}
     if (changedMode) { mode = options.mode; candidate = undefined; }
     if (Number.isFinite(options.rate)) playbackRate = Math.min(playback.rateLimits.max, Math.max(playback.rateLimits.min, options.rate));
     if (options.trackId && tracks[options.trackId]?.url) {
@@ -208,7 +208,8 @@ export function createScenicMusic(context, destination, {
   }
   function nextTrack() {
     if (disposed) return;
-    const previous = queuedNextId ?? pending?.id ?? active?.id;
+    const previous = restoreRequest?.id ?? queuedNextId ?? pending?.id ?? active?.id;
+    restoreRequest=undefined;
     requestedTrack = undefined;
     if (mode === 'scenic' && getSunsetMusicMix(lastEnvironment) > sunsetPlaylist.mixThreshold) sunsetSkipped = true;
     cancelPending();
@@ -224,9 +225,44 @@ export function createScenicMusic(context, destination, {
     if (available) update(lastEnvironment);
     else report('paused', { id, label: selection.label });
   }
+  function restartTrack() {
+    if(disposed)return;
+    const id=restoreRequest?.id??requestedTrack??pending?.id??active?.id;if(!id)return;
+    restoreRequest=undefined;
+    offsets.set(id,0);cancelPending();queuedNextId=id;
+    if(available)update(lastEnvironment);
+  }
+  function capturePlayback() {
+    const slot=active??pending;
+    const trackId=restoreRequest?.id??slot?.id??requestedTrack??queuedNextId;
+    const offset=restoreRequest?.offset??(slot?.id===trackId?slot.element.currentTime:offsets.get(trackId))??0;
+    return {mode,rate:playbackRate,paused:musicPaused,permitted,trackId,offset,
+      offsets:[...offsets],environment:{...lastEnvironment},selection:selection?structuredClone(selection):undefined,sunsetSkipped};
+  }
+  function seekTrack(seconds){
+    if(disposed||!Number.isFinite(seconds))return;
+    const slot=pending??active;if(!slot)return;
+    if(slot.seek)slot.element.removeEventListener('loadedmetadata',slot.seek);
+    const seek=()=>{const duration=slot.element.duration;const time=Number.isFinite(duration)&&duration>0?(loops()?Math.max(0,seconds)%duration:Math.min(Math.max(0,seconds),duration)):Math.max(0,seconds);try{slot.element.currentTime=time;offsets.set(slot.id,time);}catch{}};
+    slot.seek=seek;slot.element.addEventListener('loadedmetadata',seek);seek();
+  }
+  function restorePlayback(saved) {
+    if(disposed||!saved)return;
+    revision++;available=false;
+    active=pending=outgoing=undefined;
+    for(const slot of slots)retire(slot);
+    offsets.clear();for(const [id,offset] of saved.offsets)offsets.set(id,offset);
+    mode=saved.mode;playbackRate=saved.rate;musicPaused=saved.paused;permitted=saved.permitted;
+    lastEnvironment={...saved.environment};selection=saved.selection?structuredClone(saved.selection):undefined;
+    sunsetSkipped=saved.sunsetSkipped;candidate=undefined;requestedTrack=queuedNextId=undefined;
+    restoreRequest=saved.trackId?{id:saved.trackId,offset:saved.offset}:undefined;
+    if(restoreRequest)offsets.set(restoreRequest.id,restoreRequest.offset);
+    applyAvailable(permitted&&!musicPaused);update(lastEnvironment);
+  }
   function update(env) {
     lastEnvironment = env;
     if (!available || disposed) return;
+    if(restoreRequest){const {id}=restoreRequest;restoreRequest=undefined;switchTrack(id);return;}
     if (outgoing && context.currentTime >= fadeEnd) { const old = outgoing; outgoing = undefined; retire(old); }
     if (active?.interrupted && !pending) resume();
     if (queuedNextId) {
@@ -291,5 +327,5 @@ export function createScenicMusic(context, destination, {
     offsets.delete(id);
   }
   // 有器乐主题时只播放这一条音乐链路，等待网络也不临时叠加振荡器旋律。
-  return { setAvailable, setPlaybackOptions, nextTrack, update, dispose, setTrackUrl, shouldSynthesize: () => !hasRecordings };
+  return { setAvailable, setPlaybackOptions, nextTrack, restartTrack, seekTrack, capturePlayback, restorePlayback, update, dispose, setTrackUrl, shouldSynthesize: () => !hasRecordings };
 }

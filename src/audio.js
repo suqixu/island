@@ -292,6 +292,10 @@ export function createAudio({ sunsetMusicUrl, onSunsetMusicStatus, backgroundTra
     scenicMusic?.setPlaybackOptions(options);
   }
   function nextMusicTrack() { scenicMusic?.nextTrack(); }
+  function restartMusicTrack(){scenicMusic?.restartTrack();}
+  function seekMusicTrack(seconds){scenicMusic?.seekTrack(seconds);}
+  function captureMusicPlayback(){return {playback:{...musicPlayback},engine:scenicMusic?.capturePlayback()};}
+  function restoreMusicPlayback(saved){if(!saved)return;musicPlayback={...saved.playback};scenicMusic?.restorePlayback(saved.engine);}
   function setAmbientVolume(value) { ambientVolume = value; if (ambient) ambient.gain.setTargetAtTime(value, context.currentTime, .15); }
   function setAnimationRate(rate) {
     const next = rate === 16;
@@ -351,5 +355,5 @@ export function createAudio({ sunsetMusicUrl, onSunsetMusicStatus, backgroundTra
     master = music = synthMusic = ambient = reverb = chimeReverb = waveGain = waveFilter = foamGain = foamFilter = windGain = rainGain = windFilter = rainFilter = undefined;
     waveBuffer = noiseBuffer = undefined;
   }
-  return { start, setEnabled, setMusicVolume, setMusicPlayback, nextMusicTrack, setAmbientVolume, setSunsetMusicUrl, setAnimationRate, update, thunder, wildlife, chime, dispose };
+  return { start, setEnabled, setMusicVolume, setMusicPlayback, nextMusicTrack, restartMusicTrack, seekMusicTrack, captureMusicPlayback, restoreMusicPlayback, setAmbientVolume, setSunsetMusicUrl, setAnimationRate, update, thunder, wildlife, chime, dispose };
 }

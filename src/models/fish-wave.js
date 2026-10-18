@@ -1,3 +1,4 @@
+import {attachRuntimeOptions} from '../runtime-options.js';
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import config from '../config/fish-wave.json' with { type: 'json' };
@@ -81,6 +82,22 @@ export function createFishWave(scene, { heightAt, random = Math.random, waterHei
   let settings = max, cycle = -1, anchored = false, disposed = false;
   const water = new Float32Array(15), previousCenter = new THREE.Vector3();
   let hasPreviousCenter = false;
+  let filmFrame, filmAnchor, naturalAnchor;
+  function sampleFilm(frame, context) {
+    if (!frame) {
+      if (!filmFrame) return;
+      filmFrame = undefined; filmAnchor = undefined;
+      if (naturalAnchor) {
+        center.copy(naturalAnchor.center); across.copy(naturalAnchor.across); offshore.copy(naturalAnchor.offshore);
+        for (const member of members) member.span = naturalAnchor.span;
+        anchored = naturalAnchor.anchored; cycle = naturalAnchor.cycle; naturalAnchor = undefined;
+      }
+      group.visible = false; return;
+    }
+    if (!naturalAnchor) naturalAnchor = {center:center.clone(),across:across.clone(),offshore:offshore.clone(),span:members[0].span,anchored,cycle};
+    if (filmFrame?.id !== frame.id) filmAnchor = undefined;
+    filmFrame = {...frame,camera:context.frameAt(frame.start)};
+  }
 
   function clearSight(target) {
     for (let step = 1; step < 32; step++) {
@@ -98,7 +115,7 @@ export function createFishWave(scene, { heightAt, random = Math.random, waterHei
     }
     return true;
   }
-  function place(camera) {
+  function place(camera, film = false) {
     if (!camera?.isPerspectiveCamera) return false;
     camera.updateMatrixWorld(); camera.getWorldPosition(cameraPosition);
     if (cameraPosition.y <= 1) return false;
@@ -118,7 +135,7 @@ export function createFishWave(scene, { heightAt, random = Math.random, waterHei
     let fallback = null;
     function accept(span) {
       for (const member of members) member.span = span;
-      previousCenter.copy(center); hasPreviousCenter = true;
+      if (!film) { previousCenter.copy(center); hasPreviousCenter = true; }
       return true;
     }
     for (const [x, y] of candidates) {
@@ -139,7 +156,7 @@ export function createFishWave(scene, { heightAt, random = Math.random, waterHei
           || projected.z < -1 || projected.z > 1 || !clearSight(point)) safe = false;
       }
       if (!safe) continue;
-      if (hasPreviousCenter && center.distanceTo(previousCenter) < config.placement.minimumRepeatDistance) {
+      if (!film && hasPreviousCenter && center.distanceTo(previousCenter) < config.placement.minimumRepeatDistance) {
         // If the view has only one safe patch, keep it usable as a fallback.
         fallback ??= { center: center.clone(), across: across.clone(), offshore: offshore.clone(), span };
         continue;
@@ -161,12 +178,15 @@ export function createFishWave(scene, { heightAt, random = Math.random, waterHei
   }
   function update(time, env = {}, camera) {
     if (disposed) return;
-    state.update(time, env);
-    if (state.phase === 'idle') { group.visible = false; fish.count = 0; rings.count = 0; return; }
-    if (cycle !== state.cycle) { cycle = state.cycle; anchored = place(camera); }
-    if (!anchored) { state.cancel(); group.visible = false; return; }
+    if (!filmFrame) state.update(time, env);
+    if (!filmFrame && state.phase === 'idle') { group.visible = false; fish.count = 0; rings.count = 0; return; }
+    if (filmFrame) {
+      if (filmAnchor === undefined) filmAnchor = place(filmFrame.camera, true);
+      anchored = filmAnchor;
+    } else if (cycle !== state.cycle) { cycle = state.cycle; anchored = place(camera); }
+    if (!anchored) { if (!filmFrame) state.cancel(); group.visible = false; return; }
     group.visible = true;
-    const age = state.age, fade = 1 - THREE.MathUtils.smoothstep(age, config.durationSeconds - config.fadeSeconds, config.durationSeconds);
+    const age = filmFrame ? filmFrame.progress * config.durationSeconds : state.age, fade = 1 - THREE.MathUtils.smoothstep(age, config.durationSeconds - config.fadeSeconds, config.durationSeconds);
     for (let row = 0; row < 3; row++) for (let col = 0; col < 5; col++) {
       toWorld((col - 2) * members[0].span / 4, 0, (row - 1) * 15);
       water[row * 5 + col] = waterHeightAt?.(world.x, world.z) ?? .12;
@@ -214,5 +234,5 @@ export function createFishWave(scene, { heightAt, random = Math.random, waterHei
     state.cancel(); group.removeFromParent(); group.clear(); fish.dispose(); rings.dispose();
     for (const item of [geometry, material, sprayGeometry, sprayMaterial, ringGeometry, ringMaterial]) item.dispose();
   }
-  return { group, update, setQuality, dispose, get phase() { return state.phase; } };
+  return attachRuntimeOptions({group,update,setQuality,dispose,sampleFilm,get phase(){return filmFrame?'film':state.phase;}},{fishWave:{capacity:max.fish,counts:Object.fromEntries(Object.entries(config.quality).map(([q,v])=>[q,v.fish])),batches:[{body:fish}],effects:[spray,rings]}});
 }

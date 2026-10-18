@@ -1,3 +1,4 @@
+import {createSceneCapabilities} from './scene-capabilities/index.js';
 import {createSnowSurfaceState} from './snow-surface.js';
 import {loadSnowSurface,loadSnowFlakes} from './snow-texture.js';
 import loadingConfig from './config/loading.json' with {type:'json'};
@@ -10,6 +11,12 @@ import { createSolarEclipse } from './solar-eclipse.js';
 import { createLunarEclipse, getLunarEclipseEnvironment, getLunarEclipseSeaHorizon } from './lunar-eclipse.js';
 import { getArtificialLightControls } from './artificial-light-controls.js';
 import { createSunsetBirds } from './sunset-birds.js';
+import { createWoodlandWildlife } from './woodland-wildlife.js';
+import { createRailPerches } from './woodland-habitats.js';
+import { createNightWildlife } from './night-wildlife.js';
+import { createSceneVisibility } from './scene-visibility.js';
+import { createForestVisibility } from './forest-visibility.js';
+import { createFilmScene } from './film-scene.js';
 import { createDetailFocus } from './detail-focus.js';
 import { createCameraSafety } from './camera-safety.js';
 import { getCaveCameraFloor } from './models/island-cave.js';
@@ -17,6 +24,8 @@ import { getConstellationViewFov } from './constellation-framing.js';
 import { loadRockSurface } from './rock-surface.js';
 import { loadCoastalSurfaces } from './coastal-surfaces.js';
 import { loadLeafTextures } from './leaf-texture.js';
+import {loadFlowerTexture,loadFlowerPollenTexture} from './flower-texture.js';
+import {loadSquirrelFur} from './squirrel-texture.js';
 import { loadCaveSurface } from './cave-surface.js';
 import { loadDockSurfaces, loadLighthouseSurfaces, loadPavilionRoofSurfaces, createStructureSurfaceState } from './structure-surfaces.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
@@ -56,6 +65,8 @@ import { MOON_PHASES, LUNAR_CYCLE_DAYS } from './moon.js';
 import { createDeferredPoetry } from './deferred-poetry.js';
 import { createDraggablePanel } from './draggable-panel.js';
 import { createUpdateHistory } from './update-history.js';
+import {createFilmLibraryPanel} from './film-library-panel.js';
+import {createPanelNavigation} from './panel-navigation.js';
 import { loadOptionalResource } from './resource-loading.js';
 import { createFrameLoop } from './frame-loop.js';
 import { createCleanupScope } from './cleanup-scope.js';
@@ -216,6 +227,19 @@ async function boot() {
   const fishWave = createFishWave(scene, { heightAt: island.heightAt, waterHeightAt: ocean.cameraWaterHeightAt,
     occluders: [lighthouse.group, ...restPavilions.map(pavilion => pavilion.group)] });
   cleanup.add(() => fishWave.dispose());
+  const woodlandHabitats=island.getWoodlandHabitats();
+  const woodlandLife=createWoodlandWildlife(scene,{...woodlandHabitats,
+    perches:[...woodlandHabitats.perches,...createRailPerches(restPavilions)],heightAt:island.heightAtRendered});
+  cleanup.add(()=>woodlandLife.dispose());
+  const lampHabitats=[];
+  for(const pavilion of restPavilions)pavilion.group.traverse(object=>{
+    if(object.isPointLight)lampHabitats.push({
+      sample:(time,target)=>object.getWorldPosition(target),
+      isLit:env=>!env.artificialLightsOff&&object.intensity>.1,quaternion:object.getWorldQuaternion(new THREE.Quaternion()),
+    });
+  });
+  const nightWildlife=createNightWildlife(scene,{habitats:woodlandHabitats.fireflyHabitats,lamps:lampHabitats,heightAt:island.heightAtRendered});
+  cleanup.add(()=>nightWildlife.dispose());
   const loaded = await stage('resource-wait', loadingConfig.startupStages['resource-wait'], () => resources);
   if (loaded.error) throw loaded.error;
   const [moonAsset, cloudAsset, rockAsset] = loaded.values;
@@ -360,9 +384,10 @@ async function boot() {
     pavilion.onChime = event => playSpatialEvent(event, audio?.chime);
   });
   const state = createSimulation();
+  let filmScene;
   const cloudTexturePool=createCloudTexturePool({defaultMaps:cloudMaps,
     loadAdditional:()=>loadCloudTextures({signal:startupController.signal,atlas:cloudMaps?'additional':'all'}),
-    apply:maps=>atmosphere.setCloudMaps(maps)});
+    apply:maps=>{atmosphere.setCloudMaps(maps);filmScene?.invalidate();}});
   cleanup.add(()=>cloudTexturePool.dispose());
   let lastCloudMode;
   function syncCloudTextures(mode){
@@ -384,6 +409,8 @@ async function boot() {
   // Three 0.180's bloom dispose does not release its high-pass material.
   cleanup.add(() => bloom.materialHighPassFilter.dispose());
   addPass(bloom); addPass(createScreenOutputPass());
+  const forestVisibility=createForestVisibility(island.group);cleanup.add(()=>forestVisibility.dispose());
+  const sceneVisibility=createSceneVisibility(scene);cleanup.add(()=>sceneVisibility.dispose());
   let cameraMotion = null, lastUI = 0, frames = 0, fpsTime = 0;
   let interacting = false, interactionUntil = 0;
   let quality = initialQuality.value;
@@ -435,7 +462,9 @@ async function boot() {
   $('panel-toggle').onclick = () => panel($('control-panel').classList.contains('closed'));
   $('panel-close').onclick = () => panel(false);
   cleanup.add(createDraggablePanel($('control-panel'),$('panel-drag-handle')).dispose);
-  cleanup.add(createUpdateHistory($('panel-drag-handle')).dispose);
+  const panelNavigation=createPanelNavigation($('panel-drag-handle'));cleanup.add(panelNavigation.dispose);
+  const updateHistory=createUpdateHistory($('panel-drag-handle'),{navigation:panelNavigation});cleanup.add(updateHistory.dispose);
+  const filmLibraryPanel=createFilmLibraryPanel($('panel-drag-handle'),{navigation:panelNavigation,showPanel:panel});cleanup.add(filmLibraryPanel.dispose);
   if (innerWidth <= CAMERA_CONFIG.mobileBreakpoint) panel(false);
   document.querySelectorAll('[data-season]').forEach(el => el.onclick = () => { state.seasonIndex = Number(el.dataset.season); state.seasonProgress = 0; refreshUI(); });
   document.querySelectorAll('[data-weather]').forEach(el => el.onclick = () => { selectWeather(state,el.dataset.weather); refreshUI(); });
@@ -540,30 +569,35 @@ async function boot() {
     audio?.setAnimationRate(getAnimationRate(state));
     refreshUI();
   };
+  let audioLoading;
+  async function ensureAudio(signal) {
+    if(!audio&&!audioLoading)audioLoading=import('./audio-player.js').then(({createAudio})=>{
+      if(audioDisposed)throw new Error('声音已关闭');
+      audio=createAudio(audioOptions);audio.setMusicVolume(Number($('music-volume').value));audio.setAmbientVolume(Number($('ambient-volume').value));
+      audio.setMusicPlayback({mode:musicMode,paused:musicPaused,trackId:musicMode==='scenic'?undefined:selectedTrack??musicConfig.playback.defaultTrackId});
+      audio.setAnimationRate(getAnimationRate(state));return audio;
+    }).finally(()=>{audioLoading=undefined;});
+    if(audioLoading)await audioLoading;
+    if(signal?.aborted)throw new DOMException('播放已取消','AbortError');
+    await audio.start();
+    if(signal?.aborted){audio.setEnabled(soundEnabled);throw new DOMException('播放已取消','AbortError');}
+    return audio;
+  }
+  function refreshSoundControls(){
+    $('sound-toggle').innerHTML=icon(soundEnabled?'volume':'mute');$('sound-toggle').classList.toggle('enabled',soundEnabled);
+    $('sound-toggle').setAttribute('aria-label',soundEnabled?'关闭自然声音':'开启自然声音');$('sound-toggle').setAttribute('title',soundEnabled?'关闭自然声音':'开启自然声音');updateMusicControls();
+  }
   async function toggleSound() {
     if (audioBusy) return;
     audioBusy = true;
     try {
       if (!soundEnabled) {
-        if (!audio) {
-          const { createAudio } = await import('./audio-player.js');
-          if (audioDisposed) return;
-          audio = createAudio(audioOptions);
-          audio.setMusicVolume(Number($('music-volume').value));
-          audio.setAmbientVolume(Number($('ambient-volume').value));
-          audio.setMusicPlayback({mode:musicMode,paused:musicPaused,
-            trackId:musicMode === 'scenic' ? undefined : selectedTrack ?? musicConfig.playback.defaultTrackId});
-          audio.setAnimationRate(getAnimationRate(state));
-        }
-        await audio.start();
+        await ensureAudio();
         if (audioDisposed) return;
         soundEnabled = true; toast('自然声场已开启 · 海浪、海鸟、风铃与海洋生灵');
       }
       else { audio?.setEnabled(false); soundEnabled = false; toast('声音已关闭'); }
-      $('sound-toggle').innerHTML = icon(soundEnabled ? 'volume' : 'mute');
-      $('sound-toggle').classList.toggle('enabled',soundEnabled);
-      $('sound-toggle').setAttribute('aria-label',soundEnabled ? '关闭自然声音' : '开启自然声音');
-      $('sound-toggle').setAttribute('title',soundEnabled ? '关闭自然声音' : '开启自然声音');
+      refreshSoundControls();
     } catch (error) { toast(`声音未能开启：${error.message}`); }
     finally { audioBusy = false; updateMusicControls(); }
   }
@@ -669,7 +703,7 @@ async function boot() {
       toast('已拉近 · 拖动环绕，滚轮缩放 · 点“全岛”返回');
     }});
   cleanup.add(() => detailFocus.dispose());
-  $('capture').onclick = () => {
+  function captureFrame() {
     composer.render();
     renderer.domElement.toBlob(blob => {
       if (!blob) return toast('保存失败，请稍后重试');
@@ -678,13 +712,15 @@ async function boot() {
       link.style.display = 'none'; document.body.appendChild(link); link.click(); link.remove();
       setTimeout(() => URL.revokeObjectURL(url), 60000); toast('风景照片已生成 · 请查看浏览器下载');
     });
-  };
+  }
+  $('capture').onclick = captureFrame;
   $('fullscreen').onclick = async () => {
     try { if (document.fullscreenElement) await document.exitFullscreen(); else if (document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen(); else toast('当前浏览器暂不支持全屏'); }
     catch { toast('当前浏览器暂不支持全屏'); }
   };
   function resize() {
-    camera.aspect = innerWidth / innerHeight; updateCameraFov();
+    camera.aspect = innerWidth / innerHeight;
+    if(filmScene?.active){camera.updateProjectionMatrix();filmScene.reframe();}else updateCameraFov();
     renderer.setSize(innerWidth,innerHeight); composer.setSize(innerWidth,innerHeight);
     poetry.reframe();
   }
@@ -701,6 +737,7 @@ async function boot() {
     sailboats.setQuality(quality);
     sunsetBirds.setQuality(quality);
     lagoonLife.setQuality(quality);
+    woodlandLife.setQuality(quality);nightWildlife.setQuality(quality);
     atmosphere.setQuality(quality);
     lighthouse.setQuality(quality);
     pathLamps.setQuality(quality);
@@ -710,11 +747,30 @@ async function boot() {
     bloom.enabled = next.bloom; renderer.shadowMap.enabled = next.shadows; resize();
   }
   applyQuality(initialQuality);
+  const capabilities=createSceneCapabilities({state,atmosphere,getQuality:()=>quality,applyQuality:value=>applyQuality(qualityOptions.find(q=>q.value===value)),poetry,
+    lights:{getMode:()=>artificialLightMode,setMode:value=>artificialLightMode=value},getAudio:()=>audio,
+    providers:{...island.getRuntimeProviders(),...woodlandLife.getRuntimeProviders(),night:nightWildlife,marine,lagoon:lagoonLife,fishWave,sailboat:sailboats,sunsetBird:sunsetBirds}});
+  filmScene=createFilmScene({capabilities,state,scene,camera,controls,island,woodlandLife,nightWildlife,restPavilions,views,ensureAudio,filmLibraryPanel,captureFrame,closePanel:()=>panel(false),onError:error=>toast(error.message),
+    captureExtra:()=>({cloudCover:structuredClone(cloudCover),soundEnabled,musicPaused,musicMode,selectedTrack,musicPlayback:audio?.captureMusicPlayback(),musicVolume:Number($('music-volume').value),ambientVolume:Number($('ambient-volume').value),
+      cameraMotion,moonCameraView,auroraCameraView,artificialLightMode,poetryEnabled:poetry.enabled,
+      solarMode:$('eclipse-toggle').dataset.mode,lunarMode:$('lunar-eclipse-toggle').dataset.mode}),
+    onEnter(script){cameraMotion=null;moonCameraView=false;auroraCameraView=false;artificialLightMode='auto';soundEnabled=true;musicPaused=true;musicMode='single';poetry.setEnabled(false);if(script.schemaVersion!==2){solarEclipse.setMode('off');lunarEclipse.setMode('off');}},
+    restoreExtra(saved,{elapsedAdvance}){
+      ({soundEnabled,musicPaused,musicMode,selectedTrack,cameraMotion,moonCameraView,auroraCameraView,artificialLightMode}=saved);
+      if(saved.cloudCover)Object.assign(cloudCover,saved.cloudCover,{lastTime:state.elapsed});
+      if(cameraMotion)cameraMotion.start+=elapsedAdvance;
+      if(saved.musicPlayback)audio?.restoreMusicPlayback(saved.musicPlayback);
+      else audio?.setMusicPlayback({mode:musicMode,trackId:musicMode==='scenic'?undefined:selectedTrack,paused:musicPaused});
+      audio?.setMusicVolume(saved.musicVolume);audio?.setAmbientVolume(saved.ambientVolume);audio?.setEnabled(soundEnabled);
+      poetry.setEnabled(saved.poetryEnabled);solarEclipse.setMode(saved.solarMode);lunarEclipse.setMode(saved.lunarMode);refreshSoundControls();refreshUI();
+    }});
+  cleanup.add(()=>filmScene.dispose());
   $('quality').onclick = () => {
     const next = qualityOptions[(qualityOptions.findIndex(option => option.value === quality) + 1) % qualityOptions.length];
     applyQuality(next);toast(`已切换为${next.label}画质`);
   };
   cleanup.listen(document, 'keydown',event => {
+    if(filmScene.active)return;
     if (event.target.matches('input, select, button')) return;
     if (event.key === 'Escape') panel(false);
     if (event.code === 'Space') { event.preventDefault(); state.running = !state.running; refreshUI(); }
@@ -727,13 +783,16 @@ async function boot() {
   function requestSnowTextures(env) {
     if (!detailsReady || snowTexturesRequested || !needsSnowTextures(env)) return;
     snowTexturesRequested = true;
-    deferredAssets.enqueue('snow-surface', () => loadSnowSurface({signal:startupController.signal}).then(map => snowSurface.setMap(map)), {priority:true});
-    deferredAssets.enqueue('snowflakes', () => loadSnowFlakes({signal:startupController.signal}).then(map => atmosphere.setSnowTexture(map)), {priority:true});
+    deferredAssets.enqueue('snow-surface', () => loadSnowSurface({signal:startupController.signal}).then(map => {snowSurface.setMap(map);filmScene.invalidate();}), {priority:true});
+    deferredAssets.enqueue('snowflakes', () => loadSnowFlakes({signal:startupController.signal}).then(map => {atmosphere.setSnowTexture(map);filmScene.invalidate();}), {priority:true});
   }
   let previousTime = performance.now();
   function frame(now, render = true) {
     const delta = Math.max(0, Math.min((now-previousTime)/1000,.1)); previousTime = now;
-    advanceSimulation(state,delta);
+    const filmState=filmScene.update(now);
+    // 暂停时保留最后画面；仅转屏、拖动或迟到贴图需要同步场景。
+    if(filmState.active&&filmState.paused&&!filmState.needsFrame)return;
+    if(!filmState.active)advanceSimulation(state,delta);
     if (cameraMotion) {
       const progress = Math.min((state.elapsed-cameraMotion.start)/CAMERA_CONFIG.transitionDuration,1), eased = progress*progress*(3-2*progress);
       camera.position.lerpVectors(cameraMotion.from,cameraMotion.to,eased); controls.target.lerpVectors(cameraMotion.targetFrom,cameraMotion.targetTo,eased);
@@ -741,21 +800,26 @@ async function boot() {
     }
     controls.update(delta * getAnimationRate(state));
     cameraSafety.update();
-    const baseEnv = getEnvironment(state);
+    let baseEnv = getEnvironment(state);
+    Object.assign(baseEnv,getArtificialLightControls(artificialLightMode));
+    if(filmScene.scheduled)baseEnv=filmScene.composeEnvironment(baseEnv,{phase:'base'});
+    baseEnv.instantFilmFrame=filmState.seeked;
     requestSnowTextures(baseEnv);
     syncCloudTextures(baseEnv.cloudMode);
-    baseEnv.skyCloudCover = advanceCloudCover(cloudCover, state.elapsed, baseEnv).coverage;
-    lunarEclipseState=lunarEclipse.update(delta,baseEnv);
-    const env=getLunarEclipseEnvironment(baseEnv,lunarEclipseState);
+    const coverage=advanceCloudCover(cloudCover,state.elapsed,baseEnv).coverage;
+    if(!Number.isFinite(baseEnv.skyCloudCover))baseEnv.skyCloudCover=coverage;
+    if(filmScene.scheduled)baseEnv=filmScene.composeEnvironment(baseEnv,{phase:'sky'});
+    lunarEclipseState=filmScene.scheduled?baseEnv.lunarEclipse:lunarEclipse.update(delta,baseEnv);
+    const env=filmScene.scheduled?baseEnv:getLunarEclipseEnvironment(baseEnv,lunarEclipseState);
     sunDirection.set(...env.sun).normalize(); env.sunDirection = sunDirection;
-    env.eclipse=solarEclipse.update(delta,env);
+    env.eclipse=filmScene.scheduled?baseEnv.eclipse:solarEclipse.update(delta,env);
     state.holdSunClock=env.eclipse.active||env.lunarEclipse.active;
     state.holdMoonClock=env.lunarEclipse.active;
     env.solarDaylight=env.daylight;
     env.daylight*=env.eclipse.lightFactor;
     snowSurface.uniforms.uSnowDaylight.value=env.daylight;
     snowSurface.uniforms.uSnowSeed.value=(state.windSeed??0)%4096;
-    const sunBackdrop = getSunBackdropState(camera, innerWidth, innerHeight, sunDirection);
+    const sunBackdrop = getSunBackdropState(camera, innerWidth, innerHeight, sunDirection, env.sunDiscSize);
     env.sunBackdropDirection = sunBackdrop.direction;
     env.sunAngularRadius = sunBackdrop.angularRadius*(1+env.eclipse.coverage*.8);
     env.sunFramed = sunBackdrop.framed;
@@ -763,7 +827,7 @@ async function boot() {
     renderer.toneMappingExposure = RENDERING_CONFIG.renderer.toneMappingExposure + moonlit * .30;
     env.moonDirection = getMoonBackdropDirection(camera, innerWidth, env);
     env.seaHorizon = getLunarEclipseSeaHorizon(env,getSeaHorizonState(env));
-    Object.assign(env,getArtificialLightControls(artificialLightMode));
+    if(!filmScene.scheduled)Object.assign(env,getArtificialLightControls(artificialLightMode));
     island.update(state.elapsed,env,camera); ocean.update(state.elapsed,env); audio?.update(state.elapsed,env);
     cameraSafety.update();
     marine.update(state.elapsed,env,camera);
@@ -774,10 +838,12 @@ async function boot() {
     lighthouse.update(state.elapsed,env);
     pathLamps.update(state.elapsed,env,camera);
     restPavilions.forEach(pavilion => pavilion.update(state.elapsed,env));
+    woodlandLife.update(state.elapsed,env,camera);nightWildlife.update(state.elapsed,env,camera);
     atmosphere.update(state.elapsed,env,camera);
     env.moonDiscOpacity=atmosphere.moonDiscOpacity;
     env.moonInFrame=atmosphere.moonInFrame;
     poetry.update(state.elapsed,env,Boolean(cameraMotion));
+    forestVisibility.update(camera);sceneVisibility.update();
     document.body.classList.toggle('poetry-sky', poetry.active);
     if (!render) return;
     composer.render();
@@ -805,11 +871,14 @@ async function boot() {
       // Fine ground detail is optional: let the first landscape paint before
       // downloading/decoding these maps. The island owns late-load disposal.
       detailsReady = true;
-      const enqueueDetail = (name, load, message) => deferredAssets.enqueue(name, load,
+      const enqueueDetail = (name, load, message) => deferredAssets.enqueue(name, () => Promise.resolve().then(load).then(value=>{filmScene.invalidate();return value;}),
         {onError:error => console.warn(message, error)});
       enqueueDetail('coast', () => loadCoastalSurfaces({signal:startupController.signal}).then(maps => {
         lighthouse.setStepMap(maps.stone); island.setCoastalMaps(maps);
       }), '地表细节贴图未能加载');
+      enqueueDetail('flower-petals',()=>loadFlowerTexture({signal:startupController.signal}).then(map=>island.setFlowerMap(map)),'花瓣纹理未能加载');
+      enqueueDetail('flower-pollen',()=>loadFlowerPollenTexture({signal:startupController.signal}).then(map=>island.setFlowerPollenMap(map)),'花粉纹理未能加载');
+      enqueueDetail('squirrel-fur',()=>loadSquirrelFur({signal:startupController.signal}).then(map=>woodlandLife.setFurMap(map)),'松鼠毛皮纹理未能加载');
       enqueueDetail('leaves', () => loadLeafTextures({signal:startupController.signal}).then(maps => island.setLeafMaps(maps)), '叶片细节贴图未能加载');
       enqueueDetail('cave', () => loadCaveSurface({signal:startupController.signal}).then(maps => island.setCaveMaps(maps)), '洞穴细节贴图未能加载');
       // Distant sails occupy only a few dozen pixels. Keep their lit colors
@@ -824,7 +893,7 @@ async function boot() {
     } catch (error) {
       cleanup.fail(error);
     }
-  }, { maxFps: now => interacting || now < interactionUntil || Boolean(cameraMotion) || controls.autoRotate ? RENDERING_CONFIG.frameRates.active : RENDERING_CONFIG.frameRates.idle });
+  }, { maxFps: now => filmScene.playing || interacting || now < interactionUntil || Boolean(cameraMotion) || controls.autoRotate ? RENDERING_CONFIG.frameRates.active : RENDERING_CONFIG.frameRates.idle });
   cleanup.add(() => frameLoop.dispose());
   const visibilityChanged = () => document.hidden ? frameLoop.pause() : frameLoop.start();
   cleanup.listen(document, 'visibilitychange', visibilityChanged);

@@ -1,3 +1,4 @@
+import {attachRuntimeOptions} from '../runtime-options.js';
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { createLagoonHabitats, getLagoonResidentPose } from '../lagoon-life-motion.js';
@@ -236,5 +237,5 @@ export function createLagoonLife(scene, { heightAt, seed = 7319 } = {}) {
     material.dispose(); group.clear(); api.onEvent = null;
   }
   const api = { group, update, setQuality, dispose, onEvent: null };
-  update(0); return api;
+  update(0); return attachRuntimeOptions(api,Object.fromEntries([['lagoonFish','fish',42,fish],['turtle','turtle',3,[turtles]],['crab','crab',8,[crabs]],['lobster','lobster',5,[lobsters]]].map(([id,kind,capacity,models])=>[id,{capacity,counts:Object.fromEntries(Object.entries(QUALITY).map(([q,v])=>[q,v[kind]])),batches:models.map(model=>({body:model.body,parts:Object.entries(model).filter(([key,v])=>key!=='body'&&v?.isInstancedMesh).map(([key,mesh])=>({mesh,ratio:mesh.instanceMatrix.count/model.body.instanceMatrix.count}))}))}])));
 }

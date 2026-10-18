@@ -8,6 +8,11 @@ const day = {hour:12,daylight:1,moonLight:0,weather:'sunny',season:'summer',clou
 const night = {...day,hour:22,daylight:0,moonLight:1};
 const tracks = Object.fromEntries(Object.entries({chunjiang:'春江花月夜',caiyun:'彩云追月',pingsha:'平沙落雁',mengjiang:'孟姜女哭长城',shange:'山歌好比春江水',zuguo:'我的祖国',liangzhu:'梁祝',nuerqing:'女儿情',wangningmei:'枉凝眉'}).map(([id,title])=>[id,{url:`/${id}.ogg`,title}]));
 const settle = async()=>{for(let i=0;i<5;i++)await Promise.resolve();};
+test('宣传片重播可将当前曲目从头播放，普通暂停仍保留进度',async()=>{
+  const h=harness();h.music.setPlaybackOptions({mode:'single',trackId:'chunjiang'});h.music.setAvailable(true);h.music.update(day);await settle();
+  let playing=h.elements.find(e=>!e.paused);playing.currentTime=26;h.music.setPlaybackOptions({paused:true});h.music.setPlaybackOptions({paused:false});await settle();assert.equal(playing.currentTime,26);
+  assert.equal(typeof h.music.restartTrack,'function');const previous=playing;h.music.restartTrack();await settle();playing=h.elements.find(e=>e!==previous&&!e.paused);assert.ok(playing);assert.equal(playing.currentTime,0);h.music.dispose();
+});
 function harness({ sunset = false, lighthouse = false, lighthousePlaylist = false, dock = false, cave = false, caveChant = false, caveSongs = false, pavilion = false, eastPavilion = false, islandSong = false, instrumentals = false, random = () => .15 } = {}){
   const elements=[],nodes=[];
   const context={currentTime:0,createGain(){const n={gain:{value:0,calls:[],cancelScheduledValues(){},setValueAtTime(v,t){this.value=v;this.calls.push(['set',v,t]);},linearRampToValueAtTime(v,t){this.value=v;this.calls.push(['ramp',v,t]);}},connect(){},disconnect(){this.disconnected=true;}};nodes.push(n);return n;},
@@ -21,6 +26,29 @@ function harness({ sunset = false, lighthouse = false, lighthousePlaylist = fals
   const music=api().createScenicMusic(context,{}, {tracks:{...tracks,...additions,...(caveChant?{caveChant:{url:'/dabei.mp3',title:'大悲咒'}}:{}),...(eastPavilion?{eastPavilion:{url:'/xinjing.mp3',title:'心经'}}:{}),...(pavilion?{southPavilion:{url:'/gongde.mp3',title:'功德宝山咒'}}:{}),...(cave?{cave:{url:'/jiegenghua.mp3',title:'桔梗花'}}:{}),...(dock?{dock:{url:'/songbie.mp3',title:'送别'}}:{}),...(lighthouse?{lighthouse:{url:'/yueer.mp3',title:'月儿明风儿静'}}:{}),...(sunset?{sunset:{url:'/sunset.mp3',title:'渔舟唱晚'}}:{})},mediaFactory,random,clock:()=>context.wallTime??context.currentTime,onStatus:s=>statuses.push(s)});
   return {context,elements,nodes,statuses,music};
 }
+
+test('宣传片退出恢复随景及单曲的实际模式、曲目、进度和暂停状态',async()=>{
+  for(const mode of ['scenic','single'])for(const paused of [false,true]){
+    const h=harness({random:()=>0});h.music.setPlaybackOptions({mode,rate:1.5});h.music.setAvailable(true);h.music.update(day);await settle();
+    h.elements.find(e=>!e.paused).currentTime=26;
+    if(paused)h.music.setPlaybackOptions({paused:true});
+    assert.equal(typeof h.music.capturePlayback,'function');const saved=h.music.capturePlayback();
+    h.music.setPlaybackOptions({mode:'single',trackId:'caiyun',paused:false,rate:1});await settle();h.context.currentTime=10;h.music.update(day);
+    assert.equal(typeof h.music.restorePlayback,'function');h.music.restorePlayback(saved);await settle();
+    const restored=h.music.capturePlayback();assert.equal(restored.mode,mode);assert.equal(restored.trackId,saved.trackId);assert.equal(restored.offset,26);assert.equal(restored.paused,paused);assert.equal(restored.rate,1.5);
+    assert.ok(h.elements.filter(e=>!e.paused).length===(paused?0:1));h.music.dispose();
+  }
+});
+test('恢复到暂停曲目后，用户重新选曲优先于待恢复曲目',async()=>{
+  const h=harness({random:()=>0});h.music.setAvailable(true);h.music.update(day);await settle();h.music.setPlaybackOptions({paused:true});const saved=h.music.capturePlayback();
+  h.music.setPlaybackOptions({mode:'single',trackId:'caiyun',paused:false});await settle();h.music.restorePlayback(saved);
+  h.music.setPlaybackOptions({mode:'single',trackId:'nuerqing',paused:false});await settle();assert.equal(h.music.capturePlayback().trackId,'nuerqing');h.music.dispose();
+});
+test('电影定位调整同一曲目的进度，循环曲超时取余且暂停时不会自动播放',async()=>{
+  const h=harness();h.music.setPlaybackOptions({mode:'single',trackId:'chunjiang'});h.music.setAvailable(true);h.music.update(day);await settle();
+  const playing=h.elements.find(e=>!e.paused);playing.duration=120;assert.equal(typeof h.music.seekTrack,'function');h.music.seekTrack(150);assert.equal(playing.currentTime,30);
+  h.music.setPlaybackOptions({paused:true});h.music.seekTrack(10);assert.equal(playing.currentTime,10);assert.equal(playing.paused,true);h.music.setPlaybackOptions({paused:false,rate:2});await settle();assert.equal(playing.playbackRate,2);h.music.dispose();
+});
 
 test('除落日外，各种天气昼夜均从完整普通曲库随机选第一首', async () => {
   for (const env of [day, night, {...day,weather:'rain'}, {...day,weather:'typhoon'}, {...day,season:'autumn'}]) {

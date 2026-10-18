@@ -1,3 +1,4 @@
+import {attachRuntimeOptions} from '../runtime-options.js';
 import * as THREE from 'three';
 import { getAnimationRate } from '../animation-time.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
@@ -336,7 +337,7 @@ export function createMarine(scene, { heightAt, fishSeed = Math.floor(Math.rando
     tailDummy.scale.setScalar(1); tailDummy.updateMatrix();
     rootMatrix.multiplyMatrices(matrix, tailDummy.matrix); pairMesh.tail.setMatrixAt(index, rootMatrix);
   }
-  function limitFor(kind) { return kind === 'whale' ? 1 : settings.dolphins; }
+  function limitFor(kind) { const count=kind==='whale'?1:settings.dolphins;return api.getActivityLimit?.(kind,count)??count; }
 
   function makeWaterEvent(event, record, env, now) {
     const pose = getMarinePose(event.kind, event.index, now, record.anchor, record.episode);
@@ -477,5 +478,5 @@ export function createMarine(scene, { heightAt, fishSeed = Math.floor(Math.rando
     group.clear(); geometries.clear(); materials.clear(); api.onEvent = null;
   }
   const api = { group, update, setQuality, dispose, onEvent: null };
-  return api;
+  return attachRuntimeOptions(api,{marineFish:{capacity:60,counts:Object.fromEntries(Object.entries(QUALITY).map(([q,v])=>[q,v.fish])),batches:schools.map(p=>({body:p.body,parts:[{mesh:p.tail}]}))},whale:{capacity:1,batches:[{body:animals.whale.body,parts:[{mesh:animals.whale.tail}]}]},dolphin:{capacity:4,counts:Object.fromEntries(Object.entries(QUALITY).map(([q,v])=>[q,v.dolphins])),batches:[{body:animals.dolphin.body,parts:[{mesh:animals.dolphin.tail}]}]}});
 }

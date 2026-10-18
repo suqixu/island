@@ -1,0 +1,10 @@
+{
+  "tool": "built-in image_gen",
+  "date": "2026-10-18",
+  "asset": "src/assets/textures/vegetation/squirrel-fur-albedo-v1.webp",
+  "runtimeSize": [
+    512,
+    512
+  ],
+  "prompt": "Use case: photorealistic-natural. Asset type: albedo texture for a small existing procedural 3D squirrel on an island. Primary request: a square full-bleed macro scan of soft squirrel coat fur, delicate overlapping short fur hairs, gentle strand variation and fine underfur, natural slightly russet warm gray-brown coat with subtle cream tips, no pronounced patches. Individual hair direction flows upward from bottom to top, softly irregular, small natural tufts, seamless-looking edge continuity. Orthographic surface material scan, neutral diffuse even light, no baked cast shadows or specular white lighting. Fill every pixel with fur, do not depict any squirrel, animal outline, eyes, paws, tail, background, fabric, skin, or surrounding scene. No text, frame, watermark or symbols. Refined natural fine fur surface, avoid overly coarse brush strokes or long dog hair."
+}

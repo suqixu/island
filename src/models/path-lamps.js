@@ -207,7 +207,7 @@ export function createPathLamps(scene, { layout, heightAt } = {}) {
   function update(time, environment = {}, camera) {
     if (disposed) return;
     if (environment.quality && environment.quality !== quality) setQuality(environment.quality);
-    const strength = environment.artificialLightsOff ? 0 : getLighthouseLampStrength(environment.daylight);
+    const strength = environment.artificialLightsOff ? 0 : getLighthouseLampStrength(environment.daylight)*(environment.pathLightIntensity??1);
     glow.emissiveIntensity = strength * 4.8; glass.emissiveIntensity = strength * .45;
     const budget = Math.min(POINT_BUDGET[quality], anchors.length);
     if (strength <= .0001 || budget === 0) {

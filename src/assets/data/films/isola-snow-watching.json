@@ -1,0 +1,190 @@
+{
+  "format": "isola-film",
+  "schemaVersion": 2,
+  "title": "浮屿 · 听雪",
+  "duration": 60,
+  "music": {
+    "trackId": "mengjiang",
+    "musicVolume": 0.56,
+    "ambientVolume": 0.22,
+    "fadeIn": 3,
+    "fadeOut": 4
+  },
+  "shots": [
+    {
+      "id": "01-first-snow",
+      "label": "码头初雪",
+      "description": "码头与灰蓝海面同框，缓缓仰起，以深色山影衬出最初的零星雪花。",
+      "start": 0,
+      "end": 7,
+      "landmark": "dock",
+      "camera": [
+        {"at": 0, "position": [25, 9, 43], "target": [0, 0, 0], "fov": 48},
+        {"at": 7, "position": [25, 9, 43], "target": [0, 4, 0], "fov": 48}
+      ],
+      "environment": [
+        {"at": 0, "hour": 13.5, "season": 3, "weather": "snow", "snowCover": 0.08},
+        {"at": 7, "hour": 13.5, "season": 3, "weather": "snow", "snowCover": 0.2}
+      ]
+    },
+    {
+      "id": "02-woodland-flakes",
+      "label": "林间落雪",
+      "description": "林缘缓慢横移，深色树干衬托飘雪；冬季无活动动物时使用现有林木地标。",
+      "start": 7,
+      "end": 15,
+      "landmark": "woodland",
+      "camera": [
+        {"at": 0, "position": [10, 5, 13], "target": [0, 2, 0], "fov": 50},
+        {"at": 8, "position": [7, 5, 14], "target": [0, 2, 0], "fov": 50}
+      ],
+      "environment": [
+        {"at": 0, "hour": 13.5, "season": 3, "weather": "snow", "snowCover": 0.2},
+        {"at": 8, "hour": 13.5, "season": 3, "weather": "snow", "snowCover": 0.38}
+      ]
+    },
+    {
+      "id": "03-snow-on-the-eaves",
+      "label": "亭檐渐白",
+      "description": "从南峰亭侧面轻轻推进，亭顶与石阶渐白；檐前雪渐密，海风渐强。",
+      "start": 15,
+      "end": 23,
+      "landmark": "pavilion-south",
+      "camera": [
+        {"at": 0, "position": [7, 4, 10], "target": [0, 0.5, 0], "fov": 48},
+        {"at": 8, "position": [6, 3.6, 8.5], "target": [0, 0.5, 0], "fov": 46}
+      ],
+      "environment": [
+        {"at": 0, "hour": 13.5, "season": 3, "weather": "snow", "snowCover": 0.38},
+        {"at": 8, "hour": 13.5, "season": 3, "weather": "snow", "snowCover": 0.55}
+      ]
+    },
+    {
+      "id": "04-island-in-a-blizzard",
+      "label": "风雪漫岛",
+      "description": "固定全岛远景，暴风雪斜扫山林；云雾压低，岛屿轮廓时隐时现，整段留白无字幕。",
+      "start": 23,
+      "end": 31,
+      "landmark": "island",
+      "camera": [{"at": 0, "position": [135, 50, 170], "target": [0, 5, 0], "fov": 55}],
+      "environment": [
+        {"at": 0, "hour": 13.5, "season": 3, "weather": "blizzard", "snowCover": 0.55},
+        {"at": 8, "hour": 13.5, "season": 3, "weather": "blizzard", "snowCover": 0.8}
+      ]
+    },
+    {
+      "id": "05-waves-through-the-snow",
+      "label": "雪浪拍岸",
+      "description": "礁岸低机位让岸线与外海同框，固定观看暴风雪带动的大浪与拍岸浪沫，保留足够海面安全高度。",
+      "start": 31,
+      "end": 40,
+      "landmark": "reef",
+      "camera": [{"at": 0, "position": [26, 10, 25], "target": [0, 1, 0], "fov": 58}],
+      "environment": [
+        {"at": 0, "hour": 13.5, "season": 3, "weather": "blizzard", "snowCover": 0.8},
+        {"at": 9, "hour": 13.5, "season": 3, "weather": "blizzard", "snowCover": 0.92}
+      ]
+    },
+    {
+      "id": "06-a-light-in-the-snow",
+      "label": "暮雪亮灯",
+      "description": "回到南峰亭旁，风雪渐缓，暮色连续转为冷蓝；亭灯自然亮起，镜头轻轻后退。",
+      "start": 40,
+      "end": 49,
+      "landmark": "pavilion-south",
+      "camera": [
+        {"at": 0, "position": [6, 3.6, 8.5], "target": [0, 0.5, 0], "fov": 46},
+        {"at": 9, "position": [7, 3.8, 10], "target": [0, 0.5, 0], "fov": 48}
+      ],
+      "environment": [
+        {"at": 0, "hour": 13.5, "season": 3, "weather": "snow", "snowCover": 0.92},
+        {"at": 9, "hour": 18.9, "season": 3, "weather": "snow", "snowCover": 0.95}
+      ]
+    },
+    {
+      "id": "07-stay-and-watch",
+      "label": "灯下听雪",
+      "description": "延续亭边同向构图缓缓退开，最后六秒固定观看暖灯、积雪与远海，末三秒无字幕，片尾淡黑。",
+      "start": 49,
+      "end": 60,
+      "landmark": "pavilion-south",
+      "camera": [
+        {"at": 0, "position": [7, 3.8, 10], "target": [0, 0.5, 0], "fov": 48},
+        {"at": 5, "position": [8, 4, 12], "target": [0, 0.5, 0], "fov": 48}
+      ],
+      "environment": [
+        {"at": 0, "hour": 18.9, "season": 3, "weather": "snow", "snowCover": 0.95},
+        {"at": 11, "hour": 19.2, "season": 3, "weather": "snow", "snowCover": 0.95}
+      ]
+    }
+  ],
+  "captions": [
+    {"start": 1, "end": 5.5, "text": "你喜欢看雪吗？", "style": "body"},
+    {"start": 8, "end": 13.5, "text": "雪落下来，远方渐渐白了。", "style": "body"},
+    {"start": 16, "end": 21.5, "text": "风，从海上来了。", "style": "body"},
+    {"start": 33, "end": 38.5, "text": "山海之间，风雪正急。", "style": "body"},
+    {"start": 43, "end": 48, "text": "直到风慢下来，灯亮起来。", "style": "body"},
+    {"start": 51, "end": 57, "text": "今晚，就在这里看雪。", "style": "ending"}
+  ],
+  "tracks": [
+    {"capability": "scene.cloudMode", "keyframes": [{"at": 0, "value": "many"}]},
+    {"capability": "environment.snow", "interpolation": "smooth", "keyframes": [
+      {"at": 0, "value": 0.12}, {"at": 7, "value": 0.32}, {"at": 15, "value": 0.48},
+      {"at": 23, "value": 0.95}, {"at": 26, "value": 1}, {"at": 39, "value": 1},
+      {"at": 44, "value": 0.45}, {"at": 49, "value": 0.24}, {"at": 60, "value": 0.2}
+    ]},
+    {"capability": "environment.windSpeed", "interpolation": "smooth", "keyframes": [
+      {"at": 0, "value": 3}, {"at": 14, "value": 5}, {"at": 22, "value": 26},
+      {"at": 25, "value": 46}, {"at": 31, "value": 52}, {"at": 38, "value": 52},
+      {"at": 40, "value": 30}, {"at": 46, "value": 6}, {"at": 51, "value": 3}, {"at": 60, "value": 3}
+    ]},
+    {"capability": "environment.gust", "interpolation": "smooth", "keyframes": [
+      {"at": 0, "value": 0.08}, {"at": 15, "value": 0.18}, {"at": 23, "value": 0.76},
+      {"at": 28, "value": 0.94}, {"at": 33, "value": 0.8}, {"at": 37, "value": 0.96},
+      {"at": 40, "value": 0.65}, {"at": 47, "value": 0.14}, {"at": 60, "value": 0.08}
+    ]},
+    {"capability": "environment.windDirection", "keyframes": [{"at": 0, "value": [-0.8, 0.6]}]},
+    {"capability": "environment.cloudiness", "interpolation": "smooth", "keyframes": [
+      {"at": 0, "value": 0.62}, {"at": 15, "value": 0.78}, {"at": 23, "value": 1},
+      {"at": 40, "value": 1}, {"at": 49, "value": 0.65}, {"at": 60, "value": 0.6}
+    ]},
+    {"capability": "environment.skyCloudCover", "interpolation": "smooth", "keyframes": [
+      {"at": 0, "value": 0.65}, {"at": 23, "value": 1}, {"at": 40, "value": 1},
+      {"at": 49, "value": 0.7}, {"at": 60, "value": 0.65}
+    ]},
+    {"capability": "environment.fog", "interpolation": "smooth", "keyframes": [
+      {"at": 0, "value": 0.08}, {"at": 15, "value": 0.16}, {"at": 25, "value": 0.4},
+      {"at": 30, "value": 0.4}, {"at": 32, "value": 0.24}, {"at": 39, "value": 0.24},
+      {"at": 47, "value": 0.1}, {"at": 60, "value": 0.08}
+    ]},
+    {"capability": "environment.rain", "keyframes": [{"at": 0, "value": 0}]},
+    {"capability": "environment.storm", "keyframes": [{"at": 0, "value": 0}]},
+    {"capability": "scene.motionRate", "keyframes": [{"at": 0, "value": 1}]},
+    {"capability": "audio.ambientVolume", "interpolation": "smooth", "keyframes": [
+      {"at": 0, "value": 0.18}, {"at": 15, "value": 0.22}, {"at": 25, "value": 0.48},
+      {"at": 31, "value": 0.58}, {"at": 39, "value": 0.58}, {"at": 47, "value": 0.2},
+      {"at": 56, "value": 0.12}, {"at": 60, "value": 0.08}
+    ]},
+    {"capability": "lights.mode", "keyframes": [{"at": 0, "value": "auto"}]},
+    {"capability": "lights.pavilion.enabled", "keyframes": [{"at": 0, "value": true}]},
+    {"capability": "lights.pavilion.intensity", "keyframes": [{"at": 0, "value": 1}]},
+    {"capability": "sky.moon.enabled", "keyframes": [{"at": 0, "value": false}]},
+    {"capability": "sky.stars.enabled", "keyframes": [{"at": 0, "value": false}]},
+    {"capability": "sky.milkyWay.enabled", "keyframes": [{"at": 0, "value": false}]},
+    {"capability": "sky.constellation.mode", "keyframes": [{"at": 0, "value": "off"}]},
+    {"capability": "sky.meteor.mode", "keyframes": [{"at": 0, "value": "off"}]},
+    {"capability": "sky.comet.mode", "keyframes": [{"at": 0, "value": "off"}]},
+    {"capability": "sky.aurora.mode", "keyframes": [{"at": 0, "value": "off"}]},
+    {"capability": "sky.solarEclipse.mode", "keyframes": [{"at": 0, "value": "off"}]},
+    {"capability": "sky.lunarEclipse.mode", "keyframes": [{"at": 0, "value": "off"}]},
+    {"capability": "presentation.poetry", "keyframes": [{"at": 0, "value": false}]},
+    {"capability": "wildlife.marineFish.enabled", "keyframes": [{"at": 0, "value": false}]},
+    {"capability": "wildlife.whale.enabled", "keyframes": [{"at": 0, "value": false}]},
+    {"capability": "wildlife.dolphin.enabled", "keyframes": [{"at": 0, "value": false}]},
+    {"capability": "wildlife.seaBird.enabled", "keyframes": [{"at": 0, "value": false}]},
+    {"capability": "wildlife.sunsetBird.enabled", "keyframes": [{"at": 0, "value": false}]},
+    {"capability": "wildlife.fishWave.enabled", "keyframes": [{"at": 0, "value": false}]},
+    {"capability": "wildlife.sailboat.enabled", "keyframes": [{"at": 0, "value": false}]}
+  ],
+  "clips": []
+}

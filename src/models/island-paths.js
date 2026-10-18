@@ -10,6 +10,9 @@ import { REST_PAVILION_SITES } from '../rest-pavilion-layout.js';
 import { createCoastalSurfaceUniforms, COASTAL_SURFACE_GLSL } from '../coastal-surfaces.js';
 import { getVegetationFlex, createVegetationWindState, advanceVegetationWind,
   configureVegetationWindShader } from '../vegetation-motion.js';
+import { createFlowerAnchors } from '../flower-anchors.js';
+import {markPetalTexture,attachFlowerTexture} from '../flower-texture.js';
+import butterflyConfig from '../config/butterflies.json' with { type: 'json' };
 
 const area = (a, b, c) => (b.x - a.x) * (c.z - a.z) - (b.z - a.z) * (c.x - a.x);
 const MAX_RISER = .195;
@@ -928,18 +931,23 @@ function grassGeometry() {
   geometry.computeVertexNormals(); return geometry;
 }
 
+const FLOWER_STEMS = (() => {
+  const random = seededRandom(27031);
+  return Array.from({ length: 3 }, () => ({ x: (random() - .5) * .24, z: (random() - .5) * .24, y: .24 + random() * .14 }));
+})();
+
 function flowerGeometry() {
-  const parts = [], random = seededRandom(27031);
+  const parts = [];
   for (let stem = 0; stem < 3; stem++) {
-    const x = (random() - .5) * .24, z = (random() - .5) * .24, y = .24 + random() * .14;
+    const { x, z, y } = FLOWER_STEMS[stem];
     const stalk = colored(new THREE.CylinderGeometry(.008, .013, y, 4, 4), '#718447');
-    stalk.translate(x, y * .5, z); parts.push(stalk);
-    const center = colored(new THREE.SphereGeometry(.025, 5, 3), '#d4ac42'); center.translate(x, y, z); parts.push(center);
+    stalk.translate(x, y * .5, z); parts.push(markPetalTexture(stalk,false));
+    const center = colored(new THREE.SphereGeometry(.025, 5, 3), '#d4ac42'); center.translate(x, y, z); parts.push(markPetalTexture(center,false));
     for (let petal = 0; petal < 5; petal++) {
       const angle = petal / 5 * Math.PI * 2;
       const shape = colored(new THREE.CircleGeometry(.045, 6), stem === 1 ? '#e9c0cc' : '#eee5c1');
       shape.rotateX(-Math.PI / 2); shape.scale(.72, 1, 1.15); shape.rotateY(angle);
-      shape.translate(x + Math.sin(angle) * .034, y, z + Math.cos(angle) * .034); parts.push(shape);
+      shape.translate(x + Math.sin(angle) * .034, y, z + Math.cos(angle) * .034); parts.push(markPetalTexture(shape,true));
     }
   }
   const geometry = mergeGeometries(parts); for (const part of parts) part.dispose();
@@ -992,7 +1000,7 @@ function decorations(layout, heightAt) {
 }
 
 /** One merged road plus reusable instanced border plants and loose gravel. */
-export function* createIslandPathsGenerator(parent, { heightAt = terrainHeight, layout = getIslandPathLayout({ heightAt }), windUniforms } = {}) {
+export function* createIslandPathsGenerator(parent, { heightAt = terrainHeight, layout = getIslandPathLayout({ heightAt }), windUniforms,flowerTexture } = {}) {
   const group = new THREE.Group(); group.name = '环岛小路与山间步道'; parent.add(group);
   const geometries = new Set(), materials = new Set(), textures = new Set(), instances = [];
   const snow = { value: 0 }, winter=windUniforms?.uFoliageWinter??{value:0};
@@ -1049,6 +1057,7 @@ export function* createIslandPathsGenerator(parent, { heightAt = terrainHeight, 
   };
   const grass = instanced(grassGeometry(), plantMaterial(.94), planting.grass, '路旁低矮草簇');
   const flowers = instanced(flowerGeometry(), plantMaterial(.91), planting.flowers, '路旁细小野花');
+  attachFlowerTexture(flowers.material,flowerTexture);
   grass.customDepthMaterial = flowers.customDepthMaterial = plantDepth;
   const pebbles = instanced(new THREE.IcosahedronGeometry(1, 0), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: .96 }), planting.pebbles, '路旁零散碎石', true);
   let disposed = false;
@@ -1082,7 +1091,13 @@ export function* createIslandPathsGenerator(parent, { heightAt = terrainHeight, 
     roadTriangles: road.geometry.attributes.position.count / 3, steps: stonework[0].stairs,
     platforms: stonework[0].platforms, supports: stonework[1].count,
     grass: planting.grass.length, flowers: planting.flowers.length, pebbles: planting.pebbles.length };
-  update(0); return { group, update, dispose, counts };
+  update(0); return { group, update, dispose, counts,
+    getFlowerAnchors: () => {
+      const { x, y, z } = FLOWER_STEMS[0];
+      return createFlowerAnchors(flowers, plantUniforms, { point: new THREE.Vector3(x, y + .025, z),
+        flex: getVegetationFlex('ground', (y + .025) / .24), limit: butterflyConfig.anchorsPerMeadow });
+    },
+  };
 }
 
 /** Synchronous callers consume the same batches used by cooperative startup. */

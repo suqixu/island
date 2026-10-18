@@ -2,6 +2,7 @@ import { DEFAULTS } from './runtime-config.js';
 import * as THREE from 'three';
 import {getAnimationRate} from './animation-time.js';
 import {clearCloudCoverForPreview} from './cloud-cover.js';
+import {filmRandom,getFilmView} from './meteor-film-sampling.js';
 
 const schedule=DEFAULTS.sky.schedules.aurora;
 const clamp=THREE.MathUtils.clamp,smooth=THREE.MathUtils.smoothstep;
@@ -98,6 +99,7 @@ const fragmentShader=/* glsl */`
  * Only winter clear-night time counts toward the natural event schedule.
  */
 export function createAurora({random=Math.random}={}){
+  let filmControl,filmContext={},filmView,savedUniforms,runtimeOptions={},savedRuntime;
   const group=new THREE.Group();group.name='aurora';group.visible=false;
   const positions=[],uvs=[],indices=[],columns=48,rows=4;
   for(let lane=0;lane<3;lane++){
@@ -138,6 +140,13 @@ export function createAurora({random=Math.random}={}){
     const night=1-smooth(clamp(env.daylight??1,0,1),.015,.22);
     const cover=clamp(Math.max(env.cloudiness??.12,env.skyCloudCover??0),0,1);
     const visibility=winter&&clear?night*(1-smooth(cover,.22,.86))*(1-clamp(env.fog??0,0,1)):0;
+    if(filmControl!==undefined){
+      if(!filmControl){group.visible=false;uniforms.uOpacity.value=0;return;}
+      const p={...runtimeOptions,...filmControl.parameters},r=filmRandom(filmContext.seed??0,filmControl.id),v=filmView??view;
+      v.getWorldDirection(heading);uniforms.uBearing.value=Math.atan2(heading.z,heading.x)+(r()-.5)*.24;
+      uniforms.uSeed.value=r()*Math.PI*2;uniforms.uShape.value=Math.max(0,['curtain','arc','pillars','crown'].indexOf(p.shape??'curtain'));uniforms.uPalette.value=r();uniforms.uFold.value=.65+r()*.8;uniforms.uRayDensity.value=105+r()*95;
+      uniforms.uTime.value=filmControl.localTime;uniforms.uOpacity.value=visibility*.72*(p.brightness??1);group.visible=uniforms.uOpacity.value>.001;return;
+    }
     if(mode==='off'||visibility<.005){group.visible=false;uniforms.uOpacity.value=0;return;}
     if(!active&&(mode==='instant'||clock>=startsAt)){
       active=true;age=mode==='instant'?8:0;duration=schedule.duration.min+sample()*schedule.duration.range;
@@ -156,7 +165,11 @@ export function createAurora({random=Math.random}={}){
   }
   function setQuality(value){uniforms.uDetail.value=value==='low'?0:1;}
   function dispose(){if(disposed)return;disposed=true;group.visible=false;geometry.dispose();material.dispose();group.removeFromParent();group.clear();}
-  return{group,update,setMode,setQuality,dispose};
+  return{group,update,setMode,setQuality,dispose,getRuntimeOptions:()=>({...runtimeOptions,mode}),setRuntimeOptions(patch){if(patch.shape!==undefined&&!['curtain','arc','pillars','crown'].includes(patch.shape))throw new Error('未知极光形态');if(patch.brightness!==undefined&&(!Number.isFinite(patch.brightness)||patch.brightness<0||patch.brightness>4))throw new Error('极光强度越界');runtimeOptions={...runtimeOptions,...patch};},
+    beginFilm(){if(filmControl!==undefined)return;savedUniforms=Object.fromEntries(Object.entries(uniforms).map(([k,u])=>[k,u.value]));savedRuntime={...runtimeOptions};filmControl=null;},
+    sampleFilm(frame,context={}){if(frame&&(!filmControl||frame.id!==filmControl.id))filmView=getFilmView(frame,context,context.frameAt(frame.start));filmControl=frame;filmContext=context;},
+    endFilm(){if(filmControl===undefined)return;for(const [key,value]of Object.entries(savedUniforms))uniforms[key].value=value;runtimeOptions=savedRuntime;filmControl=undefined;filmView=undefined;lastTime=undefined;group.visible=false;},
+  };
 }
 
 /** Prepare the existing simulation state for a visible instant preview. */

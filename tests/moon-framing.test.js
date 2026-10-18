@@ -277,3 +277,9 @@ test('满月保留原尺寸公式，自动过渡的世界尺寸也连续', () =>
     }
   }
 });
+test('影片完整构图保持月盘边界在安全区域，连续月相可固定画面尺寸',()=>{for(const [width,height]of [[1280,720],[390,780],[320,700]]){
+ const camera=new THREE.PerspectiveCamera(50,width/height,.5,65000);camera.position.set(0,20,60);camera.lookAt(0,0,0);camera.updateMatrixWorld();
+ const env={moonAltitude:.5,moonPhase:.5,moonFraming:'complete',moonDiscSize:90};const direction=framing.getMoonBackdropDirection(camera,width,env),point=camera.position.clone().addScaledVector(direction,1900).project(camera);
+ assert.ok(point.y+90/height<.84);assert.ok(point.x+90/width<.95);
+ const a=framing.getMoonBackdropScale(camera,width,height,0,direction,90),b=framing.getMoonBackdropScale(camera,width,height,.5,direction,90);near(a,b);
+}});

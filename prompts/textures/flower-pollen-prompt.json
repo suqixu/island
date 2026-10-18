@@ -1,0 +1,10 @@
+{
+  "tool": "built-in image_gen",
+  "date": "2026-10-18",
+  "asset": "src/assets/textures/vegetation/flower-pollen-albedo-v1.webp",
+  "runtimeSize": [
+    512,
+    512
+  ],
+  "prompt": "Use case: photorealistic-natural. Asset type: neutral albedo surface texture for the tiny central pollen disk of existing 3D flowers in a real-time island. A square, full-bleed, orthographic macro material scan of a naturally irregular densely packed flower center: many very small soft oval anthers dusted with fine pollen and tiny granular florets, subtle organic size variation, delicate granular details clearly readable at close range. Short dense clustered structures, no long stalks or rods. Neutral ivory and pale cream monochromatic coloration so a shader can tint the surface white, pink, soft red or yellow. Soft diffuse flat lighting, gentle natural dark crevices to describe the tiny particles, no large directional shadow, no glossy beads. Fill the entire square from edge to edge with the fine botanical pollen tissue, no isolated circular object and no surrounding blank area. No petals, leaves, stems, entire flower, field, background scene, text, frame or watermark. Not jewelry, not pearls, not foam, not a honeycomb, not a mushroom. Opaque material texture, natural finely detailed pollen surface."
+}

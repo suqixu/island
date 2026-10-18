@@ -1,0 +1,184 @@
+{
+  "format": "isola-film",
+  "schemaVersion": 2,
+  "title": "浮屿 · 观云",
+  "duration": 60,
+  "music": {
+    "trackId": "caiyun",
+    "musicVolume": 0.54,
+    "ambientVolume": 0.1,
+    "fadeIn": 2,
+    "fadeOut": 3
+  },
+  "shots": [
+    {
+      "id": "01-clear-sky",
+      "label": "万里无云",
+      "description": "从海面上方仰望澄澈蓝天，远山只留在画面下缘；云量明确为零，字幕轻问开场。",
+      "start": 0,
+      "end": 6,
+      "landmark": "island",
+      "camera": [
+        {"at": 0, "position": [0, 9, 230], "target": [0, 180, -600], "fov": 52},
+        {"at": 6, "position": [0, 9, 230], "target": [0, 260, -600], "fov": 52}
+      ],
+      "environment": [{"at": 0, "hour": 12, "season": 1, "weather": "sunny", "snowCover": 0}]
+    },
+    {
+      "id": "02-feather-clouds",
+      "label": "轻云舒展",
+      "description": "略向高处观看，云从稀疏处渐渐显露，缓慢横移中保留大片蓝天。",
+      "start": 6,
+      "end": 12,
+      "landmark": "island",
+      "camera": [
+        {"at": 0, "position": [0, 9, 230], "target": [0, 340, -600], "fov": 56},
+        {"at": 6, "position": [0, 9, 230], "target": [65, 350, -600], "fov": 54}
+      ],
+      "environment": [{"at": 0, "hour": 12, "season": 1, "weather": "sunny", "snowCover": 0}]
+    },
+    {
+      "id": "03-slow-afternoon",
+      "label": "白云慢行",
+      "description": "固定广角观看白云层次，正常风速与较慢的场景运动让午后停留。",
+      "start": 12,
+      "end": 19,
+      "landmark": "island",
+      "camera": [{"at": 0, "position": [0, 9, 230], "target": [0, 240, -600], "fov": 56}],
+      "environment": [{"at": 0, "hour": 13.2, "season": 1, "weather": "sunny", "snowCover": 0}]
+    },
+    {
+      "id": "04-clouds-in-a-hurry",
+      "label": "云逐风行",
+      "description": "延续上一镜的固定构图；只加快风与场景运动，字幕和音乐仍按正常影片时间推进。",
+      "start": 19,
+      "end": 25,
+      "landmark": "island",
+      "camera": [{"at": 0, "position": [0, 9, 230], "target": [0, 240, -600], "fov": 56}],
+      "environment": [{"at": 0, "hour": 13.2, "season": 1, "weather": "sunny", "snowCover": 0}]
+    },
+    {
+      "id": "05-sea-of-clouds",
+      "label": "云间如海",
+      "description": "升至现有云层之间，缓缓向前；利用既有高低云群形成层次，不新增山体或云模型。",
+      "start": 25,
+      "end": 32,
+      "landmark": "island",
+      "camera": [
+        {"at": 0, "position": [0, 260, 230], "target": [0, 520, -600], "fov": 60},
+        {"at": 7, "position": [0, 260, 195], "target": [0, 520, -635], "fov": 58}
+      ],
+      "environment": [{"at": 0, "hour": 14.5, "season": 1, "weather": "cloudy", "snowCover": 0}]
+    },
+    {
+      "id": "06-dark-clouds",
+      "label": "黑云压顶",
+      "description": "回到低处仰望，乌云渐浓，短促的风云运动后留出压低的停顿；不加入降雨或降雪。",
+      "start": 32,
+      "end": 39,
+      "landmark": "island",
+      "camera": [{"at": 0, "position": [0, 9, 230], "target": [0, 350, -600], "fov": 64}],
+      "environment": [{"at": 0, "hour": 16.8, "season": 1, "weather": "typhoon", "snowCover": 0}]
+    },
+    {
+      "id": "07-evening-colours",
+      "label": "满天云霞",
+      "description": "风势放缓，乌云色逐渐退去；黄昏金红霞光染上不同云形，镜头缓慢拉开。",
+      "start": 39,
+      "end": 47,
+      "landmark": "island",
+      "camera": [
+        {"at": 0, "position": [0, 9, 230], "target": [0, 270, -600], "fov": 48},
+        {"at": 8, "position": [0, 9, 250], "target": [0, 240, -600], "fov": 66}
+      ],
+      "environment": [
+        {"at": 0, "hour": 17.8, "season": 1, "weather": "sunny", "snowCover": 0},
+        {"at": 8, "hour": 18.55, "season": 1, "weather": "sunny", "snowCover": 0}
+      ]
+    },
+    {
+      "id": "08-moon-arrives",
+      "label": "月夜赴约",
+      "description": "暮色转入月夜，保持完整月盘构图；薄云缓慢移动，星光克制地陪衬。",
+      "start": 47,
+      "end": 54,
+      "landmark": "moon",
+      "camera": [
+        {"at": 0, "position": [150, -41, 200], "target": [0, 0, 0], "fov": 58},
+        {"at": 7, "position": [150, -41, 200], "target": [0, 0, 0], "fov": 52}
+      ],
+      "environment": [
+        {"at": 0, "hour": 20.4, "season": 1, "weather": "sunny", "snowCover": 0},
+        {"at": 7, "hour": 22, "season": 1, "weather": "sunny", "snowCover": 0}
+      ]
+    },
+    {
+      "id": "09-clouds-chase-the-moon",
+      "label": "彩云追月",
+      "description": "同向固定机位停留，银蓝云层在月光下轻行；收尾降低云量，完整露月，末两秒留给片尾与音乐。",
+      "start": 54,
+      "end": 60,
+      "landmark": "moon",
+      "camera": [{"at": 0, "position": [150, -41, 200], "target": [0, 0, 0], "fov": 52}],
+      "environment": [{"at": 0, "hour": 22, "season": 1, "weather": "sunny", "snowCover": 0}]
+    }
+  ],
+  "captions": [
+    {"start": 1, "end": 4.5, "text": "你喜欢看云吗？", "style": "body"},
+    {"start": 6.8, "end": 11.5, "text": "天空那么大，一缕云，就有了远方。", "style": "body"},
+    {"start": 12.8, "end": 18.3, "text": "有的云很慢，像一个不愿结束的午后。", "style": "body"},
+    {"start": 19.7, "end": 24.5, "text": "有的云很急，像风捎来了谁的消息。", "style": "body"},
+    {"start": 25.6, "end": 31.5, "text": "经过山巅，又漫过山谷，把自己，流成了一片海。", "style": "body"},
+    {"start": 32.8, "end": 36.8, "text": "也有一些时候，云很低，天很暗。", "style": "body"},
+    {"start": 39.8, "end": 46.3, "text": "直到一束光穿过云隙，满天的心事，都染上了霞色。", "style": "body"},
+    {"start": 47.8, "end": 53.4, "text": "晚霞渐渐睡去，月亮，便来赴约。", "style": "body"},
+    {"start": 54.7, "end": 58, "text": "你看，云追着月亮，夜也温柔起来。", "style": "body"},
+    {"start": 58, "end": 60, "text": "看云，也看时光。", "style": "ending"}
+  ],
+  "tracks": [
+    {"capability": "scene.cloudMode", "keyframes": [{"at": 0, "value": "many"}]},
+    {"capability": "environment.skyCloudCover", "interpolation": "smooth", "keyframes": [
+      {"at": 0, "value": 0}, {"at": 6, "value": 0}, {"at": 8.5, "value": 0.3},
+      {"at": 12, "value": 0.62}, {"at": 24.5, "value": 0.62}, {"at": 27, "value": 0.92},
+      {"at": 32, "value": 0.92}, {"at": 34, "value": 1}, {"at": 38, "value": 1},
+      {"at": 41, "value": 0.9}, {"at": 46.5, "value": 0.9}, {"at": 49, "value": 0.48},
+      {"at": 54, "value": 0.48}, {"at": 58, "value": 0.18}, {"at": 60, "value": 0.18}
+    ]},
+    {"capability": "environment.cloudiness", "interpolation": "smooth", "keyframes": [
+      {"at": 0, "value": 0.06}, {"at": 24.5, "value": 0.12}, {"at": 28, "value": 0.45},
+      {"at": 32, "value": 0.75}, {"at": 34, "value": 1}, {"at": 38, "value": 1},
+      {"at": 41, "value": 0.3}, {"at": 46.5, "value": 0.3}, {"at": 49, "value": 0.14},
+      {"at": 60, "value": 0.08}
+    ]},
+    {"capability": "scene.motionRate", "interpolation": "smooth", "keyframes": [
+      {"at": 0, "value": 0.6}, {"at": 18.5, "value": 0.6}, {"at": 19.5, "value": 8},
+      {"at": 24, "value": 8}, {"at": 25.5, "value": 0.8}, {"at": 31.5, "value": 0.8},
+      {"at": 33, "value": 5}, {"at": 36, "value": 5}, {"at": 38.5, "value": 0.6},
+      {"at": 60, "value": 0.6}
+    ]},
+    {"capability": "environment.windSpeed", "interpolation": "smooth", "keyframes": [
+      {"at": 0, "value": 2}, {"at": 18.5, "value": 2}, {"at": 19.5, "value": 22},
+      {"at": 24, "value": 22}, {"at": 26, "value": 4}, {"at": 31.5, "value": 4},
+      {"at": 33, "value": 20}, {"at": 36, "value": 20}, {"at": 39.5, "value": 3},
+      {"at": 60, "value": 3}
+    ]},
+    {"capability": "environment.windDirection", "keyframes": [{"at": 0, "value": [1, 0.15]}]},
+    {"capability": "environment.storm", "keyframes": [{"at": 0, "value": 0}]},
+    {"capability": "environment.rain", "keyframes": [{"at": 0, "value": 0}]},
+    {"capability": "environment.snow", "keyframes": [{"at": 0, "value": 0}]},
+    {"capability": "environment.fog", "keyframes": [{"at": 0, "value": 0.015}]},
+    {"capability": "sky.moon.enabled", "keyframes": [{"at": 0, "value": false}, {"at": 47, "value": true}]},
+    {"capability": "sky.moon.framing", "keyframes": [{"at": 0, "value": "complete"}]},
+    {"capability": "scene.moonPhase", "keyframes": [{"at": 0, "value": 0.5}]},
+    {"capability": "sky.stars.brightness", "keyframes": [{"at": 0, "value": 0.22}]},
+    {"capability": "sky.milkyWay.enabled", "keyframes": [{"at": 0, "value": false}]},
+    {"capability": "sky.constellation.mode", "keyframes": [{"at": 0, "value": "off"}]},
+    {"capability": "sky.meteor.mode", "keyframes": [{"at": 0, "value": "off"}]},
+    {"capability": "sky.comet.mode", "keyframes": [{"at": 0, "value": "off"}]},
+    {"capability": "sky.aurora.mode", "keyframes": [{"at": 0, "value": "off"}]},
+    {"capability": "sky.solarEclipse.mode", "keyframes": [{"at": 0, "value": "off"}]},
+    {"capability": "sky.lunarEclipse.mode", "keyframes": [{"at": 0, "value": "off"}]},
+    {"capability": "presentation.poetry", "keyframes": [{"at": 0, "value": false}]}
+  ],
+  "clips": []
+}

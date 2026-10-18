@@ -1,0 +1,8 @@
+import test from 'node:test';import assert from 'node:assert/strict';import * as THREE from 'three';
+import {attachRuntimeOptions} from '../src/runtime-options.js';
+test('模块自身应用数量与附肢比例，质量切换和恢复不重建资源',()=>{
+ const body=new THREE.InstancedMesh(new THREE.BoxGeometry(),new THREE.MeshBasicMaterial(),8),legs=new THREE.InstancedMesh(body.geometry,body.material,128);let q='high';const api=attachRuntimeOptions({update(){body.count=q==='low'?2:8;legs.count=body.count*16},setQuality:v=>q=v},{crab:{capacity:8,batches:[{body,parts:[{mesh:legs,ratio:16}]}],counts:{low:2,medium:4,high:8}}});
+ api.setQuality('low');api.setRuntimeOptions({crab:{count:5}});api.update(0);assert.equal(body.count,5);assert.equal(legs.count,80);api.setQuality('low');api.update(1);assert.equal(body.count,5);assert.throws(()=>api.setRuntimeOptions({crab:{count:9}}));api.setRuntimeOptions({crab:{enabled:false}});api.update(2);assert.equal(body.count,0);assert.equal(legs.count,0);api.restoreRuntimeOptions({});api.update(3);assert.equal(body.count,2);assert.equal(legs.count,32);
+});
+test('速度调整仅在显式调度时使用，输入时间回跳也不使模型时钟倒退',()=>{const times=[];const api=attachRuntimeOptions({update:t=>times.push(t)},{fish:{capacity:0,batches:[]}});api.update(10);api.setRuntimeOptions({speed:2});api.update(11);api.update(12);api.restoreRuntimeOptions({});api.update(13);assert.deepEqual(times,[10,12,14,15]);});
+test('真实鱼浪模块提供可注册的运行接口与实际池容量',async()=>{const {createFishWave}=await import('../src/models/fish-wave.js');const scene=new THREE.Scene(),api=createFishWave(scene,{heightAt:()=>-20});assert.equal(api.getRuntimeCapabilities().channels.fishWave.capacity,1200);api.setRuntimeOptions({fishWave:{count:0}});api.update(1,{});assert.equal(api.group.getObjectByName('跃浪银鱼').count,0);api.dispose();});

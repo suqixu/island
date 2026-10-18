@@ -53,9 +53,13 @@
       "default": 1.7
     }
   },
-  "mobileDefaultQuality": "medium",
+  "mobileDefaultQuality": "high",
   "forestCanopyLod": {
     "farDistance": 220,
     "nearDistance": 180
+  },
+  "caveFlowerLod": {
+    "nearDistance": 36,
+    "farDistance": 48
   }
 }

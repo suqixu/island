@@ -1,3 +1,4 @@
+import {attachRuntimeOptions} from '../runtime-options.js';
 import {addSmoothSnowNormals} from './snow-normals.js';
 import {createSnowBoardGeometry} from './snow-layers.js';
 import {WEATHER_CONFIG, RENDERING_CONFIG} from '../runtime-config.js';
@@ -24,9 +25,13 @@ import { createForestCanopyLod } from '../forest-canopy-lod.js';
 import { runStartupGenerator } from '../startup-tasks.js';
 import { createCoastalSurfaceUniforms, COASTAL_SURFACE_GLSL } from '../coastal-surfaces.js';
 import { createLeafTextureState, attachLeafTexture } from '../leaf-texture.js';
+import {createFlowerTextureState} from '../flower-texture.js';
 import { beachGrassPlacement, isOpenBeach } from '../beach-grass.js';
 import { createStructureSurfaceState, attachStructureSurface } from '../structure-surfaces.js';
 import { SOIL_TRANSITION_GLSL } from '../ground-transition.js';
+import { createFlowerButterflies } from '../flower-butterflies.js';
+import { createMeadowInsects } from '../meadow-insects.js';
+import { createWoodlandHabitats } from '../woodland-habitats.js';
 
 const UP = new THREE.Vector3(0, 1, 0);
 const PATH_LAYOUT = getIslandPathLayout({ heightAt, caveEndpoint: CAVE_LAYOUT.approach });
@@ -862,6 +867,7 @@ function* buildIsland(scene, {snowSurface}={}) {
   const group = new THREE.Group(); group.name = 'ISOLA · 自然海岛';
   const random = seededRandom(802194);
   const leafTextures = createLeafTextureState();
+  const flowerTexture=createFlowerTextureState();
   const uniforms = {
     uTime: { value: 0 }, uWind: { value: 0.3 }, uSnow: { value: 0 }, uFoliageWinter:{value:0}, uLandWetness: { value: 0 }, uBeachDaylight: {value:1},
     uWindDirection: { value: new THREE.Vector2(.83, .55).normalize() },
@@ -877,9 +883,9 @@ function* buildIsland(scene, {snowSurface}={}) {
   const caveTriangles = applyCaveOpening(land);
   yield { stage: 'cave' };
   const cave = createIslandCave(group, { heightAt, leafTexture:leafTextures.broadleaf, snowSurface });
-  const caveFlowers = createCaveFlowerMeadow(group, { heightAt: PATH_LAYOUT.heightAtRendered, distanceAt: PATH_LAYOUT.distanceAt });
+  const caveFlowers = createCaveFlowerMeadow(group, { heightAt: PATH_LAYOUT.heightAtRendered, distanceAt: PATH_LAYOUT.distanceAt,flowerTexture:flowerTexture.uniforms,leafTexture:leafTextures.broadleaf });
   yield { stage: 'paths' };
-  const paths = yield* createIslandPathsGenerator(group, { heightAt, layout: PATH_LAYOUT, windUniforms: uniforms });
+  const paths = yield* createIslandPathsGenerator(group, { heightAt, layout: PATH_LAYOUT, windUniforms: uniforms,flowerTexture:flowerTexture.uniforms });
   yield { stage: 'forest' };
   const forest = yield* addForest(group, uniforms, random, leafTextures);
   yield { stage: 'palms' };
@@ -892,7 +898,17 @@ function* buildIsland(scene, {snowSurface}={}) {
   const dockLighting = addDock(group,uniforms);
   yield { stage: 'birds' };
   const birds = addBirds(group, random);
+  const caveAnchors = caveFlowers.getFlowerAnchors(), pathAnchors = paths.getFlowerAnchors();
+  const flowerAnchors = [];
+  for (let index = 0; index < Math.max(caveAnchors.length, pathAnchors.length); index++) {
+    if (caveAnchors[index]) flowerAnchors.push(caveAnchors[index]);
+    if (pathAnchors[index]) flowerAnchors.push(pathAnchors[index]);
+  }
+  const reservations = new Set();
+  const butterflies = createFlowerButterflies(group, { anchors: flowerAnchors, heightAt: PATH_LAYOUT.heightAtRendered, reservations });
+  const meadowInsects = createMeadowInsects(group, { anchors: flowerAnchors, heightAt: PATH_LAYOUT.heightAtRendered, reservations });
   scene.add(group);
+  const woodlandHabitats = createWoodlandHabitats({ group, forest, uniforms, pathLayout: PATH_LAYOUT });
   const seasonalColor = new THREE.Color();
   const vegetationWind = createVegetationWindState();
   let lastSeason = -1;
@@ -919,6 +935,8 @@ function* buildIsland(scene, {snowSurface}={}) {
       mesh.count = Math.floor(mesh.userData.fullCount * fraction);
     }
     forest.trunks.count = forest.canopies.reduce((count, canopy) => count + canopy.count, 0) * 3;
+    butterflies.setQuality(quality);
+    meadowInsects.setQuality(quality);
   };
   const seasonNames = ['spring', 'summer', 'autumn', 'winter'];
   const groundTints = [[1.04, 1.13, 0.93], [0.93, 1, 0.92], [1.19, 1.03, 0.77], [0.85, 0.94, 0.93]];
@@ -953,19 +971,19 @@ function* buildIsland(scene, {snowSurface}={}) {
     uniforms.uTreeAmplitudes.value.fromArray(vegetationWind.treeAmplitudes);
     uniforms.uLeafFlutter.value = vegetationWind.flutter;
     const winterTarget=Math.max(env.snow??0,Math.min(1,getSnowCover(env)*1.5),season===3?1:0);
-    uniforms.uFoliageWinter.value+=(winterTarget-uniforms.uFoliageWinter.value)*(1-Math.exp(-delta*1.8));
+    uniforms.uFoliageWinter.value+=(winterTarget-uniforms.uFoliageWinter.value)*(env.instantFilmFrame?1:1-Math.exp(-delta*1.8));
     for (const { nearWinterRange, farWinterRange } of forest.canopyGeometries) {
       nearWinterRange(uniforms.uFoliageWinter.value); farWinterRange(uniforms.uFoliageWinter.value);
     }
     const snowTarget = getSnowCover(env);
-    uniforms.uSnow.value += (snowTarget - uniforms.uSnow.value) * (1 - Math.exp(-delta * 1.9));
-    uniforms.uLandWetness.value += (clamp(env.rain ?? 0, 0, 1) - uniforms.uLandWetness.value) * (1 - Math.exp(-delta * 1.25));
+    uniforms.uSnow.value += (snowTarget - uniforms.uSnow.value) * (env.instantFilmFrame?1:1 - Math.exp(-delta * 1.9));
+    uniforms.uLandWetness.value += (clamp(env.rain ?? 0, 0, 1) - uniforms.uLandWetness.value) * (env.instantFilmFrame?1:1 - Math.exp(-delta * 1.25));
     dockLighting.snowCaps.visible=uniforms.uSnow.value>.005;
     const darkness = env.artificialLightsOff ? 0 : 1 - smooth(0.12, 0.48, env.daylight ?? 1);
-    dockLighting.material.emissiveIntensity = darkness * 3.1;
-    for (const light of dockLighting.lights) light.intensity = darkness * 48;
+    dockLighting.material.emissiveIntensity = darkness * 3.1*(env.dockLightIntensity??1);
+    for (const light of dockLighting.lights) light.intensity = darkness * 48*(env.dockLightIntensity??1);
     cave.update(time, env);
-    caveFlowers.update(time, env);
+    caveFlowers.update(time, env, camera);
     if (season !== lastSeason) {
       lastSeason = season;
       const tint = groundTints[season]; uniforms.uGroundTint.value.set(tint[0], tint[1], tint[2]);
@@ -982,7 +1000,12 @@ function* buildIsland(scene, {snowSurface}={}) {
     understory.flowers.visible=(season===0||season===1)&&!isSnowLandscape(env);
     if (env.quality && env.quality !== lastQuality) setQuality(env.quality);
     paths.update(time, { ...env, seasonIndex: season, quality: lastQuality });
-    const birdLimit = lastQuality === 'low' ? 14 : lastQuality === 'medium' ? 24 : birds.length;
+    butterflies.update(time, { ...env, seasonIndex: season, quality: lastQuality }, camera);
+    meadowInsects.update(time, { ...env, seasonIndex: season, quality: lastQuality }, camera);
+    seaBirds.update(time,env);
+  };
+  const seaBirds=attachRuntimeOptions({update(time,env){
+    const birdLimit = seaBirds.getRuntimeOptions().seaBird?.count??(lastQuality === 'low' ? 14 : lastQuality === 'medium' ? 24 : birds.length);
     const birdsInDaylight = (env.daylight ?? 1) > .06;
     const birdsInFairWeather = (env.storm ?? 0) < .6;
     for (let i = 0; i < birds.length; i++) {
@@ -1000,7 +1023,7 @@ function* buildIsland(scene, {snowSurface}={}) {
       const flap = Math.sin(time * 4.4 * bird.flapRate + bird.flutter) * (.31 - glide * .27) + .1 - glide * .14;
       bird.right.rotation.z = flap; bird.left.rotation.z = -flap;
     }
-  };
+  },setQuality(){}},{seaBird:{capacity:birds.length,objects:birds.map(b=>b.group)}});
   update(0, { season: 'summer' });
   const releasedRockMaps = new WeakSet();
   function releaseRockMap(map) {
@@ -1012,6 +1035,8 @@ function* buildIsland(scene, {snowSurface}={}) {
     disposed = true;
     // Helpers own their local resources. Remove them before collecting the
     // remaining island batches so their shared materials are not disposed twice.
+    butterflies.dispose();
+    meadowInsects.dispose();
     cave.dispose();
     caveFlowers.dispose();
     paths.dispose();
@@ -1035,6 +1060,7 @@ function* buildIsland(scene, {snowSurface}={}) {
     for (const texture of textures) texture.dispose();
     releaseRockMap(uniforms.uRockMap.value);
     leafTextures.dispose();
+    flowerTexture.dispose();
     for (const map of new Set([uniforms.uSandMap.value,uniforms.uLagoonMap.value,uniforms.uStepMap.value])) map?.dispose();
   }
   function setRockMap(map) {
@@ -1055,7 +1081,7 @@ function* buildIsland(scene, {snowSurface}={}) {
     const current = new Set(Object.values(keys).map(key=>uniforms[key].value));
     for (const map of previous) if (map && !current.has(map)) map.dispose();
   }
-  return { group, update, heightAt, heightAtRendered: PATH_LAYOUT.heightAtRendered, setQuality, setRockMap, setCoastalMaps, setDockMaps:dockLighting.setSurfaceMaps, setCaveMaps:cave.setSurfaceMaps, setLeafMaps:leafTextures.setMaps, dispose };
+  return { group, update, getRuntimeProviders:()=>({butterfly:butterflies,...meadowInsects.getRuntimeProviders(),seaBird:seaBirds}), heightAt, heightAtRendered: PATH_LAYOUT.heightAtRendered, getWoodlandHabitats:()=>woodlandHabitats, getFlowerObservationPoint:caveFlowers.getObservationPoint, setQuality, setRockMap, setCoastalMaps, setDockMaps:dockLighting.setSurfaceMaps, setCaveMaps:cave.setSurfaceMaps, setLeafMaps:leafTextures.setMaps, setFlowerMap:flowerTexture.setMap, setFlowerPollenMap:flowerTexture.setPollenMap, dispose };
 }
 
 /** Keep the synchronous API for tools and tests; both paths share every vertex. */

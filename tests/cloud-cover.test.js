@@ -123,7 +123,7 @@ test('真实大气在零云量完全消隐，即使火烧云时也不会凭空�
   globalThis.innerWidth = 634; globalThis.innerHeight = 768;
   const scene = new THREE.Scene(); let atmosphere;
   try {
-    atmosphere = createAtmosphere(scene, { moonMap: new THREE.Texture() });
+    atmosphere = createAtmosphere(scene, { moonMap: new THREE.Texture(), cloudMaps: Array.from({length:8},()=>new THREE.Texture()) });
     const camera = new THREE.PerspectiveCamera(54, 634 / 768, .5, 65000);
     camera.position.set(160 * 1.48, 68 * 1.48, 200 * 1.48); camera.lookAt(0, 15, 0);
     const sprites = atmosphere.group.children.filter(item => item.isSprite && item.userData.drift);
@@ -173,4 +173,34 @@ test('真实大气切回默认后，退出仍释放全部已接收云图且每�
   }finally{
     atmosphere?.dispose();globalThis.document=originalDocument;globalThis.innerWidth=originalWidth;globalThis.innerHeight=originalHeight;
   }
+});
+
+test('没有加载完成的云图时保持天空无云，收到纹理后才出现云，清空后不能回退程序云',()=>{
+  const originalDocument=globalThis.document,originalWidth=globalThis.innerWidth,originalHeight=globalThis.innerHeight;
+  const context=new Proxy({createImageData:(w,h)=>({data:new Uint8ClampedArray(w*h*4)}),
+    createRadialGradient:()=>({addColorStop(){}}),createLinearGradient:()=>({addColorStop(){}})},
+    {get:(target,key)=>target[key]??(()=>{})});
+  globalThis.document={createElement:()=>({getContext:()=>context})};
+  globalThis.innerWidth=634;globalThis.innerHeight=768;
+  let atmosphere;
+  try {
+    atmosphere=createAtmosphere(new THREE.Scene());
+    const sprites=atmosphere.group.children.filter(item=>item.isSprite&&item.userData.drift);
+    const camera=new THREE.PerspectiveCamera(54,1,.5,65000);camera.position.set(160,68,200);camera.lookAt(0,15,0);
+    const env={...getEnvironment(createSimulation({hour:12,weather:'sunny'})),skyCloudCover:1};
+    assert.ok(sprites.every(sprite=>!sprite.visible&&sprite.material.map===null),'第一帧之前也不能显示替代云图');
+    atmosphere.update(0,env,camera);
+    assert.ok(sprites.every(sprite=>!sprite.visible&&sprite.material.opacity===0));
+    const maps=Array.from({length:8},()=>new THREE.Texture());atmosphere.setCloudMaps(maps);atmosphere.update(.1,env,camera);
+    assert.ok(sprites.some(sprite=>sprite.visible));assert.ok(sprites.every(sprite=>maps.includes(sprite.material.map)));
+    atmosphere.setCloudMaps(null);
+    assert.ok(sprites.every(sprite=>!sprite.visible),'切换加载时应立即隐藏');
+    atmosphere.update(.2,env,camera);
+    assert.ok(sprites.every(sprite=>!sprite.visible&&sprite.material.map===null));
+    const sky=atmosphere.group.children.find(object=>object.material?.uniforms?.uTyphoonCloudStrength);
+    for(let step=3;step<60;step++)atmosphere.update(step/10,{...env,weather:'typhoon',typhoon:1,storm:1},camera);
+    assert.equal(sky.material.uniforms.uTyphoonCloudStrength.value,0,'没有纹理时也不能显示程序风暴云顶');
+    atmosphere.setCloudMaps(maps);atmosphere.update(6,{...env,weather:'typhoon',typhoon:1,storm:1},camera);
+    assert.ok(sky.material.uniforms.uTyphoonCloudStrength.value>0,'纹理就绪后风暴云顶应恢复');
+  } finally {atmosphere?.dispose();globalThis.document=originalDocument;globalThis.innerWidth=originalWidth;globalThis.innerHeight=originalHeight;}
 });

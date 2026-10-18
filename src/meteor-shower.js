@@ -1,5 +1,8 @@
 import { DEFAULTS, RENDERING_CONFIG } from './runtime-config.js';
 import * as THREE from 'three';
+import meteorConfig from './config/scene-capabilities.json' with {type:'json'};
+import {validateCapabilityValue} from './scene-capabilities/registry.js';
+import {sampleMeteorEpisode,getFilmView} from './meteor-film-sampling.js';
 
 const schedule=DEFAULTS.sky.schedules.meteor;
 const clamp=THREE.MathUtils.clamp,smooth=THREE.MathUtils.smoothstep,RADIUS=2110,POOL_SIZE=32;
@@ -63,6 +66,7 @@ function material(vertexShader,fragmentShader,uniforms){return new THREE.ShaderM
  * dt is unaccelerated elapsed time, supplied by the owning night sky.
  */
 export function createMeteorShower({groupRandom=Math.random,timeRandom=Math.random}={}){
+  let runtimeOptions={},filmControl,filmContext,filmView;
   const random=randomSource(570317),group=new THREE.Group();group.name='meteor-shower';
   const opacity={value:0},pixelRatio={value:1};
   const trails=new THREE.Mesh(geometry(POOL_SIZE,true),material(trailVertex,trailFragment,{uOpacity:opacity}));
@@ -94,7 +98,7 @@ export function createMeteorShower({groupRandom=Math.random,timeRandom=Math.rand
   }
   function spawn(){
     let slot;
-    for(let i=0;i<limits[quality].capacity;i++)if(!pool[i].active){slot=pool[i];break;}
+    for(let i=0;i<(runtimeOptions.maxActive??limits[quality].capacity);i++)if(!pool[i].active){slot=pool[i];break;}
     if(!slot)return;
     const x=(random()-.5)*.7,y=(random()-.5)*.3;
     const dx=Math.cos(burstBearing)/aspect,dy=Math.sin(burstBearing),edge=1.2;
@@ -109,11 +113,11 @@ export function createMeteorShower({groupRandom=Math.random,timeRandom=Math.rand
     // A visual mass proxy ties scale, brightness and speed to one individual.
     // Larger meteors move a little more slowly, within a short, crisp pass.
     const mass=random();
-    slot.active=true;slot.born=elapsed;slot.flight=.85+mass*.45;
-    slot.linger=.18+mass*.22;
+    slot.active=true;slot.born=elapsed;slot.flight=runtimeOptions.flightDuration??(.85+mass*.45);
+    slot.linger=runtimeOptions.lingerDuration??(.18+mass*.22);
     slot.trailFraction=.55+random()*.18;
     slot.width=3.8+mass*2.6;slot.size=6+mass*6;
-    slot.brightness=1.15+mass*.65;
+    slot.brightness=(1.15+mass*.65)*(runtimeOptions.brightness??1);
     slot.color.setRGB(1,.96+random()*.03,.84+random()*.10);
   }
   function point(slot,progress,target){
@@ -130,7 +134,8 @@ export function createMeteorShower({groupRandom=Math.random,timeRandom=Math.rand
     }
   }
   function update(delta,visibility,view,{moonLight=0,pixelRatio:ratio=1}={}){
-    if(disposed||!view||mode==='off')return;
+    if(disposed||!view||filmControl===undefined&&mode==='off')return;
+    if(filmControl!==undefined){renderFilm(visibility,view,moonLight,ratio);return;}
     const dt=Number.isFinite(delta)?clamp(delta,0,.25):0;elapsed+=dt;
     opacity.value=clamp(visibility,0,1)*(1-clamp(moonLight,0,1)*.22);pixelRatio.value=ratio;
     group.visible=visibility>.005;
@@ -142,10 +147,10 @@ export function createMeteorShower({groupRandom=Math.random,timeRandom=Math.rand
     const age=elapsed-started;
     if(age<30&&visibility>.2){
       if(elapsed>=nextBurstAt&&age<29){
-        burstSize=1+clamp(Math.floor(groupRandom()*9),0,8);burstRemaining=burstSize;
-        burstBearing=-(.55+groupRandom()*(Math.PI-1.10));
+        burstSize=runtimeOptions.burstCount??(1+clamp(Math.floor(groupRandom()*9),0,8));burstRemaining=burstSize;
+        burstBearing=runtimeOptions.bearing===undefined?-(.55+groupRandom()*(Math.PI-1.10)):THREE.MathUtils.degToRad(runtimeOptions.bearing);
         group.userData.burstIndex=++burstIndex;group.userData.burstCount=burstSize;group.userData.burstDirection=burstBearing;
-        nextMeteorAt=elapsed;nextBurstAt=elapsed+2.8+timeRandom()*5.2;
+        nextMeteorAt=elapsed;nextBurstAt=elapsed+(runtimeOptions.burstInterval??(2.8+timeRandom()*5.2));
       }
       while(burstRemaining>0&&elapsed>=nextMeteorAt){
         spawn();burstRemaining--;nextMeteorAt+=(.14+random()*.10)*Math.min(1,3/burstSize);
@@ -173,7 +178,18 @@ export function createMeteorShower({groupRandom=Math.random,timeRandom=Math.rand
     trails.visible=trailCount>0;heads.visible=headCount>0;
     for(const object of [trails,heads])for(const name of ['position','aOpacity','aColor','aSize'])if(object.geometry.attributes[name])object.geometry.attributes[name].needsUpdate=true;
   }
-  function setQuality(value){quality=Object.hasOwn(limits,value)?value:RENDERING_CONFIG.defaultQuality;pool.forEach((slot,i)=>{if(i>=limits[quality].capacity)slot.active=false;});}
+  function setQuality(value){quality=Object.hasOwn(limits,value)?value:RENDERING_CONFIG.defaultQuality;if(filmControl===undefined)pool.forEach((slot,i)=>{if(i>=limits[quality].capacity)slot.active=false;});}
+  let savedRuntimeOptions;
+  function setRuntimeOptions(patch={}){for(const [key,value]of Object.entries(patch)){const schema=meteorConfig.meteor.parameters[key];if(!schema)throw new Error(`未知流星参数 ${key}`);validateCapabilityValue(schema,value,key);if(key==='mode'&&filmControl===undefined)setMode(value);else runtimeOptions[key]=value;}}
+  function renderFilm(visibility,view,moonLight,ratio){
+    opacity.value=clamp(visibility,0,1)*(1-clamp(moonLight,0,1)*.22);pixelRatio.value=ratio;
+    const slots=filmControl?sampleMeteorEpisode({...filmControl,parameters:{...runtimeOptions,...filmControl.parameters}},{seed:filmContext.seed,view:filmView??view}):[];
+    let trailCount=0,headCount=0;
+    for(const slot of slots){const age=filmControl.localTime-slot.born,t=clamp(age/slot.flight,0,1),after=Math.max(0,age-slot.flight),fade=(1-smooth(after,0,slot.linger))*smooth(t,0,.06);liveColor.copy(slot.color);point(slot,t,head);point(slot,Math.max(0,t-slot.trailFraction),tail);writeQuad(trailCount++,slot,slot.brightness*fade*(after>0?.48:1));if(age<slot.flight){const a=heads.geometry.attributes;a.position.setXYZ(headCount,head.x,head.y,head.z);a.aSize.setX(headCount,slot.size);a.aOpacity.setX(headCount,slot.brightness*smooth(t,0,.06));a.aColor.setXYZ(headCount,liveColor.r,liveColor.g,liveColor.b);headCount++;}}
+    trails.geometry.setDrawRange(0,trailCount*6);heads.geometry.setDrawRange(0,headCount);trails.visible=trailCount>0;heads.visible=headCount>0;group.visible=visibility>.005&&trailCount>0;group.userData.activeCount=headCount;
+    for(const object of [trails,heads])for(const attribute of Object.values(object.geometry.attributes))if(attribute.usage===THREE.DynamicDrawUsage)attribute.needsUpdate=true;
+  }
+  function sampleFilm(frame,context={}){if(frame&&(!filmControl||frame.id!==filmControl.id)){const view=context.frameAt?.(frame.start);if(view)filmView=getFilmView(frame,context,view);}filmControl=frame;filmContext=context;}
   function dispose(){if(disposed)return;disposed=true;trails.geometry.dispose();trails.material.dispose();heads.geometry.dispose();heads.material.dispose();group.removeFromParent();group.clear();}
-  return{group,update,setQuality,setEnabled,setMode,dispose};
+  return{group,update,setQuality,setEnabled,setMode,dispose,getRuntimeOptions:()=>({...runtimeOptions,mode}),setRuntimeOptions,getRuntimeCapabilities:()=>meteorConfig.meteor.parameters,beginFilm(){if(filmControl!==undefined)return;savedRuntimeOptions={...runtimeOptions};filmControl=null;filmContext={};filmView=undefined;},sampleFilm,endFilm(){if(filmControl===undefined)return;runtimeOptions=savedRuntimeOptions;filmControl=undefined;filmView=undefined;trails.visible=heads.visible=false;group.visible=false;trails.geometry.setDrawRange(0,0);heads.geometry.setDrawRange(0,0);}};
 }

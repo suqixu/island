@@ -1,0 +1,10 @@
+{
+  "tool": "image_gen built-in",
+  "date": "2026-10-18",
+  "asset": "src/assets/textures/vegetation/flower-petal-albedo-v1.webp",
+  "runtimeSize": [
+    512,
+    512
+  ],
+  "prompt": "Use case: stylized-concept. Asset type: base color texture for the EXISTING curved flower petal geometry in an interactive Three.js island. Primary request: a neutral, softly realistic petal surface with delicate longitudinal botanical veins, fine satin cellular grain, and very subtle translucent-looking variation. Composition: square flat unwrapped surface, full bleed, viewed orthographically straight on; the petal base direction is at the BOTTOM and tip direction at TOP. Fill the entire square with petal tissue, no silhouette, no cutout, no whole flower, no center, no leaves. Color: almost white ivory neutral grayscale so the game can tint it pink, yellow, purple and blue; only slight light gray vein variation, keep most values bright. Lighting: evenly lit albedo without baked directional highlights or shadows. The lower central area may be slightly warmer and densely veined, upper area lightly ribbed. Natural and refined, visible at close range without heavy contrast. Constraints: no text, no border, no watermark, no background scene, no object photography, no 3D render of a flower. Opaque square texture."
+}

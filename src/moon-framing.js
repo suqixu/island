@@ -25,6 +25,7 @@ export function getMoonBackdropDirection(camera, viewportWidth, env) {
     const elevation = MathUtils.clamp(Math.sin(env.moonAltitude) / .5, -1, 1);
     y = horizon + (peak - horizon) * elevation;
   }
+  if(env?.moonFraming==='complete'){const height=viewportWidth/camera.aspect,radius=(env.moonDiscSize||getMoonBackdropSize(viewportWidth,height,env.moonPhase))/height;y=MathUtils.clamp(y,-.72+radius,.72-radius);}
   return forward
     .addScaledVector(right, x * verticalSlope * camera.aspect)
     .addScaledVector(up, y * verticalSlope)
@@ -48,12 +49,12 @@ export function getMoonBackdropSize(viewportWidth, viewportHeight, moonPhase = .
 }
 
 /** 普通月相补偿离轴投影，满月仍严格保留原大月面的世界尺寸。 */
-export function getMoonBackdropScale(camera, viewportWidth, viewportHeight, moonPhase = .5, moonDirection) {
+export function getMoonBackdropScale(camera, viewportWidth, viewportHeight, moonPhase = .5, moonDirection, discSize = 0) {
   const { natural, full, fullBlend } = moonSizeState(viewportWidth, viewportHeight, moonPhase);
   const direction = moonDirection?.isVector3
     ? moonDirection.clone().normalize() : getMoonBackdropDirection(camera, viewportWidth);
   const depthRatio = MathUtils.clamp(direction.dot(camera.getWorldDirection(new Vector3())), 0, 1);
-  const pixels = MathUtils.lerp(natural * depthRatio, full, fullBlend);
+  const pixels = discSize>0?discSize*depthRatio:MathUtils.lerp(natural * depthRatio, full, fullBlend);
   const verticalSlope = Math.tan(MathUtils.degToRad(camera.getEffectiveFOV()) * .5);
   return pixels * 3800 * verticalSlope / viewportHeight;
 }

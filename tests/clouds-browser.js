@@ -43,12 +43,13 @@ function render() {
     });
   }
   renderer.render(scene, camera);
-  document.getElementById('status').textContent = (actualSheet ? `图集 v${actualSheet} · ` : '本地云体回退 · ')
+  document.getElementById('status').textContent = (actualSheet ? `图集 v${actualSheet} · ` : '云图未就绪，暂时无云 · ')
     + (atlas ? `${cloudMaps?.length ?? 8} 种云形`
     : `可见云群 ${clouds.filter(cloud => cloud.visible).length} / ${clouds.length} · 大气准备 ${buildMs.toFixed(0)}ms`);
 }
 document.querySelectorAll('[data-preset]').forEach(button => button.onclick = () => preset(button.dataset.preset));
 function showAtlas() {
+  if(!cloudMaps?.length){atlas=false;render();return;}
   preset('busy'); atlas = true;
   fitAtlasCamera(); render();
 }

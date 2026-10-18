@@ -3,7 +3,7 @@ import { currentVersion, releaseNotes } from './release-notes.js';
 let nextHistoryId = 0;
 
 /** Switches settings and release notes within the existing draggable panel. */
-export function createUpdateHistory(panelHeader) {
+export function createUpdateHistory(panelHeader,{navigation}={}) {
   const panel = panelHeader.parentElement;
   const document = panelHeader.ownerDocument;
   const create = (tag, className, text) => {
@@ -38,6 +38,11 @@ export function createUpdateHistory(panelHeader) {
     view.append(section);
   }
   panelHeader.prepend(button);
+  if(navigation){
+    panel.append(view);navigation.register('updates',view,button);
+    const open=()=>navigation.show('updates');button.addEventListener('click',open);
+    return {close:()=>navigation.leave('updates'),dispose(){navigation.leave('updates');button.removeEventListener('click',open);view.remove();button.remove();}};
+  }
   panelHeader.prepend(returnButton);
   panel.append(view);
   let settings = null;
@@ -86,6 +91,7 @@ export function createUpdateHistory(panelHeader) {
   returnButton.addEventListener('click', close);
 
   return {
+    close,
     dispose() {
       if (disposed) return;
       disposed = true;

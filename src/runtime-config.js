@@ -28,7 +28,7 @@ export function initializeSettingInputs(document, state, quality = RENDERING_CON
   button.setAttribute('aria-label', `渲染画质：${option.label}，点击切换`);
 }
 
-/** A narrow touch display starts balanced; users retain the full quality switch. */
+/** 手机与桌面均由配置选择精细画质，用户仍可手动切换。 */
 export function getInitialQuality({
   width = globalThis.innerWidth ?? Infinity,
   coarsePointer = globalThis.matchMedia?.('(pointer: coarse)').matches ?? false,

@@ -6,6 +6,7 @@ import {createMeteorShower} from './meteor-shower.js';
 import {createConstellationGuides} from './constellation-guides.js';
 import {COMET_STYLES} from './comet-styles.js';
 import {createAurora} from './aurora.js';
+import {filmRandom,getFilmView} from './meteor-film-sampling.js';
 
 const schedule=DEFAULTS.sky.schedules.comet;
 const TAU=Math.PI*2, radians=THREE.MathUtils.degToRad, clamp=THREE.MathUtils.clamp;
@@ -158,6 +159,7 @@ function tail(name,comet,time){
  * elapsed time, retain world directions, and allocate no geometry per frame.
  */
 export function createNightSky({cometRandom=Math.random,meteorRandom=Math.random,eventRandom=Math.random,auroraRandom=Math.random}={}){
+  let filmState,filmContext={},savedFilm,runtimeOptions={stars:{},milkyWay:{},comet:{}},constellationMode=DEFAULTS.sky.constellation;
   const random=randomSource(731905),group=new THREE.Group(),celestial=new THREE.Group();
   group.name='night-sky';celestial.name='celestial-sphere';group.add(celestial);
   const aurora=createAurora({random:auroraRandom});group.add(aurora.group);
@@ -212,14 +214,14 @@ export function createNightSky({cometRandom=Math.random,meteorRandom=Math.random
   }
   function setCometsVisible(value){setCometMode(value?'default':'off');}
 
-  function seedPath(view,target,finish,travel){
+  function seedPath(view,target,finish,travel,rng=random){
     view.getWorldDirection(heading);
-    const azimuth=Math.atan2(heading.z,heading.x)+(random()-.5)*.18;
-    const altitude=clamp(Math.asin(clamp(heading.y,-1,1))+.44+random()*.10,.82,1.12);
+    const azimuth=Math.atan2(heading.z,heading.x)+(rng()-.5)*.18;
+    const altitude=clamp(Math.asin(clamp(heading.y,-1,1))+.44+rng()*.10,.82,1.12);
     target.set(Math.cos(azimuth)*Math.cos(altitude),Math.sin(altitude),Math.sin(azimuth)*Math.cos(altitude));
     side.set(-Math.sin(azimuth),0,Math.cos(azimuth));
     pathUp.crossVectors(side,target).normalize();if(pathUp.y<0)pathUp.negate();
-    const bearing=cometStyle.bearing+(random()-.5)*.08;
+    const bearing=cometStyle.bearing+(rng()-.5)*.08;
     finish.copy(target).addScaledVector(side,travel*Math.cos(bearing)).addScaledVector(pathUp,travel*Math.sin(bearing)).normalize();
   }
   function quad(mesh,at,to,headWidth,tailWidth){
@@ -257,11 +259,17 @@ export function createNightSky({cometRandom=Math.random,meteorRandom=Math.random
     mist.visible=quality!=='low';
     // Only clear-night observing time advances event scheduling. Daytime doesn't
     // accumulate missed events or cause a burst when the sky becomes visible.
-    if(visibility>.2&&cometMode!=='off')clock+=dt;
-    uniforms.uTime.value+=dt;
-    cometAge+=dt;
+    if(filmState===undefined&&visibility>.2&&cometMode!=='off')clock+=dt;
+    if(filmState===undefined){uniforms.uTime.value+=dt;cometAge+=dt;}
+    else{
+      uniforms.uTime.value=filmContext.filmTime??0;const frame=filmState.comet;cometActive=Boolean(frame);
+      if(frame){const p={...runtimeOptions.comet,...frame.parameters};cometStyle=COMET_STYLES.find(s=>s.id===p.style)??COMET_STYLES[0];const r=filmRandom(filmContext.seed??0,frame.id),locked=getFilmView(frame,filmContext,view);
+        const u=comet.material.uniforms;u.uDustColor.value.fromArray(cometStyle.dustColor);u.uIonColor.value.fromArray(cometStyle.ionColor);u.uSpread.value=cometStyle.spread;u.uCurve.value=cometStyle.curve;u.uSplit.value=cometStyle.split;u.uIonStrength.value=cometStyle.ionStrength;head.material.uniforms.uColor.value.fromArray(cometStyle.headColor);head.material.uniforms.uSize.value=cometStyle.headSize;
+        comet.userData.variant=cometStyle.id;seedPath(locked,cometStart,cometEnd,cometStyle.travel,r);const alignment=clamp(cometStart.dot(cometEnd),-1,1);cometSpeed=Math.acos(alignment)/(p.duration??cometStyle.duration)*1.3;cometTangent.copy(cometEnd).addScaledVector(cometStart,-alignment).normalize();cometAge=frame.localTime;
+      }
+    }
     shower.update(dt,visibility,view,{moonLight:moon,pixelRatio:uniforms.uPixelRatio.value});
-    if(cometMode!=='off'&&!cometActive&&clock>=cometAt&&visibility>.2){
+    if(filmState===undefined&&cometMode!=='off'&&!cometActive&&clock>=cometAt&&visibility>.2){
       cometActive=true;cometAge=0;enteredView=false;outsideFor=0;
       cometStyle=COMET_STYLES[clamp(Math.floor(cometRandom()*COMET_STYLES.length),0,COMET_STYLES.length-1)];
       comet.userData.variant=cometStyle.id;comet.userData.variantName=cometStyle.name;
@@ -306,7 +314,7 @@ export function createNightSky({cometRandom=Math.random,meteorRandom=Math.random
       // the nucleus, rather than multiplying two trapezoidal tapers.
       quad(comet,headPosition,tailPosition,cometStyle.width,cometStyle.width);
       headGeometry.attributes.position.setXYZ(0,headPosition.x,headPosition.y,headPosition.z);headGeometry.attributes.position.needsUpdate=true;
-      const alpha=visibility*(1-moon*.45)*smooth(cometAge,0,.9);
+      const alpha=visibility*(1-moon*.45)*smooth(cometAge,0,.9)*(filmState?.comet?.parameters.brightness??runtimeOptions.comet.brightness??1);
       comet.material.uniforms.uOpacity.value=alpha*.8;
       head.material.uniforms.uOpacity.value=alpha*smooth(headPosition.y/2070,0,.12);
       // Test the whole tail's bounds, so the nucleus can leave first without
@@ -317,8 +325,11 @@ export function createNightSky({cometRandom=Math.random,meteorRandom=Math.random
       cometBounds.setFromBufferAttribute(comet.geometry.attributes.position);
       if(cometFrustum.intersectsBox(cometBounds)){enteredView=true;outsideFor=0;}else if(enteredView)outsideFor+=dt;
       const belowHorizon=headPosition.y<=0&&cometBounds.max.y<2070*.12;
-      if(outsideFor>=.35||belowHorizon||travel>=1.9)finishComet();
+      if(outsideFor>=.35||belowHorizon||travel>=1.9){if(filmState===undefined)finishComet();else comet.visible=head.visible=false;}
     }
+    stars.visible=runtimeOptions.stars.enabled!==false;uniforms.uOpacity.value*=runtimeOptions.stars.brightness??1;
+    if(runtimeOptions.stars.count!==undefined)stars.geometry.setDrawRange(0,runtimeOptions.stars.count);
+    band.visible=runtimeOptions.milkyWay.enabled!==false;mist.visible&&=runtimeOptions.milkyWay.enabled!==false;band.material.uniforms.uOpacity.value*=runtimeOptions.milkyWay.brightness??1;mistUniforms.uOpacity.value*=runtimeOptions.milkyWay.brightness??1;
   }
   function setQuality(value){
     quality=RENDERING_CONFIG.qualityOptions.some(option=>option.value===value)?value:RENDERING_CONFIG.defaultQuality;
@@ -327,7 +338,18 @@ export function createNightSky({cometRandom=Math.random,meteorRandom=Math.random
     shower.setQuality(quality);aurora.setQuality(quality);
   }
   function dispose(){if(disposed)return;disposed=true;guides.dispose();shower.dispose();aurora.dispose();group.traverse(object=>{object.geometry?.dispose();object.material?.dispose();});group.removeFromParent();group.clear();}
+  function setConstellationMode(value){constellationMode=value;guides.setMode(value);}
+  function getRuntimeOptions(){return {constellation:constellationMode,meteor:shower.getRuntimeOptions(),aurora:aurora.getRuntimeOptions(),comet:{...runtimeOptions.comet,mode:cometMode},stars:{enabled:true,brightness:1,count:stars.geometry.drawRange.count,...runtimeOptions.stars},milkyWay:{enabled:true,brightness:1,...runtimeOptions.milkyWay}};}
+  function setRuntimeOptions(patch){
+    if(patch.stars?.count!==undefined&&(patch.stars.count<0||patch.stars.count>catalogue.length))throw new Error('星点数量超过容量');
+    if(patch.constellation!==undefined)setConstellationMode(patch.constellation);
+    for(const name of ['stars','milkyWay','comet'])if(patch[name])runtimeOptions[name]={...runtimeOptions[name],...patch[name]};
+    if(patch.meteor)shower.setRuntimeOptions(patch.meteor);if(patch.aurora)aurora.setRuntimeOptions(patch.aurora);
+  }
+  function beginFilm(){if(filmState!==undefined)return;savedFilm={runtime:structuredClone(runtimeOptions),constellation:constellationMode,clock,cometAt,cometAge,cometSpeed,cometActive,enteredView,outsideFor,cometStyle,time:uniforms.uTime.value,start:cometStart.clone(),end:cometEnd.clone(),tangent:cometTangent.clone(),starCount:stars.geometry.drawRange.count,meteor:shower.getRuntimeOptions()};filmState={};shower.beginFilm();aurora.beginFilm();}
+  function sampleFilm(frames,context={}){filmState=frames;filmContext=context;shower.sampleFilm(frames.meteor??null,context);aurora.sampleFilm(frames.aurora??null,context);}
+  function endFilm(){if(filmState===undefined)return;const saved=savedFilm;runtimeOptions=saved.runtime;setConstellationMode(saved.constellation);clock=saved.clock;cometAt=saved.cometAt;cometAge=saved.cometAge;cometSpeed=saved.cometSpeed;cometActive=saved.cometActive;enteredView=saved.enteredView;outsideFor=saved.outsideFor;cometStyle=saved.cometStyle;const u=comet.material.uniforms;u.uDustColor.value.fromArray(cometStyle.dustColor);u.uIonColor.value.fromArray(cometStyle.ionColor);u.uSpread.value=cometStyle.spread;u.uCurve.value=cometStyle.curve;u.uSplit.value=cometStyle.split;u.uIonStrength.value=cometStyle.ionStrength;head.material.uniforms.uColor.value.fromArray(cometStyle.headColor);head.material.uniforms.uSize.value=cometStyle.headSize;uniforms.uTime.value=saved.time;cometStart.copy(saved.start);cometEnd.copy(saved.end);cometTangent.copy(saved.tangent);stars.geometry.setDrawRange(0,saved.starCount);shower.endFilm();aurora.endFilm();filmState=undefined;lastTime=undefined;comet.visible=head.visible=false;}
   guides.setMode(DEFAULTS.sky.constellation);
   setQuality(RENDERING_CONFIG.defaultQuality);
-  return{group,catalogue,update,setQuality,setConstellationsVisible:guides.setVisible,setConstellationMode:guides.setMode,setMeteorsVisible:shower.setEnabled,setCometsVisible,setMeteorMode:shower.setMode,setCometMode,setAuroraMode:aurora.setMode,dispose};
+  return{group,catalogue,update,setQuality,setConstellationsVisible:value=>setConstellationMode(value?'labels':'off'),setConstellationMode,setMeteorsVisible:shower.setEnabled,setCometsVisible,setMeteorMode:shower.setMode,setCometMode,setAuroraMode:aurora.setMode,dispose,getRuntimeOptions,setRuntimeOptions,beginFilm,sampleFilm,endFilm};
 }

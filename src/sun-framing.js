@@ -29,10 +29,10 @@ export function getSunDiscProjection(camera,direction,angularRadius){
  * 太阳的屏幕构图只改变方向，不改变真实升落或天气强度。
  * 天空不足时保留独立的物理方向；盘面跨越地平线时由天空着色器遮蔽。
  */
-export function getSunBackdropState(camera, viewportWidth, viewportHeight, physicalDirection) {
+export function getSunBackdropState(camera, viewportWidth, viewportHeight, physicalDirection, discSize = 0) {
   const physical = physicalDirection.clone().normalize();
   const verticalSlope = Math.tan(MathUtils.degToRad(camera.getEffectiveFOV()) * .5);
-  const diameter = MathUtils.clamp(Math.min(viewportWidth * .06, viewportHeight * .04), 22, 36);
+  const diameter = Number.isFinite(discSize) && discSize > 0 ? MathUtils.clamp(discSize, 1, Math.min(200,viewportWidth*.22,viewportHeight*.22)) : MathUtils.clamp(Math.min(viewportWidth * .06, viewportHeight * .04), 22, 36);
   const radius = diameter * .5;
   const fallback = () => ({
     direction: physical.clone(),

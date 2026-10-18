@@ -1,7 +1,9 @@
+import {attachRuntimeOptions} from '../runtime-options.js';
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { createSunsetSailboatMotion } from '../sunset-sailboat-motion.js';
 import {loadSailboatSurfaces,disposeSailboatSurfaceMaps} from '../sailboat-surfaces.js';
+import {heightAt as terrainHeight} from '../terrain.js';
 
 function merged(parts) {
   const geometry = mergeGeometries(parts);
@@ -117,7 +119,7 @@ function silhouetteModels() {
 }
 
 /** Four slots with three shared silhouettes, allocated once and chosen per voyage. */
-export function createSailboats(scene, { heightAt, seed, loadSurfaces=loadSailboatSurfaces } = {}) {
+export function createSailboats(scene, { heightAt=terrainHeight, seed, loadSurfaces=loadSailboatSurfaces } = {}) {
   const group = new THREE.Group(); group.name = '远海帆船剪影'; scene.add(group);
   const motion = createSunsetSailboatMotion({ heightAt, seed });
   const models = silhouetteModels();
@@ -143,6 +145,29 @@ export function createSailboats(scene, { heightAt, seed, loadSurfaces=loadSailbo
     return { boat, ship, timber, cloth, variants, lastRoute: null };
   });
   let disposed = false,activeMaps=null,pending;
+  let filmFrame, filmRoute, filmKey;
+  function sampleFilm(frame,context){
+    if(!frame){if(!filmFrame)return;filmFrame=undefined;filmRoute=undefined;filmKey=undefined;for(const record of records)record.lastRoute=null;return;}
+    filmFrame={...frame,camera:context.frameAt(frame.start)};
+  }
+  function planFilmVoyage(view,duration){
+    const forward=view.getWorldDirection(new THREE.Vector3()).setY(0).normalize();
+    const right=new THREE.Vector3(forward.z,0,-forward.x),eye=view.getWorldPosition(new THREE.Vector3());
+    const course=right.clone().multiplyScalar(.75).addScaledVector(forward,.16);
+    // Validate the whole hull corridor once, including bow and beam; never
+    // move a render-only ship onto land just to fill a frame.
+    for(const distance of [280,360,440,560])for(const side of [-.12,.12,-.3,.3]){
+      const start=eye.clone().addScaledVector(forward,distance).addScaledVector(right,distance*side).setY(0);
+      let safe=true;
+      for(let time=0;time<=duration+2&&safe;time+=2)for(const x of [-13,0,13])for(const z of [-5,0,5]){
+        const p=start.clone().addScaledVector(course,time).addScaledVector(right,x).addScaledVector(forward,z);
+        const bed=heightAt?.(p.x,p.z);
+        if(!Number.isFinite(bed)||bed>=-5||Math.hypot(p.x,p.z)<150)safe=false;
+      }
+      if(safe)return {style:'fishing',beam:6,length:22,height:12,start:0,duration,x:start.x,z:start.z,vx:course.x,vz:course.z,heading:Math.atan2(course.x,course.z)};
+    }
+    return null;
+  }
   const surfaceController=new AbortController();
   function setSurfaceMaps(maps){
     if(disposed){disposeSailboatSurfaceMaps(maps);return;}
@@ -154,8 +179,9 @@ export function createSailboats(scene, { heightAt, seed, loadSurfaces=loadSailbo
       material.map=map;material.bumpMap=bump;if(recompile)material.needsUpdate=true;
     }
   }
-  return {
+  return attachRuntimeOptions({
     group,
+    sampleFilm,
     setSurfaceMaps,
     // Optional close-up material inspection only; the main scene uses lit colors.
     loadSurfaces({signal,...options}={}){
@@ -170,11 +196,17 @@ export function createSailboats(scene, { heightAt, seed, loadSurfaces=loadSailbo
     },
     update(elapsed, env = {}, camera) {
       if (disposed) return;
-      motion.advance(elapsed, env, camera);
+      if(filmFrame){
+        const key=`${filmFrame.id}:${filmFrame.camera.aspect}`;
+        if(filmKey!==key){filmRoute=planFilmVoyage(filmFrame.camera,filmFrame.end-filmFrame.start);filmKey=key;records[0].lastRoute=null;}
+      }else motion.advance(elapsed, env, camera);
       const daylight = Number.isFinite(env?.daylight) ? Math.max(0, Math.min(1, env.daylight)) : 1;
       for (const record of records) {
         const { boat, ship, timber, cloth, variants } = record;
-        const { pose, route } = boat;
+        const route=filmFrame?filmRoute:boat.route;
+        const t=filmFrame?.localTime??0;
+        const opacity=filmFrame?THREE.MathUtils.smoothstep(t,0,2)*(1-THREE.MathUtils.smoothstep(filmFrame.progress,.91,1)):0;
+        const pose=filmFrame?{visible:boat.index===0&&Boolean(route),opacity,x:(route?.x??0)+(route?.vx??0)*t,z:(route?.z??0)+(route?.vz??0)*t,y:.12+Math.sin(t*1.1)*.08,heading:route?.heading??0,pitch:Math.sin(t*.7)*.012,roll:Math.sin(t*.83)*.025}:boat.pose;
         ship.visible = pose.visible;
         ship.userData.opacity = pose.opacity; ship.userData.route = route;
         if (route !== record.lastRoute) {
@@ -211,5 +243,5 @@ export function createSailboats(scene, { heightAt, seed, loadSurfaces=loadSailbo
       for (const material of materials) material.dispose();
       group.removeFromParent(); group.clear();
     },
-  };
+  },{sailboat:{capacity:records.length,objects:records.map(r=>r.ship)}});
 }

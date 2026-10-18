@@ -1,0 +1,159 @@
+{
+  "format": "isola-film",
+  "schemaVersion": 2,
+  "title": "浮屿 · 彩虹",
+  "duration": 60,
+  "music": {"trackId": "pingsha", "musicVolume": 0.55, "ambientVolume": 0.25, "fadeIn": 3, "fadeOut": 4},
+  "shots": [
+    {
+      "id": "01-sunlit-island",
+      "label": "晴空白云",
+      "start": 0,
+      "end": 8,
+      "landmark": "island",
+      "camera": [
+        {"at": 0, "position": [200, 55, 250], "target": [0, 14, 0], "fov": 52},
+        {"at": 8, "position": [180, 50, 230], "target": [0, 14, 0], "fov": 52}
+      ],
+      "environment": [
+        {"at": 0, "hour": 14.5, "season": 1, "weather": "sunny", "snowCover": 0}
+      ]
+    },
+    {
+      "id": "02-first-rain",
+      "label": "初雨落海",
+      "start": 8,
+      "end": 15,
+      "landmark": "dock",
+      "camera": [
+        {"at": 0, "position": [26, 8, 44], "target": [5, 0, 0], "fov": 50},
+        {"at": 7, "position": [20, 7, 36], "target": [5, 0, 0], "fov": 50}
+      ],
+      "environment": [
+        {"at": 0, "hour": 14.5, "season": 1, "weather": "rain", "snowCover": 0}
+      ]
+    },
+    {
+      "id": "03-gathering-clouds",
+      "label": "乌云压境",
+      "start": 15,
+      "end": 23,
+      "landmark": "island",
+      "camera": [
+        {"at": 0, "position": [180, 50, 230], "target": [0, 18, 0], "fov": 52},
+        {"at": 8, "position": [205, 55, 255], "target": [0, 32, 0], "fov": 52}
+      ],
+      "environment": [
+        {"at": 0, "hour": 14.5, "season": 1, "weather": "rain", "snowCover": 0}
+      ]
+    },
+    {
+      "id": "04-bird-against-the-wind",
+      "label": "逆风飞过",
+      "start": 23,
+      "end": 34,
+      "landmark": "island",
+      "camera": [
+        {"at": 0, "position": [205, 55, 255], "target": [0, 24, 0], "fov": 52},
+        {"at": 11, "position": [213, 57, 263], "target": [0, 24, 0], "fov": 52}
+      ],
+      "environment": [
+        {"at": 0, "hour": 14.5, "season": 1, "weather": "typhoon", "snowCover": 0}
+      ]
+    },
+    {
+      "id": "05-breaking-waves",
+      "label": "巨浪拍岸",
+      "start": 34,
+      "end": 43,
+      "landmark": "reef",
+      "camera": [
+        {"at": 0, "position": [26, 8, 26], "target": [120, 2, 120], "fov": 55}
+      ],
+      "environment": [
+        {"at": 0, "hour": 14.5, "season": 1, "weather": "typhoon", "snowCover": 0}
+      ]
+    },
+    {
+      "id": "06-breaking-light",
+      "label": "云隙见光",
+      "start": 43,
+      "end": 50,
+      "landmark": "island",
+      "camera": [
+        {"at": 0, "position": [213, 57, 263], "target": [0, 24, 0], "fov": 52},
+        {"at": 7, "position": [200, 60, 260], "target": [0, 32, 0], "fov": 52}
+      ],
+      "environment": [
+        {"at": 0, "hour": 14.5, "season": 1, "weather": "rain", "snowCover": 0}
+      ]
+    },
+    {
+      "id": "07-rainbow",
+      "label": "彩虹初现",
+      "start": 50,
+      "end": 56,
+      "landmark": "island",
+      "camera": [
+        {"at": 0, "position": [200, 60, 260], "target": [0, 32, 0], "fov": 54},
+        {"at": 6, "position": [208, 63, 270], "target": [0, 32, 0], "fov": 54}
+      ],
+      "environment": [
+        {"at": 0, "hour": 14.5, "season": 1, "weather": "sunny", "snowCover": 0}
+      ]
+    },
+    {
+      "id": "08-after-the-storm",
+      "label": "风雨之后",
+      "start": 56,
+      "end": 60,
+      "landmark": "island",
+      "camera": [
+        {"at": 0, "position": [208, 63, 270], "target": [0, 32, 0], "fov": 54},
+        {"at": 4, "position": [212, 64, 275], "target": [0, 32, 0], "fov": 54}
+      ],
+      "environment": [
+        {"at": 0, "hour": 14.5, "season": 1, "weather": "sunny", "snowCover": 0}
+      ]
+    }
+  ],
+  "captions": [{"start": 56, "end": 60, "text": "风雨之后，总会有彩虹。", "style": "ending"}],
+  "tracks": [
+    {"capability": "scene.weather", "interpolation": "step", "keyframes": [{"at": 0, "value": "sunny"}, {"at": 8, "value": "rain"}, {"at": 23, "value": "typhoon"}, {"at": 43, "value": "rain"}, {"at": 48, "value": "sunny"}]},
+    {"capability": "scene.cloudMode", "interpolation": "step", "keyframes": [{"at": 0, "value": "many"}]},
+    {"capability": "scene.motionRate", "interpolation": "step", "keyframes": [{"at": 0, "value": 1}]},
+    {"capability": "environment.rain", "interpolation": "smooth", "keyframes": [{"at": 0, "value": 0}, {"at": 8, "value": 0}, {"at": 12, "value": 0.28}, {"at": 15, "value": 0.48}, {"at": 23, "value": 0.9}, {"at": 28, "value": 1}, {"at": 41, "value": 1}, {"at": 44, "value": 0.65}, {"at": 48, "value": 0.08}, {"at": 50, "value": 0}, {"at": 60, "value": 0}]},
+    {"capability": "environment.cloudiness", "interpolation": "smooth", "keyframes": [{"at": 0, "value": 0.12}, {"at": 6, "value": 0.2}, {"at": 12, "value": 0.62}, {"at": 18, "value": 0.92}, {"at": 23, "value": 1}, {"at": 41, "value": 1}, {"at": 44, "value": 0.82}, {"at": 48, "value": 0.38}, {"at": 51, "value": 0.18}, {"at": 60, "value": 0.12}]},
+    {"capability": "environment.skyCloudCover", "interpolation": "smooth", "keyframes": [{"at": 0, "value": 0.25}, {"at": 7, "value": 0.36}, {"at": 15, "value": 0.82}, {"at": 20, "value": 1}, {"at": 41, "value": 1}, {"at": 45, "value": 0.85}, {"at": 49, "value": 0.42}, {"at": 54, "value": 0.2}, {"at": 60, "value": 0.18}]},
+    {"capability": "environment.windSpeed", "interpolation": "smooth", "keyframes": [{"at": 0, "value": 3}, {"at": 8, "value": 5}, {"at": 15, "value": 12}, {"at": 23, "value": 40}, {"at": 28, "value": 56}, {"at": 38, "value": 58}, {"at": 42, "value": 50}, {"at": 46, "value": 18}, {"at": 50, "value": 5}, {"at": 56, "value": 3}, {"at": 60, "value": 3}]},
+    {"capability": "environment.gust", "interpolation": "smooth", "keyframes": [{"at": 0, "value": 0.08}, {"at": 15, "value": 0.24}, {"at": 23, "value": 0.8}, {"at": 28, "value": 0.98}, {"at": 33, "value": 0.84}, {"at": 38, "value": 1}, {"at": 42, "value": 0.9}, {"at": 47, "value": 0.2}, {"at": 52, "value": 0.08}, {"at": 60, "value": 0.08}]},
+    {"capability": "environment.storm", "interpolation": "smooth", "keyframes": [{"at": 0, "value": 0}, {"at": 16, "value": 0}, {"at": 23, "value": 0.85}, {"at": 27, "value": 1}, {"at": 41, "value": 1}, {"at": 44, "value": 0.6}, {"at": 49, "value": 0}, {"at": 60, "value": 0}]},
+    {"capability": "environment.typhoon", "interpolation": "smooth", "keyframes": [{"at": 0, "value": 0}, {"at": 19, "value": 0}, {"at": 27, "value": 1}, {"at": 41, "value": 1}, {"at": 45, "value": 0.4}, {"at": 50, "value": 0}, {"at": 60, "value": 0}]},
+    {"capability": "environment.roughSea", "interpolation": "smooth", "keyframes": [{"at": 0, "value": 0}, {"at": 19, "value": 0}, {"at": 27, "value": 1}, {"at": 42, "value": 1}, {"at": 46, "value": 0.5}, {"at": 51, "value": 0.08}, {"at": 56, "value": 0}, {"at": 60, "value": 0}]},
+    {"capability": "environment.fog", "interpolation": "smooth", "keyframes": [{"at": 0, "value": 0.015}, {"at": 15, "value": 0.12}, {"at": 23, "value": 0.24}, {"at": 32, "value": 0.25}, {"at": 34, "value": 0.16}, {"at": 42, "value": 0.16}, {"at": 48, "value": 0.06}, {"at": 52, "value": 0.015}, {"at": 60, "value": 0.015}]},
+    {"capability": "environment.snow", "interpolation": "smooth", "keyframes": [{"at": 0, "value": 0}]},
+    {"capability": "environment.windDirection", "interpolation": "step", "keyframes": [{"at": 0, "value": [-0.8, 0.6]}]},
+    {"capability": "sky.rainbow.strength", "interpolation": "smooth", "keyframes": [{"at": 0, "value": 0}, {"at": 50, "value": 0}, {"at": 53, "value": 0.65}, {"at": 56, "value": 1}, {"at": 60, "value": 1}]},
+    {"capability": "audio.musicVolume", "interpolation": "smooth", "keyframes": [{"at": 0, "value": 0.55}, {"at": 15, "value": 0.55}, {"at": 23, "value": 0.3}, {"at": 28, "value": 0.2}, {"at": 42, "value": 0.2}, {"at": 48, "value": 0.45}, {"at": 52, "value": 0.6}, {"at": 60, "value": 0.6}]},
+    {"capability": "audio.ambientVolume", "interpolation": "smooth", "keyframes": [{"at": 0, "value": 0.2}, {"at": 8, "value": 0.24}, {"at": 15, "value": 0.32}, {"at": 23, "value": 0.5}, {"at": 28, "value": 0.65}, {"at": 41, "value": 0.65}, {"at": 46, "value": 0.35}, {"at": 51, "value": 0.18}, {"at": 60, "value": 0.14}]},
+    {"capability": "sky.moon.enabled", "interpolation": "step", "keyframes": [{"at": 0, "value": false}]},
+    {"capability": "sky.stars.enabled", "interpolation": "step", "keyframes": [{"at": 0, "value": false}]},
+    {"capability": "sky.milkyWay.enabled", "interpolation": "step", "keyframes": [{"at": 0, "value": false}]},
+    {"capability": "sky.constellation.mode", "interpolation": "step", "keyframes": [{"at": 0, "value": "off"}]},
+    {"capability": "sky.meteor.mode", "interpolation": "step", "keyframes": [{"at": 0, "value": "off"}]},
+    {"capability": "sky.comet.mode", "interpolation": "step", "keyframes": [{"at": 0, "value": "off"}]},
+    {"capability": "sky.aurora.mode", "interpolation": "step", "keyframes": [{"at": 0, "value": "off"}]},
+    {"capability": "sky.solarEclipse.mode", "interpolation": "step", "keyframes": [{"at": 0, "value": "off"}]},
+    {"capability": "sky.lunarEclipse.mode", "interpolation": "step", "keyframes": [{"at": 0, "value": "off"}]},
+    {"capability": "presentation.poetry", "interpolation": "step", "keyframes": [{"at": 0, "value": false}]},
+    {"capability": "wildlife.sunsetBird.enabled", "interpolation": "step", "keyframes": [{"at": 0, "value": true}]},
+    {"capability": "wildlife.sunsetBird.count", "interpolation": "step", "keyframes": [{"at": 0, "value": 1}]},
+    {"capability": "wildlife.seaBird.enabled", "interpolation": "step", "keyframes": [{"at": 0, "value": false}]},
+    {"capability": "wildlife.woodlandBird.enabled", "interpolation": "step", "keyframes": [{"at": 0, "value": false}]},
+    {"capability": "wildlife.fishWave.enabled", "interpolation": "step", "keyframes": [{"at": 0, "value": false}]},
+    {"capability": "wildlife.sailboat.enabled", "interpolation": "step", "keyframes": [{"at": 0, "value": false}]},
+    {"capability": "wildlife.whale.enabled", "interpolation": "step", "keyframes": [{"at": 0, "value": false}]},
+    {"capability": "wildlife.dolphin.enabled", "interpolation": "step", "keyframes": [{"at": 0, "value": false}]}
+  ],
+  "clips": [{"id": "one-bird-crossing-storm", "capability": "wildlife.sunsetBird", "start": 28, "end": 34, "parameters": {"count": 1, "flight": "crosswind"}}]
+}

@@ -43,7 +43,7 @@ export async function loadCloudTextures({signal, atlas = 1}={}) {
       });
     });
   },{signal,fallback:undefined,dispose:maps=>maps?.forEach(map=>map.dispose()),
-    onFallback:error=>console.warn('云图未就绪，保留本地云体',error)});
+    onFallback:error=>console.warn('云图未就绪，天空暂时保持无云',error)});
 }
 
 // Deal every silhouette once before reusing it; shuffling never mutates the

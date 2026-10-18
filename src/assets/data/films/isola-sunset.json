@@ -1,0 +1,596 @@
+{
+  "format": "isola-film",
+  "schemaVersion": 2,
+  "title": "浮屿 · 渔舟唱晚",
+  "duration": 60,
+  "music": {
+    "trackId": "sunset",
+    "musicVolume": 0.65,
+    "ambientVolume": 0.36,
+    "fadeIn": 3,
+    "fadeOut": 4
+  },
+  "shots": [
+    {
+      "id": "01-golden-sea",
+      "label": "落日铺海",
+      "start": 0,
+      "end": 12,
+      "landmark": "island",
+      "camera": [
+        {
+          "at": 0,
+          "position": [
+            180,
+            7,
+            260
+          ],
+          "target": [
+            203.188806,
+            6.561293,
+            292.589673
+          ],
+          "fov": 50
+        },
+        {
+          "at": 12,
+          "position": [
+            178,
+            4,
+            258
+          ],
+          "target": [
+            201.213079,
+            3.625596,
+            290.573191
+          ],
+          "fov": 48
+        }
+      ],
+      "environment": [
+        {
+          "at": 0,
+          "hour": 17.25,
+          "season": 1,
+          "weather": "sunny",
+          "snowCover": 0
+        }
+      ],
+      "description": "完整日盘与海面余晖，镜头缓慢下降，海风轻起。"
+    },
+    {
+      "id": "02-homeward",
+      "label": "归鸟与渔舟",
+      "start": 12,
+      "end": 26,
+      "landmark": "island",
+      "camera": [
+        {
+          "at": 0,
+          "position": [
+            178,
+            4,
+            258
+          ],
+          "target": [
+            201.213079,
+            3.625596,
+            290.573191
+          ],
+          "fov": 48
+        },
+        {
+          "at": 14,
+          "position": [
+            182,
+            3,
+            262
+          ],
+          "target": [
+            205.165051,
+            2.622309,
+            294.607327
+          ],
+          "fov": 46
+        }
+      ],
+      "environment": [
+        {
+          "at": 0,
+          "hour": 17.43,
+          "season": 1,
+          "weather": "sunny",
+          "snowCover": 0
+        }
+      ],
+      "description": "一叶短桅渔舟缓缓航行，两只飞鸟向落日深处飞远。"
+    },
+    {
+      "id": "03-silver-leaps",
+      "label": "银光跃浪",
+      "start": 26,
+      "end": 42,
+      "landmark": "island",
+      "camera": [
+        {
+          "at": 0,
+          "position": [
+            182,
+            5,
+            262
+          ],
+          "target": [
+            205.285545,
+            3.263797,
+            294.477207
+          ],
+          "fov": 46
+        },
+        {
+          "at": 16,
+          "position": [
+            184,
+            4,
+            264
+          ],
+          "target": [
+            207.205804,
+            2.525055,
+            296.547123
+          ],
+          "fov": 44
+        }
+      ],
+      "environment": [
+        {
+          "at": 0,
+          "hour": 17.68,
+          "season": 1,
+          "weather": "sunny",
+          "snowCover": 0
+        }
+      ],
+      "description": "低看海面，鱼群错峰跃起，如银光散落；远处渔舟继续慢航。"
+    },
+    {
+      "id": "04-last-afterglow",
+      "label": "红云送日 · 余晖静泊",
+      "start": 42,
+      "end": 60,
+      "landmark": "island",
+      "camera": [
+        {
+          "at": 0,
+          "position": [
+            184,
+            3,
+            264
+          ],
+          "target": [
+            206.386307,
+            3.0,
+            297.148955
+          ],
+          "fov": 46
+        },
+        {
+          "at": 18,
+          "position": [
+            184,
+            3,
+            264
+          ],
+          "target": [
+            206.386307,
+            3.0,
+            297.148955
+          ],
+          "fov": 46
+        }
+      ],
+      "environment": [
+        {
+          "at": 0,
+          "hour": 17.91,
+          "season": 1,
+          "weather": "sunny",
+          "snowCover": 0
+        }
+      ],
+      "description": "同一固定机位看完整落日缓缓没入海平线，红云犹在；最后十秒只留安静暮色，月亮尚未升起。"
+    }
+  ],
+  "tracks": [
+    {
+      "capability": "scene.hour",
+      "interpolation": "linear",
+      "keyframes": [
+        {
+          "at": 0,
+          "value": 17.25
+        },
+        {
+          "at": 12,
+          "value": 17.43
+        },
+        {
+          "at": 26,
+          "value": 17.68
+        },
+        {
+          "at": 42,
+          "value": 17.91
+        },
+        {
+          "at": 50,
+          "value": 18.16
+        },
+        {
+          "at": 60,
+          "value": 18.16
+        }
+      ]
+    },
+    {
+      "capability": "scene.season",
+      "interpolation": "step",
+      "keyframes": [
+        {
+          "at": 0,
+          "value": 1
+        }
+      ]
+    },
+    {
+      "capability": "scene.weather",
+      "interpolation": "step",
+      "keyframes": [
+        {
+          "at": 0,
+          "value": "sunny"
+        }
+      ]
+    },
+    {
+      "capability": "scene.snowCover",
+      "interpolation": "step",
+      "keyframes": [
+        {
+          "at": 0,
+          "value": 0
+        }
+      ]
+    },
+    {
+      "capability": "scene.motionRate",
+      "interpolation": "step",
+      "keyframes": [
+        {
+          "at": 0,
+          "value": 1
+        }
+      ]
+    },
+    {
+      "capability": "scene.cloudMode",
+      "interpolation": "step",
+      "keyframes": [
+        {
+          "at": 0,
+          "value": "default"
+        }
+      ]
+    },
+    {
+      "capability": "environment.cloudiness",
+      "interpolation": "step",
+      "keyframes": [
+        {
+          "at": 0,
+          "value": 0.18
+        }
+      ]
+    },
+    {
+      "capability": "environment.skyCloudCover",
+      "interpolation": "step",
+      "keyframes": [
+        {
+          "at": 0,
+          "value": 0.22
+        }
+      ]
+    },
+    {
+      "capability": "environment.windSpeed",
+      "interpolation": "step",
+      "keyframes": [
+        {
+          "at": 0,
+          "value": 5
+        }
+      ]
+    },
+    {
+      "capability": "environment.gust",
+      "interpolation": "step",
+      "keyframes": [
+        {
+          "at": 0,
+          "value": 0.08
+        }
+      ]
+    },
+    {
+      "capability": "environment.rain",
+      "interpolation": "step",
+      "keyframes": [
+        {
+          "at": 0,
+          "value": 0
+        }
+      ]
+    },
+    {
+      "capability": "environment.snow",
+      "interpolation": "step",
+      "keyframes": [
+        {
+          "at": 0,
+          "value": 0
+        }
+      ]
+    },
+    {
+      "capability": "environment.fog",
+      "interpolation": "step",
+      "keyframes": [
+        {
+          "at": 0,
+          "value": 0
+        }
+      ]
+    },
+    {
+      "capability": "environment.storm",
+      "interpolation": "step",
+      "keyframes": [
+        {
+          "at": 0,
+          "value": 0
+        }
+      ]
+    },
+    {
+      "capability": "sky.sun.size",
+      "interpolation": "step",
+      "keyframes": [
+        {
+          "at": 0,
+          "value": 80
+        }
+      ]
+    },
+    {
+      "capability": "sky.moon.enabled",
+      "interpolation": "step",
+      "keyframes": [
+        {
+          "at": 0,
+          "value": false
+        }
+      ]
+    },
+    {
+      "capability": "sky.stars.enabled",
+      "interpolation": "step",
+      "keyframes": [
+        {
+          "at": 0,
+          "value": false
+        }
+      ]
+    },
+    {
+      "capability": "sky.milkyWay.enabled",
+      "interpolation": "step",
+      "keyframes": [
+        {
+          "at": 0,
+          "value": false
+        }
+      ]
+    },
+    {
+      "capability": "sky.constellation.mode",
+      "interpolation": "step",
+      "keyframes": [
+        {
+          "at": 0,
+          "value": "off"
+        }
+      ]
+    },
+    {
+      "capability": "lights.mode",
+      "interpolation": "step",
+      "keyframes": [
+        {
+          "at": 0,
+          "value": "all-off"
+        }
+      ]
+    },
+    {
+      "capability": "presentation.poetry",
+      "interpolation": "step",
+      "keyframes": [
+        {
+          "at": 0,
+          "value": false
+        }
+      ]
+    },
+    {
+      "capability": "sky.meteor.mode",
+      "interpolation": "step",
+      "keyframes": [
+        {
+          "at": 0,
+          "value": "off"
+        }
+      ]
+    },
+    {
+      "capability": "sky.comet.mode",
+      "interpolation": "step",
+      "keyframes": [
+        {
+          "at": 0,
+          "value": "off"
+        }
+      ]
+    },
+    {
+      "capability": "sky.aurora.mode",
+      "interpolation": "step",
+      "keyframes": [
+        {
+          "at": 0,
+          "value": "off"
+        }
+      ]
+    },
+    {
+      "capability": "sky.solarEclipse.mode",
+      "interpolation": "step",
+      "keyframes": [
+        {
+          "at": 0,
+          "value": "off"
+        }
+      ]
+    },
+    {
+      "capability": "sky.lunarEclipse.mode",
+      "interpolation": "step",
+      "keyframes": [
+        {
+          "at": 0,
+          "value": "off"
+        }
+      ]
+    },
+    {
+      "capability": "wildlife.sunsetBird.enabled",
+      "interpolation": "step",
+      "keyframes": [
+        {
+          "at": 0,
+          "value": false
+        },
+        {
+          "at": 12,
+          "value": true
+        },
+        {
+          "at": 28,
+          "value": false
+        }
+      ]
+    },
+    {
+      "capability": "wildlife.fishWave.enabled",
+      "interpolation": "step",
+      "keyframes": [
+        {
+          "at": 0,
+          "value": false
+        },
+        {
+          "at": 26,
+          "value": true
+        },
+        {
+          "at": 42,
+          "value": false
+        }
+      ]
+    },
+    {
+      "capability": "wildlife.sailboat.enabled",
+      "interpolation": "step",
+      "keyframes": [
+        {
+          "at": 0,
+          "value": true
+        },
+        {
+          "at": 49,
+          "value": false
+        }
+      ]
+    }
+  ],
+  "clips": [
+    {
+      "id": "returning-fishing-boat",
+      "capability": "wildlife.sailboat",
+      "start": 0,
+      "end": 49,
+      "parameters": {}
+    },
+    {
+      "id": "birds-toward-sunset",
+      "capability": "wildlife.sunsetBird",
+      "start": 12,
+      "end": 28,
+      "parameters": {}
+    },
+    {
+      "id": "silver-fish-wave",
+      "capability": "wildlife.fishWave",
+      "start": 26,
+      "end": 42,
+      "parameters": {}
+    }
+  ],
+  "captions": [
+    {
+      "start": 1,
+      "end": 7,
+      "text": "浮屿 · 渔舟唱晚",
+      "style": "title"
+    },
+    {
+      "start": 8,
+      "end": 13,
+      "text": "一海碎金，留住将晚的天光。",
+      "style": "body"
+    },
+    {
+      "start": 16,
+      "end": 23,
+      "text": "归鸟向晚，渔舟缓缓。",
+      "style": "body"
+    },
+    {
+      "start": 29,
+      "end": 37,
+      "text": "鱼跃成银，浪花替海轻唱。",
+      "style": "body"
+    },
+    {
+      "start": 43,
+      "end": 49,
+      "text": "云霞渐红，落日慢慢归海。",
+      "style": "body"
+    },
+    {
+      "start": 52,
+      "end": 59,
+      "text": "日已落，月未起。\n天地之间，只余宁静。",
+      "style": "ending"
+    }
+  ]
+}

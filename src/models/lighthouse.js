@@ -373,7 +373,7 @@ export function createLighthouse(scene, { heightAt, position, doorDirection = { 
     stepSurfaces.uLandWetness.value = clamp(environment.rain ?? 0, 0, 1);
     stepSnow.value = getSnowCover(environment);
     if (environment.quality && environment.quality !== quality) setQuality(environment.quality);
-    const strength = environment.artificialLightsOff || environment.lighthouseLightsOff ? 0 : getLighthouseLampStrength(environment.daylight);
+    const strength = environment.artificialLightsOff || environment.lighthouseLightsOff ? 0 : getLighthouseLampStrength(environment.daylight)*(environment.lighthouseLightIntensity??1);
     light.intensity = strength * 23; light.visible = strength > .0001;
     glowMaterial.emissiveIntensity = strength * 6.5;
     lensMaterial.emissiveIntensity = strength * 2.7;

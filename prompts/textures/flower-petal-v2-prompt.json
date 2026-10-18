@@ -1,0 +1,11 @@
+{
+  "tool": "built-in image_gen",
+  "date": "2026-10-18",
+  "asset": "src/assets/textures/vegetation/flower-petal-albedo-v2.webp",
+  "runtimeSize": [
+    512,
+    512
+  ],
+  "reference": "用户提供的花毛茛花海照片：柔软叠瓣和自然花簇，参考其材质感觉，不复制整幅照片作为场景。",
+  "prompt": "Use case: stylized-concept. Asset type: replacement neutral albedo material for curved 3D ranunculus-like flower petals in a real-time island. Image 1 is the existing full-bleed petal texture to improve. Image 2 is a supporting photographic reference for delicate, layered, cupped fresh flower petal material, not a composition to copy. Change the material in Image 1 to thin, soft, fresh ranunculus petal tissue: subtle translucent-looking unevenness, delicate fine branching veins and soft creases, gentle silky highlights without baked directional light. Avoid the existing wood-grain or coarse fibrous appearance. Full square filled with opaque neutral ivory-white petal tissue, close macro flat unwrapped texture, base at bottom and outer rim at top; no petal silhouette or cutout. Keep subtle pale cream tonal variation so the shader can tint it red, orange, yellow, green, cyan, blue, violet, pink or white. Even diffuse lighting, no hard shadows. No flower center, no leaves, no stems, no whole flower, no field, no scene, no text, no border, no watermark. A refined botanical surface that reads soft and slightly crinkled at close range rather than paper, plastic or brushed wood."
+}

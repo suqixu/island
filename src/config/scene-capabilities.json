@@ -1,0 +1,17 @@
+{
+  "meteor": {
+    "capacity": 32,
+    "parameters": {
+      "mode": {"type":"enum","values":["default","instant","off"],"default":"instant"},
+      "burstCount": {"type":"integer","min":0,"max":32,"default":9},
+      "maxActive": {"type":"integer","min":0,"max":32,"default":32},
+      "burstInterval": {"type":"number","min":0.1,"max":600,"default":4},
+      "flightDuration": {"type":"number","min":0.1,"max":30,"default":1.1},
+      "lingerDuration": {"type":"number","min":0,"max":30,"default":0.3},
+      "brightness": {"type":"number","min":0,"max":4,"default":1},
+      "bearing": {"type":"number","min":-179,"max":-1,"default":-55}
+    }
+  },
+  "limits": {"maxTracks":256,"maxClips":512},
+  "labels": {"environment":"环境","sky":"天空","presentation":"呈现与声音","wildlife":"生物与船只"}
+}

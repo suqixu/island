@@ -1,0 +1,30 @@
+{
+  "activity": { "minDaylight": 0.32, "maxRain": 0.14, "maxWindSpeed": 11 },
+  "distance": { "fullRate": 75, "hidden": 230, "updateSeconds": 0.2 },
+  "bee": {
+    "counts": { "low": 3, "medium": 6, "high": 9 },
+    "size": { "min": 0.55, "range": 0.2 },
+    "visits": { "min": 2, "range": 3 },
+    "maxFlowerDistance": 10,
+    "seconds": {
+      "waiting": { "min": 0.9, "range": 7 },
+      "entering": { "min": 2.8, "range": 1.4 },
+      "landing": { "min": 1.1, "range": 0.7 },
+      "feeding": { "min": 2.2, "range": 2.6 },
+      "moving": { "min": 1.7, "range": 1.2 },
+      "departing": { "min": 2.5, "range": 1.2 }
+    }
+  },
+  "dragonfly": {
+    "counts": { "low": 2, "medium": 4, "high": 6 },
+    "size": { "min": 0.6, "range": 0.2 },
+    "visits": { "min": 3, "range": 3 },
+    "seconds": {
+      "waiting": { "min": 1.2, "range": 8 },
+      "entering": { "min": 1.6, "range": 0.8 },
+      "hover": { "min": 1.2, "range": 1.2 },
+      "moving": { "min": 0.8, "range": 0.7 },
+      "departing": { "min": 2.1, "range": 1 }
+    }
+  }
+}

@@ -1,0 +1,117 @@
+{
+  "activity": {
+    "minDaylight": 0.18,
+    "maxRain": 0.5,
+    "maxWindSpeed": 13
+  },
+  "distance": {
+    "fullRate": 75,
+    "hidden": 230,
+    "updateSeconds": 0.2
+  },
+  "bird": {
+    "counts": {
+      "low": 4,
+      "medium": 7,
+      "high": 10
+    },
+    "size": {
+      "min": 0.8,
+      "range": 0.2
+    },
+    "companions": {
+      "probability": 0.3,
+      "radius": 5,
+      "minSeparation": 0.45,
+      "maxNeighbors": 2
+    },
+    "seconds": {
+      "waiting": [
+        1,
+        8
+      ],
+      "arriving": [
+        2.6,
+        1.4
+      ],
+      "perched": [
+        7,
+        9
+      ],
+      "departing": [
+        2.5,
+        1.3
+      ]
+    }
+  },
+  "squirrel": {
+    "counts": {
+      "low": 2,
+      "medium": 3,
+      "high": 5
+    },
+    "size": {
+      "min": 0.8,
+      "range": 0.2
+    },
+    "crossingProbability": 0.4,
+    "walkingSpeed": 2.3,
+    "seconds": {
+      "waiting": [
+        1.5,
+        8
+      ],
+      "emerging": [
+        1,
+        0.4
+      ],
+      "climbing": [
+        3,
+        2
+      ],
+      "observing": [
+        2,
+        3
+      ],
+      "descending": [
+        3,
+        2
+      ],
+      "grounding": [
+        0.65,
+        0
+      ],
+      "mounting": [
+        0.65,
+        0
+      ],
+      "leaving": [
+        1.5,
+        0.4
+      ],
+      "shelteringTree": [
+        2.4,
+        0.5
+      ],
+      "shelteringGround": [
+        1.5,
+        0.5
+      ],
+      "hiding": [
+        2,
+        1.5
+      ],
+      "escapeWait": [
+        0.8,
+        1.6
+      ]
+    },
+    "exit": {
+      "distance": [
+        14,
+        6
+      ],
+      "speed": 3.1
+    }
+  }
+}

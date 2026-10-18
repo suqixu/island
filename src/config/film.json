@@ -1,0 +1,67 @@
+{
+  "limits": {
+    "maxBytes": 1048576,
+    "maxDuration": 1800,
+    "maxShots": 128,
+    "maxCaptions": 512,
+    "maxKeyframes": 128
+  },
+  "landmarks": [
+    "island",
+    "dock",
+    "reef",
+    "lagoon",
+    "cave",
+    "flowers",
+    "woodland",
+    "lighthouse",
+    "pavilion-south",
+    "pavilion-east",
+    "moon",
+    "fireflies",
+    "moths"
+  ],
+  "transitionSeconds": 0.65,
+  "cameraClearance": 0.65,
+  "labels": {
+    "open": "宣传片",
+    "heading": "浮屿放映室",
+    "play": "播放",
+    "pause": "暂停",
+    "resume": "继续",
+    "restart": "重播",
+    "exit": "退出",
+    "close": "关闭",
+    "preparing": "正在准备画面与声音…",
+    "ended": "放映结束",
+    "silent": "声音暂未就绪，本次静音播放",
+    "description": "选一部小岛短片，慢慢看。",
+    "unsupported": "脚本格式或版本不受支持",
+    "invalid": "脚本内容不正确",
+    "tooLarge": "脚本文件过大",
+    "failed": "暂时无法播放，请重试",
+    "speed": "播放速度",
+    "capture": "截图保存",
+    "volume": "播放音量",
+    "mute": "静音",
+    "unmute": "取消静音",
+    "fullscreen": "全屏",
+    "exitFullscreen": "退出全屏"
+  },
+  "presentation": {
+    "defaultFullscreen": true,
+    "controlsHideMs": 2500,
+    "bottomRevealHeight": 100,
+    "feedbackMs": 700,
+    "volume": 1,
+    "volumeStep": 0.05
+  },
+  "playbackRates": [
+    1,
+    0.5,
+    1.5,
+    2,
+    3,
+    4
+  ]
+}

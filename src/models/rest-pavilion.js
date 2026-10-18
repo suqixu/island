@@ -541,13 +541,13 @@ export function createRestPavilion(scene, { heightAt, position, entranceDirectio
   function update(time, environment = {}) {
     if (disposed) return;
     if (environment.quality && environment.quality !== quality) setQuality(environment.quality);
-    const strength = environment.artificialLightsOff ? 0 : getRestPavilionLampStrength(environment.daylight);
+    const strength = environment.artificialLightsOff ? 0 : getRestPavilionLampStrength(environment.daylight)*(environment.pavilionLightIntensity??1);
     light.intensity = strength * 12; light.visible = strength > .0001;
     glowMaterial.emissiveIntensity = strength * 4.2; paper.emissiveIntensity = strength * .48;
     const now = Number.isFinite(time) ? Math.max(lastTime, time) : lastTime;
     const delta = getAnimationDelta(now - lastTime, 1, environment); lastTime = now;
     chime.update(delta, now, environment, api.onChime);
-    snowCover += (getSnowCover(environment) - snowCover) * (1 - Math.exp(-delta * 1.8));
+    snowCover += (getSnowCover(environment) - snowCover) * (environment.instantFilmFrame?1:1 - Math.exp(-delta * 1.8));
     surfaceSnow.value=snowCover;
     snowMaterial.opacity = snowCover * .96; snow.visible = snowCover > .005;
   }

@@ -5,9 +5,13 @@ import * as THREE from 'three';
 import { createIsland } from '../src/models/island.js';
 import * as islandApi from '../src/models/island.js';
 
+const isRandomInsect = object => object.name.startsWith('花丛蝴蝶') || object.userData.meadowInsect;
+
 function geometryDigest(group) {
   const hash = createHash('sha256');
   group.traverse(object => {
+    // 昆虫按场景随机且独立创建；其行为由专门测试覆盖，不进入静态海岛摘要。
+    if (isRandomInsect(object)) return;
     hash.update(object.name);
     hash.update(JSON.stringify([object.position.toArray(), object.quaternion.toArray(), object.scale.toArray(), object.count]));
     for (const [name, attribute] of Object.entries(object.geometry?.attributes ?? {}).sort()) {
@@ -26,10 +30,11 @@ function geometryDigest(group) {
 function structureDigest(group) {
   const hash = createHash('sha256');
   group.traverse(object => {
-    if (object.userData.caveFlowerMeadow||object.name==='码头铺板积雪') return;
-    hash.update(JSON.stringify([object.name, object.type, object.children.filter(child=>child.name!=='码头铺板积雪').length, object.count ?? null]));
-    // 冬叶留存属性由独立测试守护，固定几何结构基线继续覆盖原有顶点与索引。
-    for (const [name, attribute] of Object.entries(object.geometry?.attributes ?? {}).filter(([name])=>name!=='aWinterLeaf'&&name!=='aSnowNormal').sort()) {
+    if (object.userData.caveFlowerMeadow||object.name==='码头铺板积雪'||isRandomInsect(object)) return;
+    hash.update(JSON.stringify([object.name, object.type, object.children.filter(child=>child.name!=='码头铺板积雪'&&!isRandomInsect(child)).length, object.count ?? null]));
+    // 冬叶与花瓣纹理遮罩由独立测试守护；固定结构仍覆盖原顶点与索引，
+    // 上下完整摘要同时检查同步/异步新增UV及遮罩的实际字节。
+    for (const [name, attribute] of Object.entries(object.geometry?.attributes ?? {}).filter(([name])=>name!=='aWinterLeaf'&&name!=='aSnowNormal'&&name!=='aPetalTexture').sort()) {
       hash.update(JSON.stringify([name, attribute.array.constructor.name, attribute.itemSize, attribute.count, attribute.normalized]));
     }
     for (const attribute of [object.geometry?.index, object.instanceMatrix, object.instanceColor]) {
@@ -55,6 +60,7 @@ function structureDigest(group) {
 test('分阶段海岛保留现有全部顶点、索引、实例矩阵、颜色与数量，并在内部耗时循环中让步', async () => {
   assert.equal(typeof islandApi.createIslandAsync, 'function', '启动需要异步分段创建海岛');
   const original = createIsland(new THREE.Scene());
+  for(const name of ['采蜜蜂身体','草间蜻蜓身体'])assert.ok(original.group.getObjectByName(name)?.isInstancedMesh,'真实海岛需要接入两种新增昆虫');
   const before = geometryDigest(original.group);
   // 包含细沙岸坡、洞口精确裁切/封闭后缘和洞外纹理遮罩；保留码头纹理UV及叶片遮罩。
   // 低岸细沙不再重复覆盖浅色环路，保留内陆路径与其自然衔接权重。
@@ -76,6 +82,9 @@ test('分阶段海岛保留现有全部顶点、索引、实例矩阵、颜色�
   });
   assert.deepEqual(asynchronous.group.userData.stats, original.group.userData.stats);
   assert.equal(geometryDigest(asynchronous.group), before);
+  assert.ok(original.group.getObjectByName('花丛蝴蝶身体')?.isInstancedMesh);
+  assert.equal(asynchronous.group.getObjectByName('花丛蝴蝶身体')?.count, original.group.getObjectByName('花丛蝴蝶身体')?.count);
+  for(const name of ['采蜜蜂身体','草间蜻蜓身体'])assert.equal(asynchronous.group.getObjectByName(name)?.count,original.group.getObjectByName(name)?.count);
   assert.equal(scene.children[0], asynchronous.group);
   for (const heavy of ['terrain', 'paths', 'forest', 'understory']) {
     assert.ok(slices.filter(slice => slice.stage === heavy).length > 2, `${heavy} 内部应多次让步`);

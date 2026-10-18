@@ -19,7 +19,8 @@ function withAtmosphere(run) {
   const scene = new THREE.Scene(), moonMap = new THREE.Texture();
   const camera = new THREE.PerspectiveCamera(54, 634 / 768, .5, 65000);
   camera.position.set(237, 101, 296);camera.lookAt(0, 15, 0);camera.updateMatrixWorld();
-  const atmosphere = createAtmosphere(scene, { moonMap });
+  // 天气形态在云纹理已就绪的场景验收；未就绪保持无云由 cloud-cover 测试覆盖。
+  const atmosphere = createAtmosphere(scene, { moonMap, cloudMaps: Array.from({length:8},()=>new THREE.Texture()) });
   let time = 0;
   const update = weather => atmosphere.update(time += .05, getEnvironment(createSimulation({ hour: 12, weather, windSeed: 1 })), camera);
   try { run({ atmosphere, scene, camera, update }); }
@@ -30,6 +31,14 @@ function withAtmosphere(run) {
     }
   }
 }
+
+test('影片暂停定位可立即清除上一段降雪，不在夏夜画面残留雪花',()=>{
+  withAtmosphere(({atmosphere,scene,camera})=>{
+    const snow=getEnvironment(createSimulation({weather:'snow',windSeed:42}));atmosphere.update(1,snow,camera);
+    const layers=['近景大片雪','中景密雪','远景雪幕'].map(name=>scene.getObjectByName(name));assert.ok(layers.some(layer=>layer.visible));
+    const clear={...getEnvironment(createSimulation({hour:22,weather:'sunny',seasonIndex:1,windSeed:42})),instantFilmFrame:true};atmosphere.update(1,clear,camera);assert.ok(layers.every(layer=>!layer.visible));
+  });
+});
 
 test('长时间运行后切换暴风雪仍连续旋转雪晶，重复时间不推进粒子且低画质限量', () => {
   withAtmosphere(({atmosphere,scene,camera})=>{
