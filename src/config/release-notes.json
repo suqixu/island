@@ -1,6 +1,12 @@
 {
-  "currentVersion": "1.4.0",
+  "currentVersion": "1.4.1",
   "versions": [
+    {
+      "version": "1.4.1",
+      "items": [
+        "修复手机端影片播放时残留“禅”按钮的问题，播放期间隐藏入口，退出后恢复显示。"
+      ]
+    },
     {
       "version": "1.4.0",
       "items": [

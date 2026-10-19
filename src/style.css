@@ -67,6 +67,8 @@
 @media(min-width:1600px){.panel-header{top:-25px;margin-left:-26px;margin-right:-26px;padding-left:26px;padding-right:26px}}
 
 body.zen-mode [data-zen-ui]{display:none}
+/* 播放时连同禅模式入口一起隐藏，退出播放后自动恢复。 */
+body.film-active .zen-toggle{visibility:hidden!important;pointer-events:none!important}
 body.zen-mode .topbar{justify-content:flex-end;border-color:transparent;pointer-events:none}
 body.zen-mode .zen-toggle{pointer-events:auto;font-family:Georgia,serif;font-size:26px;color:rgba(240,243,221,.8);background:rgba(20,49,40,.15);border-color:rgba(240,245,232,.15)}
 body.zen-mode .zen-toggle svg{display:block;width:24px;height:24px;flex:none}
