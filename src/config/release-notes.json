@@ -1,6 +1,12 @@
 {
-  "currentVersion": "1.4.1",
+  "currentVersion": "1.4.2",
   "versions": [
+    {
+      "version": "1.4.2",
+      "items": [
+        "接入 Cloudflare Web Analytics，用于统计浮屿网站访问情况。"
+      ]
+    },
     {
       "version": "1.4.1",
       "items": [
